@@ -1,0 +1,14 @@
+## APP
+Create a basic app with Vue3 and strapi.js to keep my list of padel tennis palyers.
+I want people to be able to register in a basic form and fill their profile with:
+ - name
+ - photo
+ - Category (A selector: 5,4,3,1)
+
+App will allow you to connect with people and add to your friends list.
+
+## Documentation
+Overwrite the prompt file with an enchanced version and add all missing requirements and details you missed
+
+## Infraestructure:
+You are building a dockerized app. Use docker to build and execute the app

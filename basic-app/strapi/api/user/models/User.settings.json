@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "users",
+  "info": {
+    "name": "User"
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "photo": {
+      "model": "file",
+      "via": "related",
+      "allowedTypes": ["images"],
+      "plugin": "upload",
+      "required": true
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": ["5", "4", "3", "1"],
+      "required": true
+    },
+    "friends": {
+      "collection": "user",
+      "via": "friends"
+    }
+  }
+}

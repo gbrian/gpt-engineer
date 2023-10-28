@@ -1,0 +1,19 @@
+{
+  "name": "padel-tennis-app",
+  "version": "1.0.0",
+  "description": "A Vue.js app to keep a list of padel tennis players",
+  "main": "src/main.js",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "vue": "^3.0.0",
+    "axios": "^0.21.1",
+    "vue-router": "^4.0.0-0"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "^4.5.0",
+    "@vue/compiler-sfc": "^3.0.0"
+  }
+}
