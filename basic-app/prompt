@@ -1,1 +1,12 @@
-use latest version of node
+[{
+	"resource": "src/components/RegistrationForm.vue",
+	"owner": "_generated_diagnostic_collection_name_#3",
+	"code": "1005",
+	"severity": 8,
+	"message": "',' expected.",
+	"source": "Vetur",
+	"startLineNumber": 40,
+	"startColumn": 3,
+	"endLineNumber": 40,
+	"endColumn": 10
+}]

@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="register">
     <input v-model="name" type="text" placeholder="Name" required>
-    <input v-model="photo" type="file" required>
+    <input type="file" @change="onFileChange" required>
     <select v-model="category" required>
       <option disabled value="">Please select a category</option>
       <option>5</option>
@@ -20,11 +20,14 @@ export default {
   data() {
     return {
       name: '',
-      photo: '',
+      photo: null,
       category: ''
     }
   },
   methods: {
+    onFileChange(e) {
+      this.photo = e.target.files[0];
+    },
     async register() {
       const formData = new FormData()
       formData.append('name', this.name)
