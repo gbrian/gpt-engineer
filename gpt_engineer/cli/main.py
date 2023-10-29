@@ -132,13 +132,6 @@ def main(
 
     load_env_if_needed()
 
-    ai = AI(
-        model_name=model,
-        temperature=temperature,
-        azure_endpoint=azure_endpoint,
-        cache=DB(memory_path / "cache") if ai_cache else None,
-    )
-
     project_path = os.path.abspath(
         project_path
     )  # resolve the string to a valid path (eg "a/b/../c" to "a/c")
@@ -160,6 +153,13 @@ def main(
         preprompts=DB(preprompts_path(use_custom_preprompts, input_path)),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
+    )
+
+    ai = AI(
+        model_name=model,
+        temperature=temperature,
+        azure_endpoint=azure_endpoint,
+        cache=DB(memory_path / "cache") if ai_cache else None,
     )
 
     if steps_config not in [
