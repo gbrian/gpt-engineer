@@ -194,36 +194,42 @@ class Edit:
 
 
 def parse_edits(llm_response):
-    def parse_one_edit(lines):
+    def parse_one_edit(lines, parse_type="file"):
         HEAD = "<<<<<<< HEAD"
         DIVIDER = "======="
         UPDATE = ">>>>>>> updated"
 
-        filename = lines.pop(0)
-        text = "\n".join(lines)
-        splits = text.split(DIVIDER)
-        if len(splits) != 2:
-            raise ValueError(f"Could not parse following text as code edit: \n{text}")
-        before, after = splits
+        logger.info(f"parse_one_edit {parse_type}: {lines}")
+        is_file_change = True if HEAD in lines else False
+        if is_file_change:
+            filename = lines.pop(0)
+            text = "\n".join(lines)
+            splits = text.split(DIVIDER)
+            if len(splits) != 2:
+                raise ValueError(f"Could not parse following text as code edit: \n{text}")
+            before, after = splits
 
-        before = before.replace(HEAD, "").strip()
-        after = after.replace(UPDATE, "").strip()
+            before = before.replace(HEAD, "").strip()
+            after = after.replace(UPDATE, "").strip()
 
-        return Edit(filename, before, after)
+            return Edit(filename, before, after)
+
+        logger.info(f"Request user confirmation to execute {lines}")
+        return []
 
     def parse_all_edits(txt):
         edits = []
         current_edit = []
-        in_fence = False
+        in_fence = None
 
         for line in txt.split("\n"):
             if line.startswith("```") and in_fence:
-                edits.append(parse_one_edit(current_edit))
+                edits.append(parse_one_edit(current_edit, parse_type=in_fence))
                 current_edit = []
                 in_fence = False
                 continue
             elif line.startswith("```") and not in_fence:
-                in_fence = True
+                in_fence = line[3:]
                 continue
 
             if in_fence:
