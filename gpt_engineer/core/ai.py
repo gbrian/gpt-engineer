@@ -32,6 +32,8 @@ from typing import List, Optional, Union
 import backoff
 import openai
 
+import hashlib
+
 from gpt_engineer.core.token_usage import TokenUsageLog
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -89,7 +91,9 @@ class AI:
 
     """
 
-    def __init__(self, model_name="gpt-4", temperature=0.1, azure_endpoint=""):
+    def __init__(
+        self, model_name="gpt-4", temperature=0.1, azure_endpoint="", cache=None
+    ):
         """
         Initialize the AI class.
 
@@ -106,6 +110,8 @@ class AI:
 
         self.llm = self._create_chat_model()
         self.token_usage_log = TokenUsageLog(model_name)
+
+        self.cache = cache
 
         logger.debug(f"Using model {self.model_name}")
 
@@ -168,8 +174,23 @@ class AI:
 
         logger.debug(f"Creating a new chat completion: {messages}")
 
-        callbacks = [StreamingStdOutCallbackHandler()]
-        response = self.backoff_inference(messages, callbacks)
+        response = None
+        md5Key = messages_md5(messages) if self.cache else None
+        if self.cache and md5Key in self.cache:
+            response = AIMessage(content=json.loads(self.cache[md5Key])["content"])
+
+        if not response:
+            callbacks = [StreamingStdOutCallbackHandler()]
+            response = self.backoff_inference(messages, callbacks)
+            if self.cache:
+                self.cache[md5Key] = json.dumps(
+                    {
+                        "messages": serialize_messages(messages),
+                        "content": response.content,
+                    }
+                )
+        else:
+            logger.debug(f"Response from cache: {messages} {response}")
 
         self.token_usage_log.update_log(
             messages=messages, answer=response.content, step_name=step_name
@@ -343,3 +364,8 @@ def serialize_messages(messages: List[Message]) -> str:
     '[{"type": "system", "content": "Hello"}, {"type": "human", "content": "Hi, AI!"}]'
     """
     return AI.serialize_messages(messages)
+
+
+def messages_md5(messages: List[Message]):
+    messageaStr = "".join(map(lambda x: x.content, messages))
+    return str(hashlib.md5(messageaStr.encode("utf-8")).hexdigest())

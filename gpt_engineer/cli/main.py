@@ -109,6 +109,12 @@ def main(
         help="""Use your project's custom preprompts instead of the default ones.
           Copies all original preprompts to the project's workspace if they don't exist there.""",
     ),
+    ai_cache: bool = typer.Option(
+        False,
+        "--cache",
+        "-c",
+        help="Caches AI responses.",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
@@ -130,6 +136,7 @@ def main(
         model_name=model,
         temperature=temperature,
         azure_endpoint=azure_endpoint,
+        cache=DB(memory_path / "cache") if ai_cache else None,
     )
 
     project_path = os.path.abspath(

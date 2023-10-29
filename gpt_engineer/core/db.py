@@ -198,6 +198,17 @@ class DB:
             shutil.rmtree(item_path)
 
 
+import json
+
+
+class DbJSON(DB):
+    def __getitem__(self, key: str) -> object:
+        return json.loads(DB.__getitem__(self, key))
+
+    def __setitem__(self, key: Union[str, Path], val: object) -> None:
+        DB.__setitem__(self, key, json.dumps(val))
+
+
 # dataclass for all dbs:
 @dataclass
 class DBs:

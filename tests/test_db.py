@@ -1,6 +1,6 @@
 import pytest
 
-from gpt_engineer.core.db import DB, DBs
+from gpt_engineer.core.db import DB, DbJSON, DBs
 
 
 def test_DB_operations(tmp_path):
@@ -124,3 +124,18 @@ def test_DBs_dataclass_attributes(tmp_path):
     assert dbs_instance.workspace == dbs[4]
     assert dbs_instance.archive == dbs[5]
     assert dbs_instance.project_metadata == dbs[6]
+
+
+def test_DbJSON(tmp_path):
+    # Test initialization
+    db = DbJSON(tmp_path)
+
+    # Test __setitem__
+    db["test_key"] = {"key": "test_value"}
+
+    assert (tmp_path / "test_key").is_file()
+
+    # Test __getitem__
+    val = db["test_key"]
+
+    assert val["key"] == "test_value"
