@@ -151,7 +151,10 @@ def get_code_strings(workspace: DB, metadata_db: DB) -> dict[str, str]:
         file_name = os.path.relpath(path, workspace.path)
 
         if file_name in workspace:
-            files_dict[file_name] = _open_file(path)
+            try:
+                files_dict[file_name] = _open_file(path)
+            except:
+                logger.error(f"Invalid file or can't read {path}")
 
     return files_dict
 
