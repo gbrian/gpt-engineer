@@ -1,6 +1,6 @@
 import pytest
 
-from gpt_engineer.core.db import DB, DbJSON, DBs
+from gpt_engineer.core.db import DB, DBJSON, DBPrompt, DBs
 
 
 def test_DB_operations(tmp_path):
@@ -126,9 +126,9 @@ def test_DBs_dataclass_attributes(tmp_path):
     assert dbs_instance.project_metadata == dbs[6]
 
 
-def test_DbJSON(tmp_path):
+def test_DBJSON(tmp_path):
     # Test initialization
-    db = DbJSON(tmp_path)
+    db = DBJSON(tmp_path)
 
     # Test __setitem__
     db["test_key"] = {"key": "test_value"}
@@ -139,3 +139,17 @@ def test_DbJSON(tmp_path):
     val = db["test_key"]
 
     assert val["key"] == "test_value"
+
+def test_DBPrompt(tmp_path):
+    # Test initialization
+    db = DBPrompt(tmp_path)
+
+    # Test __setitem__
+    db["prompt"] = "[[PROMPT]]\nPrompt A\n[[PROMPT]]\nPrompt B"
+
+    assert (tmp_path / "prompt").is_file()
+
+    # Test __getitem__
+    val = db["prompt"]
+
+    assert val == "Prompt B"

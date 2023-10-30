@@ -34,7 +34,7 @@ import typer
 from dotenv import load_dotenv
 
 from gpt_engineer.core.ai import AI
-from gpt_engineer.core.db import DB, DBs, archive
+from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
 from gpt_engineer.core.steps import STEPS, Config as StepsConfig
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
@@ -115,6 +115,12 @@ def main(
         "-c",
         help="Caches AI responses.",
     ),
+    use_git: bool = typer.Option(
+        False,
+        "--git",
+        "-g",
+        help="Project uses git. Commit changes to keep track and easy changes detection.",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
@@ -148,7 +154,7 @@ def main(
     dbs = DBs(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
-        input=DB(input_path),
+        input=DBPrompt(input_path),
         workspace=DB(workspace_path),
         preprompts=DB(preprompts_path(use_custom_preprompts, input_path)),
         archive=DB(archive_path),
@@ -183,6 +189,10 @@ def main(
         collect_learnings(model, temperature, steps, dbs)
 
     dbs.logs["token_usage"] = ai.token_usage_log.format_log()
+
+    if use_git:
+        commit_message = ai.token_usage_log.format_log()
+        os.system(f'cd {path} && git add . && git commit -m "{commit_message}"')
 
 
 if __name__ == "__main__":

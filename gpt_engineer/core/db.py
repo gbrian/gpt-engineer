@@ -201,7 +201,7 @@ class DB:
 import json
 
 
-class DbJSON(DB):
+class DBJSON(DB):
     def __getitem__(self, key: str) -> object:
         return json.loads(DB.__getitem__(self, key))
 
@@ -209,13 +209,18 @@ class DbJSON(DB):
         DB.__setitem__(self, key, json.dumps(val))
 
 
+class DBPrompt(DB):
+    def __getitem__(self, key: str) -> object:
+        prompt = DB.__getitem__(self, key)
+        return prompt.split("[[PROMPT]]\n")[-1]
+
 # dataclass for all dbs:
 @dataclass
 class DBs:
     memory: DB
     logs: DB
     preprompts: DB
-    input: DB
+    input: DBPrompt
     workspace: DB
     archive: DB
     project_metadata: DB

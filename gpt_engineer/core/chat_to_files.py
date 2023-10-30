@@ -30,6 +30,8 @@ import os
 import re
 import logging
 
+from termcolor import colored
+
 from dataclasses import dataclass
 from typing import List, Tuple
 
@@ -194,10 +196,12 @@ class Edit:
     filename: str
     before: str
     after: str
+    full_text: str
 
 
 def parse_edits(llm_response):
     def parse_one_edit(lines, parse_type="file"):
+        full_text = "\n".join(lines)
         HEAD = "<<<<<<< HEAD"
         DIVIDER = "======="
         UPDATE = ">>>>>>> updated"
@@ -215,7 +219,7 @@ def parse_edits(llm_response):
             before = before.replace(HEAD, "").strip()
             after = after.replace(UPDATE, "").strip()
 
-            return Edit(filename, before, after)
+            return Edit(filename, before, after, full_text)
 
         logger.info(f"Request user confirmation to execute {lines}")
         return []
@@ -246,6 +250,7 @@ def parse_edits(llm_response):
 def apply_edits(edits: List[Edit], workspace: DB):
     for edit in edits:
         filename = edit.filename
+        logger.info(f"apply_edits NEW FILE {edit}")
         if edit.before == "":
             if workspace.get(filename) is not None:
                 logger.warn(
@@ -257,9 +262,17 @@ def apply_edits(edits: List[Edit], workspace: DB):
                 logger.warn(
                     f"While applying an edit to `{filename}`, the code block to be replaced was found multiple times. All instances will be replaced."
                 )
-            workspace[filename] = workspace[filename].replace(
+            curr_file = workspace[filename]
+            workspace[filename] = curr_file.replace(
                 edit.before, edit.after
             )  # existing file
+            if curr_file == workspace[filename]:
+                error = f'''
+                {colored(f"change not applied to file {filename}", "red")}
+                {edit.full_text}
+                {colored(f"Apply manually and press Enter to continue", "green")}
+                '''
+                input(error)
 
 
 def _get_all_files_in_dir(directory):
