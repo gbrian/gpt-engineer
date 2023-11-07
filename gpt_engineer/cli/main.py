@@ -27,6 +27,7 @@ Notes:
 
 import logging
 import os
+import shutil
 from pathlib import Path
 
 import openai
@@ -121,6 +122,12 @@ def main(
         "-g",
         help="Project uses git. Commit changes to keep track and easy changes detection.",
     ),
+    prompt_file: str = typer.Option(
+        False,
+        "--prompt",
+        "-p",
+        help="Use this prompt. This will replace workspce's prompt with file contents.",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
@@ -146,6 +153,10 @@ def main(
 
     workspace_path = path
     input_path = path
+
+    if prompt_file:
+        logging.info("Copying custom prompt %s" % prompt_file)
+        shutil.copyfile(prompt_file, "%s/prompt" % path)
 
     project_metadata_path = path / ".gpteng"
     memory_path = project_metadata_path / "memory"
