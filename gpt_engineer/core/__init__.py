@@ -59,6 +59,26 @@ def gtp_engineer(
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
 
+    logging.debug(
+        "gpt_engineer %s"
+        % str(
+            {
+                "project_path": project_path,
+                "model": model,
+                "temperature": temperature,
+                "steps_config": steps_config,
+                "improve_mode": improve_mode,
+                "lite_mode": lite_mode,
+                "azure_endpoint": azure_endpoint,
+                "use_custom_preprompts": use_custom_preprompts,
+                "ai_cache": ai_cache,
+                "use_git": use_git,
+                "prompt_file": prompt_file,
+                "verbose": verbose,
+            }
+        )
+    )
+
     if lite_mode:
         assert not improve_mode, "Lite mode cannot improve code"
         if steps_config == StepsConfig.DEFAULT:

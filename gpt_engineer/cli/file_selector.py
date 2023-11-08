@@ -101,6 +101,7 @@ class DisplayablePath(object):
         self.path = Path(str(path))
         self.parent = parent_path
         self.is_last = is_last
+        self.size = None if self.path.is_dir() else os.path.getsize(str(path))
         if self.parent:
             self.depth = self.parent.depth + 1
 
@@ -114,7 +115,7 @@ class DisplayablePath(object):
         """
         if self.path.is_dir():
             return self.path.name + "/"
-        return self.path.name
+        return "%s %.2f K" % (self.path.name, self.size / 1000)
 
     @classmethod
     def make_tree(cls, root: Union[str, Path], parent=None, is_last=False, criteria=None):

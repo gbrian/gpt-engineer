@@ -32,7 +32,6 @@ from pathlib import Path
 
 import openai
 import typer
-from dotenv import load_dotenv
 
 from gpt_engineer.core import gtp_engineer
 from gpt_engineer.core.ai import AI
@@ -41,16 +40,13 @@ from gpt_engineer.core.steps import STEPS, Config as StepsConfig
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 
+from gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE
+
 app = typer.Typer()  # creates a CLI app
 
 
 def load_env_if_needed():
-    if os.getenv("OPENAI_API_KEY") is None:
-        load_dotenv()
-    if os.getenv("OPENAI_API_KEY") is None:
-        # if there is no .env file, try to load from the current working directory
-        load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    openai.api_key = OPENAI_API_KEY
 
 
 def load_prompt(dbs: DBs):
@@ -66,8 +62,8 @@ def load_prompt(dbs: DBs):
 @app.command()
 def main(
     project_path: str = typer.Argument("projects/example", help="path"),
-    model: str = typer.Argument("gpt-4", help="model id string"),
-    temperature: float = 0.1,
+    model: str = typer.Argument(MODEL, help="model id string"),
+    temperature: float = TEMPERATURE,
     steps_config: StepsConfig = typer.Option(
         StepsConfig.DEFAULT, "--steps", "-s", help="decide which steps to run"
     ),
