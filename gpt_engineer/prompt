@@ -153,3 +153,58 @@ def index_content(path: str, extensions: list, model: str, temperature: float, a
                 summary.summary_file(file, data, ai)
 >>>>>>> updated
 ```
+
+[[PROMPT]]
+Documment class Summary and add ai:AI parameter to the constructor.
+Fix code using Summary.
+
+[[AI]]
+PLANNING:
+We need to add a constructor to the Summary class that accepts an AI instance as a parameter. This is because the Summary class needs to use the AI instance to generate summaries. We also need to document the Summary class to explain its purpose and usage.
+
+In the `index_content` function, we need to pass the `ai` instance when creating a new `Summary` instance.
+
+OUTPUT:
+```python
+core/__init__.py
+<<<<<<< HEAD
+class Summary:
+=======
+class Summary:
+    """
+    A class to generate summaries of file contents using an AI model.
+
+    This class provides methods to read the contents of a file and generate a summary
+    using a specified AI model. It is designed to work with text files.
+
+    Attributes
+    ----------
+    ai : AI
+        The AI instance used to generate summaries.
+
+    Methods
+    -------
+    summary_file(file_name, data) -> str:
+        Generate a summary of the contents of a file.
+    """
+    def __init__(self, ai: AI):
+        """
+        Initialize the Summary class.
+
+        Parameters
+        ----------
+        ai : AI
+            The AI instance to use for generating summaries.
+        """
+        self.ai = ai
+>>>>>>> updated
+```
+
+```python
+core/__init__.py
+<<<<<<< HEAD
+    summary = Summary()
+=======
+    summary = Summary(ai)
+>>>>>>> updated
+```

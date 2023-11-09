@@ -10,6 +10,9 @@ SUMMARY_PROMPT = """
 
 
 class Summary:
+    def __init__(self, ai: AI):
+        self.ai = ai
+
     def summary_file(self, file_name: str, data: bytes):
         extension = os.path.splitext(file_name)[1]
         file_content = data.decode("utf-8")

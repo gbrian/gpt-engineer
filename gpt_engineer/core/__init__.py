@@ -205,10 +205,10 @@ def index_content(
         azure_endpoint=azure_endpoint,
         cache=DB(memory_path / "cache") if ai_cache else None,
     )
-    summary = Summary()
+    summary = Summary(ai)
     for root, dirs, files in os.walk(path):
         for file in files:
             if file.endswith(tuple(extensions)):
                 with open(os.path.join(root, file), "rb") as f:
                     data = f.read()
-                summary.summary_file(file, data, ai)
+                summary.summary_file(file, data)
