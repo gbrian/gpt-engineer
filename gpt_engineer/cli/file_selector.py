@@ -271,23 +271,28 @@ class TerminalFileSelector:
                 [
                     "Select files by entering the numbers separated by commas/spaces or",
                     "specify range with a dash. ",
-                    "Example: 1,2,3-5,7,9,13-15,18,20 (enter 'all' to select everything)",
+                    "Example: 1,2,3-5,7,9,13-15,18,20 or file nname like 'settings.py' (enter 'all' to select everything)",
                     "\n\nSelect files:",
                 ]
             )
         )
         selected_paths = []
-        regex = r"\d+(-\d+)?([, ]\d+(-\d+)?)*"
-
+        all_paths = self.selectable_file_paths.values()
         if user_input.lower() == "all":
             selected_paths = self.file_path_list
-        elif re.match(regex, user_input):
+        else:
             try:
                 user_input = (
                     user_input.replace(" ", ",") if " " in user_input else user_input
                 )
                 selected_files = user_input.split(",")
                 for file_number_str in selected_files:
+                    file_number_str = file_number_str.strip()
+                    num = list(
+                        map(lambda value: file_number_str in str(value), all_paths)
+                    ).index(True)
+                    if num:
+                        file_number_str = str(num)
                     if "-" in file_number_str:
                         start_str, end_str = file_number_str.split("-")
                         start = int(start_str)
@@ -299,10 +304,11 @@ class TerminalFileSelector:
                         selected_paths.append(str(self.selectable_file_paths[num]))
 
             except ValueError:
-                pass
-        else:
-            print("Please use a valid number/series of numbers.\n")
-            sys.exit(1)
+                print(
+                    "Please use a valid number/series of numbers or file name. Error in: %s\n"
+                    % user_input
+                )
+                sys.exit(1)
 
         return selected_paths
 
