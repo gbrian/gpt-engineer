@@ -214,6 +214,11 @@ class DBPrompt(DB):
         prompt = DB.__getitem__(self, key)
         return prompt.split("[[PROMPT]]\n")[-1]
 
+    def append(self, key: str, content: str):
+        prompt = DB.__getitem__(self, key)
+        DB.__setitem__(self, key, "%s\s%s" % (prompt, content))
+
+
 # dataclass for all dbs:
 @dataclass
 class DBs:

@@ -29,6 +29,16 @@ from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 
 
+def load_prompt(dbs: DBs):
+    if dbs.input.get("prompt"):
+        return dbs.input.get("prompt")
+
+    dbs.input["prompt"] = input(
+        "\nWhat application do you want gpt-engineer to generate?\n"
+    )
+    return dbs.input.get("prompt")
+
+
 def preprompts_path(use_custom_preprompts: bool, input_path: Path = None) -> Path:
     original_preprompts_path = Path(__file__).parent.parent / "preprompts"
     if not use_custom_preprompts:
@@ -158,11 +168,47 @@ def gtp_engineer(
 
 
 # Add new function index_content
-def index_content(path: str, extensions: list):
+def index_content(
+    path: str,
+    extensions: list,
+    model: str,
+    temperature: float,
+    azure_endpoint: str,
+    ai_cache: bool,
+):
+    """
+    Index the content of files in a given path and generate a summary.
+
+    This function walks through the directory specified by the path, and for each file
+    with an extension included in the extensions list, it reads the file and generates
+    a summary using the AI model.
+
+    Parameters
+    ----------
+    path : str
+        The path of the directory to index.
+    extensions : list
+        The list of file extensions to include in the indexing.
+    model : str
+        The name of the AI model to use.
+    temperature : float
+        The temperature setting for the AI model.
+    azure_endpoint : str
+        The Azure endpoint URL, if applicable.
+    ai_cache : bool
+        Whether to use AI cache.
+
+    """
+    ai = AI(
+        model_name=model,
+        temperature=temperature,
+        azure_endpoint=azure_endpoint,
+        cache=DB(memory_path / "cache") if ai_cache else None,
+    )
     summary = Summary()
     for root, dirs, files in os.walk(path):
         for file in files:
             if file.endswith(tuple(extensions)):
                 with open(os.path.join(root, file), "rb") as f:
                     data = f.read()
-                summary.summary_file(file, data)
+                summary.summary_file(file, data, ai)

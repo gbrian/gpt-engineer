@@ -1,10 +1,22 @@
+from gpt_engineer.core.ai import AI
+
+SUMMARY_PROMPT = """
+    Summarize this file of type [[EXTENSION]]
+    Keep all sensitive information extrict like class names, function names and other relevan information.
+    Reduce to the maximum.
+    File content:
+    [[FILE_CONTENT]]
+"""
+
+
 class Summary:
     def summary_file(self, file_name: str, data: bytes):
-        SUMMARY_PROMPT = "Summarize this file of type [[EXTENSION]]\nKeep all sensitive information extrict like class names, function names and other relevan information.\nReduce to the maximum.\nFile content:\n[[FILE_CONTENT]]"
         extension = os.path.splitext(file_name)[1]
         file_content = data.decode("utf-8")
-        prompt = SUMMARY_PROMPT.replace("[[EXTENSION]]", extension).replace(
-            "[[FILE_CONTENT]]", file_content
+        prompt = (
+            SUMMARY_PROMPT.strip()
+            .replace("[[EXTENSION]]", extension)
+            .replace("[[FILE_CONTENT]]", file_content)
         )
         # Send the prompt to the AI and get the summarized content
         summarized_content = AI.summarize(prompt)

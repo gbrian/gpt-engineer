@@ -520,8 +520,8 @@ def assert_files_ready(ai: AI, dbs: DBs):
     return []
 
 
-def compute_files_size(paths):
-    return reduce(lambda a, b: a + b, [os.path.getsize(path) for path in paths])
+def compute_files_size(dbs: DBs):
+    return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)]) / 1000
 
 
 def get_improve_prompt(ai: AI, dbs: DBs):
@@ -540,11 +540,7 @@ def get_improve_prompt(ai: AI, dbs: DBs):
             "The following files will be used in the improvement process:",
             f"{FILE_LIST_NAME}:",
             colored(str(dbs.project_metadata[FILE_LIST_NAME]), "green"),
-            "SIZE: %.2f K"
-            % float(
-                compute_files_size(dbs.project_metadata[FILE_LIST_NAME].split("\n"))
-                / 1000
-            ),
+            "SIZE: %.2f K" % float(compute_files_size(dbs)),
             "",
             "The inserted prompt is the following:",
             colored(f"{dbs.input['prompt']}", "green"),
@@ -558,6 +554,16 @@ def get_improve_prompt(ai: AI, dbs: DBs):
     )
     input(confirm_str)
     return []
+
+
+def get_file_info(dbs: DBs):
+    files_info = get_code_strings(
+        dbs.workspace, dbs.project_metadata
+    )  # this has file names relative to the workspace path
+
+    # Add files as input
+    for file_name, file_str in files_info.items():
+        yield format_file_to_input(file_name, file_str)
 
 
 def improve_existing_code(ai: AI, dbs: DBs):
@@ -591,23 +597,21 @@ def improve_existing_code(ai: AI, dbs: DBs):
     to sent the formatted prompt to the LLM.
     """
 
-    files_info = get_code_strings(
-        dbs.workspace, dbs.project_metadata
-    )  # this has file names relative to the workspace path
-
     messages = [
         SystemMessage(content=setup_sys_prompt_existing_code(dbs)),
     ]
-    # Add files as input
-    for file_name, file_str in files_info.items():
-        code_input = format_file_to_input(file_name, file_str)
+
+    for code_input in get_file_info(dbs):
         messages.append(HumanMessage(content=f"{code_input}"))
 
     messages.append(HumanMessage(content=f"Request: {dbs.input['prompt']}"))
 
     messages = ai.next(messages, step_name=curr_fn())
 
-    overwrite_files_with_edits(messages[-1].content.strip(), dbs)
+    chat = messages[-1].content.strip()
+    overwrite_files_with_edits(chat, dbs)
+    dbs.input.append("prompt", "[[AI]]\n%s" % chat)
+
     return messages
 
 

@@ -84,4 +84,72 @@ class Summary:
 Note: The `AI.summarize(prompt)` method is a placeholder and needs to be replaced with the actual method that sends the prompt to the AI and gets the summarized content.
 
 [[PROMPT]]
-Replace AI.summarize(prompt) by calling
+index_content must pass ai parameter to summary_file.
+summary_file will call ai.next with the generated prompt.
+Fix functions with missing parameters.
+Documen classes
+
+[[AI]]
+PLANNING:
+We need to change the `index_content` function to pass the `ai` parameter to the `summary_file` function. This is because `summary_file` will call `ai.next` with the generated prompt. Also, we need to fix the `index_content` function to include the missing parameters `model`, `temperature`, `azure_endpoint`, and `ai_cache`. Finally, we need to add documentation for the `index_content` function.
+
+OUTPUT:
+```python
+core/__init__.py
+<<<<<<< HEAD
+# Add new function index_content
+def index_content(path: str, extensions: list):
+    ai = AI(
+        model_name=model,
+        temperature=temperature,
+        azure_endpoint=azure_endpoint,
+        cache=DB(memory_path / "cache") if ai_cache else None,
+    )
+    summary = Summary()
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(tuple(extensions)):
+                with open(os.path.join(root, file), "rb") as f:
+                    data = f.read()
+                summary.summary_file(file, data)
+=======
+# Add new function index_content
+def index_content(path: str, extensions: list, model: str, temperature: float, azure_endpoint: str, ai_cache: bool):
+    """
+    Index the content of files in a given path and generate a summary.
+
+    This function walks through the directory specified by the path, and for each file
+    with an extension included in the extensions list, it reads the file and generates
+    a summary using the AI model.
+
+    Parameters
+    ----------
+    path : str
+        The path of the directory to index.
+    extensions : list
+        The list of file extensions to include in the indexing.
+    model : str
+        The name of the AI model to use.
+    temperature : float
+        The temperature setting for the AI model.
+    azure_endpoint : str
+        The Azure endpoint URL, if applicable.
+    ai_cache : bool
+        Whether to use AI cache.
+
+    """
+    ai = AI(
+        model_name=model,
+        temperature=temperature,
+        azure_endpoint=azure_endpoint,
+        cache=DB(memory_path / "cache") if ai_cache else None,
+    )
+    summary = Summary()
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(tuple(extensions)):
+                with open(os.path.join(root, file), "rb") as f:
+                    data = f.read()
+                summary.summary_file(file, data, ai)
+>>>>>>> updated
+```

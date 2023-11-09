@@ -30,7 +30,6 @@ import os
 import shutil
 from pathlib import Path
 
-import openai
 import typer
 
 from gpt_engineer.core import gtp_engineer
@@ -43,20 +42,6 @@ from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE
 
 app = typer.Typer()  # creates a CLI app
-
-
-def load_env_if_needed():
-    openai.api_key = OPENAI_API_KEY
-
-
-def load_prompt(dbs: DBs):
-    if dbs.input.get("prompt"):
-        return dbs.input.get("prompt")
-
-    dbs.input["prompt"] = input(
-        "\nWhat application do you want gpt-engineer to generate?\n"
-    )
-    return dbs.input.get("prompt")
 
 
 @app.command()
@@ -113,8 +98,6 @@ def main(
     verbose: bool = typer.Option(False, "--verbose", "-v"),
     prompt: str = typer.Option("", "--prompt-text", "-pt", help="Custom prompt text."),
 ):
-    load_env_if_needed()
-
     gtp_engineer(
         project_path=project_path,
         model=model,
