@@ -1,0 +1,24 @@
+class Summary:
+    def summary_file(self, file_name: str, data: bytes):
+        SUMMARY_PROMPT = "Summarize this file of type [[EXTENSION]]\nKeep all sensitive information extrict like class names, function names and other relevan information.\nReduce to the maximum.\nFile content:\n[[FILE_CONTENT]]"
+        extension = os.path.splitext(file_name)[1]
+        file_content = data.decode("utf-8")
+        prompt = SUMMARY_PROMPT.replace("[[EXTENSION]]", extension).replace(
+            "[[FILE_CONTENT]]", file_content
+        )
+        # Send the prompt to the AI and get the summarized content
+        summarized_content = AI.summarize(prompt)
+        # Add the summarized content to the main summary.txt file
+        with open("summary.txt", "r+") as f:
+            content = f.read()
+            start_index = content.find(f"## FILE: {file_name}")
+            end_index = content.find(f"< FILE: {file_name}")
+            if start_index != -1 and end_index != -1:
+                f.seek(start_index)
+                f.write(
+                    f"## FILE: {file_name}\n{summarized_content}\n< FILE: {file_name}"
+                )
+            else:
+                f.write(
+                    f"\n## FILE: {file_name}\n{summarized_content}\n< FILE: {file_name}"
+                )

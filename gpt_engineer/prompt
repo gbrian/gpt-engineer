@@ -1,0 +1,87 @@
+Create a summary from all files with the name of the file and a summary of the file contents
+Summarized as much as possible to save space keeo only what can be relevant when deciding
+which files can be affected by a future task like: "Create a new functionality about X or Y" or "Change the implementation of X by adding Y".
+
+[[PROMPT]]
+Add prompt parameter of type string to gtp_engineer and fix api and cli accordingly
+
+[[PROMPT]]
+If prompt parameter is set save it in a file named prompt at workspace_path
+
+[[PROMPT]]
+Create new function at core/__init__.py index_content it will receive a path and extensions parameters and will traverse all file
+and for each file with a valid extension will call to new class Summary summary_file method.
+
+Create Summary class at core/summary.py and add methods:
+- summary_file: Will receive a file_name and data byte[] and will send to the AI to be summarized using SUMMARY_PROMPT prompt below.
+                Results will be added to the main summary.txt file replacing current text defined by ## FILE: file_name and < FILE: file_name
+                Create the prompt replacing the [[XXX]] values
+
+SUMMARY_PROMPT
+Summarize this file of type [[EXTENSION]]
+Keep all sensitive information extrict like class names, function names and other relevan information.
+Reduce to the maximum.
+File content:
+[[FILE_CONTENT]]
+
+[[AI]]
+PLANNING:
+1. In the `core/__init__.py` file, we need to create a new function `index_content`. This function will take two parameters: `path` and `extensions`. It will traverse all files in the given path and for each file with a valid extension, it will call the `summary_file` method of the `Summary` class.
+
+2. We need to create a new file `core/summary.py` and add a new class `Summary` in it. This class will have a method `summary_file` which will take two parameters: `file_name` and `data`. This method will send the data to the AI to be summarized using the `SUMMARY_PROMPT` prompt. The results will be added to the main `summary.txt` file replacing the current text defined by `## FILE: file_name` and `< FILE: file_name`. The prompt will be created by replacing the `[[XXX]]` values in the `SUMMARY_PROMPT`.
+
+OUTPUT:
+```python
+core/__init__.py
+<<<<<<< HEAD
+    from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
+    from gpt_engineer.core.steps import STEPS, Config as StepsConfig
+    from gpt_engineer.cli.collect import collect_learnings
+    from gpt_engineer.cli.learning import check_collection_consent
+=======
+    from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
+    from gpt_engineer.core.steps import STEPS, Config as StepsConfig
+    from gpt_engineer.core.summary import Summary
+    from gpt_engineer.cli.collect import collect_learnings
+    from gpt_engineer.cli.learning import check_collection_consent
+
+    # Add new function index_content
+    def index_content(path: str, extensions: list):
+        summary = Summary()
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                if file.endswith(tuple(extensions)):
+                    with open(os.path.join(root, file), 'rb') as f:
+                        data = f.read()
+                    summary.summary_file(file, data)
+>>>>>>> updated
+```
+
+```python
+core/summary.py
+<<<<<<< HEAD
+=======
+class Summary:
+    def summary_file(self, file_name: str, data: bytes):
+        SUMMARY_PROMPT = "Summarize this file of type [[EXTENSION]]\nKeep all sensitive information extrict like class names, function names and other relevan information.\nReduce to the maximum.\nFile content:\n[[FILE_CONTENT]]"
+        extension = os.path.splitext(file_name)[1]
+        file_content = data.decode('utf-8')
+        prompt = SUMMARY_PROMPT.replace('[[EXTENSION]]', extension).replace('[[FILE_CONTENT]]', file_content)
+        # Send the prompt to the AI and get the summarized content
+        summarized_content = AI.summarize(prompt)
+        # Add the summarized content to the main summary.txt file
+        with open('summary.txt', 'r+') as f:
+            content = f.read()
+            start_index = content.find(f'## FILE: {file_name}')
+            end_index = content.find(f'< FILE: {file_name}')
+            if start_index != -1 and end_index != -1:
+                f.seek(start_index)
+                f.write(f'## FILE: {file_name}\n{summarized_content}\n< FILE: {file_name}')
+            else:
+                f.write(f'\n## FILE: {file_name}\n{summarized_content}\n< FILE: {file_name}')
+>>>>>>> updated
+```
+Note: The `AI.summarize(prompt)` method is a placeholder and needs to be replaced with the actual method that sends the prompt to the AI and gets the summarized content.
+
+[[PROMPT]]
+Replace AI.summarize(prompt) by calling

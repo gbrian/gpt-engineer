@@ -24,6 +24,7 @@ import openai
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
 from gpt_engineer.core.steps import STEPS, Config as StepsConfig
+from gpt_engineer.core.summary import Summary
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 
@@ -154,3 +155,14 @@ def gtp_engineer(
     if use_git:
         commit_message = ai.token_usage_log.format_log()
         os.system(f'cd {path} && git add . && git commit -m "{commit_message}"')
+
+
+# Add new function index_content
+def index_content(path: str, extensions: list):
+    summary = Summary()
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(tuple(extensions)):
+                with open(os.path.join(root, file), "rb") as f:
+                    data = f.read()
+                summary.summary_file(file, data)

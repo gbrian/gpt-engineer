@@ -189,6 +189,7 @@ def format_file_to_input(file_name: str, file_content: str) -> str:
 def overwrite_files_with_edits(chat: str, dbs: DBs):
     edits = parse_edits(chat)
     apply_edits(edits, dbs.workspace)
+    dbs.input["prompt"] = "%s\n[[AI]]\n%s" % (dbs.input.get("prompt"), chat)
 
 
 @dataclass
@@ -267,11 +268,11 @@ def apply_edits(edits: List[Edit], workspace: DB):
                 edit.before, edit.after
             )  # existing file
             if curr_file == workspace[filename]:
-                error = f'''
+                error = f"""
                 {colored(f"change not applied to file {filename}", "red")}
                 {edit.full_text}
                 {colored(f"Apply manually and press Enter to continue", "green")}
-                '''
+                """
                 input(error)
 
 
