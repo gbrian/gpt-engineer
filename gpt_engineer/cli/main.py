@@ -111,6 +111,7 @@ def main(
         help="Use this prompt. This will replace workspce's prompt with file contents.",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
+    prompt: str = typer.Option("", "--prompt-text", "-pt", help="Custom prompt text."),
 ):
     load_env_if_needed()
 
@@ -127,6 +128,7 @@ def main(
         use_git=use_git,
         prompt_file=prompt_file,
         verbose=verbose,
+        prompt=prompt,
     )
 
 

@@ -21,6 +21,7 @@ def run_gtp_engineer():
             use_git=data.get("use_git"),
             prompt_file=data.get("prompt_file"),
             verbose=data.get("verbose"),
+            prompt=data.get("prompt"),
         )
         return jsonify({"message": "Operation completed successfully"}), 200
     except Exception as e:

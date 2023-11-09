@@ -56,6 +56,7 @@ def gtp_engineer(
     use_git: bool,
     prompt_file: str,
     verbose: bool,
+    prompt: str,
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
 
@@ -99,7 +100,7 @@ def gtp_engineer(
     workspace_path = path
     input_path = path
 
-    if prompt_file:
+    if os.path.isfile(prompt_file):
         logging.info("Copying custom prompt %s" % prompt_file)
         shutil.copyfile(prompt_file, "%s/prompt" % path)
 
