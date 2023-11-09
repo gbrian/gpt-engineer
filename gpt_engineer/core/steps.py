@@ -48,7 +48,9 @@ Note:
 import inspect
 import re
 import subprocess
+import os
 
+from functools import reduce
 from enum import Enum
 from platform import platform
 from sys import version_info
@@ -518,6 +520,10 @@ def assert_files_ready(ai: AI, dbs: DBs):
     return []
 
 
+def compute_files_size(paths):
+    return reduce(lambda a, b: a + b, [os.path.getsize(path) for path in paths])
+
+
 def get_improve_prompt(ai: AI, dbs: DBs):
     """
     Asks the user what they would like to fix.
@@ -534,6 +540,11 @@ def get_improve_prompt(ai: AI, dbs: DBs):
             "The following files will be used in the improvement process:",
             f"{FILE_LIST_NAME}:",
             colored(str(dbs.project_metadata[FILE_LIST_NAME]), "green"),
+            "SIZE: %.2f K"
+            % float(
+                compute_files_size(dbs.project_metadata[FILE_LIST_NAME].split("\n"))
+                / 1000
+            ),
             "",
             "The inserted prompt is the following:",
             colored(f"{dbs.input['prompt']}", "green"),
