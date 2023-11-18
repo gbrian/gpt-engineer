@@ -43,6 +43,7 @@ import re
 import sys
 import tkinter as tk
 import tkinter.filedialog as fd
+import logging
 
 from pathlib import Path
 from typing import List, Union
@@ -51,6 +52,9 @@ from gpt_engineer.core.db import DB, DBs
 
 IGNORE_FOLDERS = {"site-packages", "node_modules", "venv"}
 FILE_LIST_NAME = "file_list.txt"
+
+
+IS_NUM = re.compile(r"^[0-9]+$")
 
 
 class DisplayablePath(object):
@@ -271,13 +275,22 @@ class TerminalFileSelector:
                 [
                     "Select files by entering the numbers separated by commas/spaces or",
                     "specify range with a dash. ",
-                    "Example: 1,2,3-5,7,9,13-15,18,20 or file nname like 'settings.py' (enter 'all' to select everything)",
+                    "Example: 1,2,3-5,7,9,13-15,18,20 or file name like 'settings.py' or enter 'all' to select everything.",
                     "\n\nSelect files:",
                 ]
             )
         )
         selected_paths = []
         all_paths = self.selectable_file_paths.values()
+
+        def process_selection(entry):
+            parts = entry.strip().split("-")
+            start = parts[0]
+            end = parts[-1]
+            start = int(start) if IS_NUM.match(start) else None
+            end = int(end) if end != start and IS_NUM.match(end) else None
+            return start, end, entry
+
         if user_input.lower() == "all":
             selected_paths = self.file_path_list
         else:
@@ -285,29 +298,32 @@ class TerminalFileSelector:
                 user_input = (
                     user_input.replace(" ", ",") if " " in user_input else user_input
                 )
-                selected_files = user_input.split(",")
-                for file_number_str in selected_files:
-                    file_number_str = file_number_str.strip()
-                    num = list(
-                        map(lambda value: file_number_str in str(value), all_paths)
-                    ).index(True)
-                    if num:
-                        file_number_str = str(num)
-                    if "-" in file_number_str:
-                        start_str, end_str = file_number_str.split("-")
-                        start = int(start_str)
-                        end = int(end_str)
+                logging.info(
+                    f"[ask_for_selection] user_inputs are {type(user_input.split(',')[0])}"
+                )
+                selected_files = [
+                    process_selection(selection_entry)
+                    for selection_entry in user_input.split(",")
+                ]
+
+                for start, end, entry in selected_files:
+                    logging.info(
+                        f"[ask_for_selection] processing selection {(start, end, entry)}"
+                    )
+                    if end:
                         for num in range(start, end + 1):
                             selected_paths.append(str(self.selectable_file_paths[num]))
+                    elif start:
+                        selected_paths.append(str(self.selectable_file_paths[start]))
                     else:
-                        num = int(file_number_str)
-                        selected_paths.append(str(self.selectable_file_paths[num]))
+                        paths = list(filter(lambda path: entry in str(path), all_paths))
+                        selected_paths = selected_paths + paths
 
-            except ValueError:
+            except ValueError as ex:
                 print(
-                    "Please use a valid number/series of numbers or file name. Error in: %s\n"
-                    % user_input
+                    f"Please use a valid number/series of numbers or file name. Error in: {user_input}\n"
                 )
+                logging.error(ex)
                 sys.exit(1)
 
         return selected_paths

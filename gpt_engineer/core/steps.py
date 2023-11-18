@@ -610,7 +610,7 @@ def improve_existing_code(ai: AI, dbs: DBs):
 
     chat = messages[-1].content.strip()
     overwrite_files_with_edits(chat, dbs)
-    dbs.input.append("prompt", "[[AI]]\n%s" % chat)
+    dbs.input.append("prompt", "\n[[AI]]\n%s" % chat)
 
     return messages
 
