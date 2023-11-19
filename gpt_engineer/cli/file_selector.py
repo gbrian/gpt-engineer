@@ -344,6 +344,11 @@ def is_in_ignoring_extensions(path: Path) -> bool:
     return is_hidden and is_pycache
 
 
+def clear_selected_files_list(metadata_db: DB):
+    if FILE_LIST_NAME in metadata_db:
+        metadata_db[FILE_LIST_NAME] = ""
+
+
 def ask_for_files(metadata_db: DB, workspace_db: DB) -> None:
     """
     Ask user to select files to improve.
@@ -352,15 +357,8 @@ def ask_for_files(metadata_db: DB, workspace_db: DB) -> None:
     Returns:
         dict[str, str]: Dictionary where key = file name and value = file path
     """
-    if FILE_LIST_NAME in metadata_db:
-        print(
-            f"File list detected at {metadata_db.path / FILE_LIST_NAME}. "
-            "Edit or delete it if you want to select new files."
-        )
-        return
-
     use_last_string = ""
-    if FILE_LIST_NAME in metadata_db:
+    if FILE_LIST_NAME in metadata_db and metadata_db[FILE_LIST_NAME] != "":
         use_last_string = (
             "3. Use previous file list (available at "
             + f"{os.path.join(metadata_db.path, FILE_LIST_NAME)})\n"

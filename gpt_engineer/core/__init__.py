@@ -27,6 +27,7 @@ from gpt_engineer.core.steps import STEPS, Config as StepsConfig
 from gpt_engineer.core.summary import Summary
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
+from gpt_engineer.cli.file_selector import clear_selected_files_list
 
 
 def load_prompt(dbs: DBs):
@@ -68,6 +69,7 @@ def gtp_engineer(
     prompt_file: str,
     verbose: bool,
     prompt: str,
+    file_selector: bool,
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
 
@@ -87,6 +89,8 @@ def gtp_engineer(
                 "use_git": use_git,
                 "prompt_file": prompt_file,
                 "verbose": verbose,
+                "prompt": prompt,
+                "file_selector": file_selector,
             }
         )
     )
@@ -133,6 +137,9 @@ def gtp_engineer(
         project_metadata=DB(project_metadata_path),
     )
 
+    if file_selector:
+        clear_selected_files_list(dbs.project_metadata)
+
     ai = AI(
         model_name=model,
         temperature=temperature,
@@ -157,8 +164,8 @@ def gtp_engineer(
 
     print("Total api cost: $ ", ai.token_usage_log.usage_cost())
 
-    if check_collection_consent():
-        collect_learnings(model, temperature, steps, dbs)
+    # if check_collection_consent():
+    #    collect_learnings(model, temperature, steps, dbs)
 
     dbs.logs["token_usage"] = ai.token_usage_log.format_log()
 

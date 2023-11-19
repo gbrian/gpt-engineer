@@ -1,6 +1,6 @@
 import textwrap
 
-from gpt_engineer.core.chat_to_files import to_files_and_memory, get_code_strings
+from gpt_engineer.core.chat_to_files import to_files_and_memory, get_code_strings, Edit
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME
 
 from unittest.mock import MagicMock
@@ -242,3 +242,54 @@ def test_get_code_strings(monkeypatch):
     # assert
     assert result["file1.txt"] == "File Data for file: path/to/file1.txt"
     assert result["file2.txt"] == "File Data for file: path/to/file2.txt"
+
+
+def test_parse_all_edits_single_diff():
+    input_text = "This is an example response with a diff syntax inside\n\nOUTPUT:\n```python\ncli/file_selector.py\n<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated\n```"
+    expected_output = [
+        Edit(
+            filename="cli/file_selector.py",
+            before="## Section to change",
+            after="## Secrion with a change",
+            full_text="cli/file_selector.py\n<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated",
+        )
+    ]
+    assert parse_all_edits(input_text) == expected_output
+
+
+def test_parse_all_edits_multiple_diffs():
+    input_text = "This is an example response with a diff syntax inside\n\nOUTPUT:\n```python\ncli/file_selector.py\n<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated\n```\n\nMore comments\n\n```python\n<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated\n```"
+    expected_output = [
+        Edit(
+            filename="cli/file_selector.py",
+            before="## Section to change",
+            after="## Secrion with a change",
+            full_text="cli/file_selector.py\n<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated",
+        ),
+        Edit(
+            filename="",
+            before="## Section to change",
+            after="## Secrion with a change",
+            full_text="<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated",
+        ),
+    ]
+    assert parse_all_edits(input_text) == expected_output
+
+
+def test_parse_all_edits_diffs_with_code():
+    input_text = 'This is an example response with a diff syntax inside\n\nOUTPUT:\n```python\ncli/file_selector.py\n<<<<<<< HEAD\n    ```python\n    cli/file_selector.py\n        def this_is_python_code:\n            pass\n    ```\n=======\n    ```python\n    cli/file_selector.py\n        def this_is_python_code:\n            """ A python function """\n            pass\n    ```\n>>>>>>> updated\n```\n\nMore comments\n\n```python\n<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated\n```'
+    expected_output = [
+        Edit(
+            filename="cli/file_selector.py",
+            before="```python\n    cli/file_selector.py\n        def this_is_python_code:\n            pass\n    ```",
+            after='```python\n    cli/file_selector.py\n        def this_is_python_code:\n            """ A python function """\n            pass\n    ```',
+            full_text='cli/file_selector.py\n<<<<<<< HEAD\n    ```python\n    cli/file_selector.py\n        def this_is_python_code:\n            pass\n    ```\n=======\n    ```python\n    cli/file_selector.py\n        def this_is_python_code:\n            """ A python function """\n            pass\n    ```\n>>>>>>> updated',
+        ),
+        Edit(
+            filename="",
+            before="## Section to change",
+            after="## Secrion with a change",
+            full_text="<<<<<<< HEAD\n    ## Section to change\n=======\n    ## Secrion with a change\n>>>>>>> updated",
+        ),
+    ]
+    assert parse_all_edits(input_text) == expected_output

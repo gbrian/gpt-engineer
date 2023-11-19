@@ -228,9 +228,14 @@ def parse_edits(llm_response):
         edits = []
         current_edit = []
         in_fence = None
+        is_patch = False
 
         for line in txt.split("\n"):
-            if line.startswith("```") and in_fence:
+            if line.startswith("<<<<<<<"):
+                is_patch = True
+            if line.startswith(">>>>>>>"):
+                is_patch = False
+            if line.startswith("```") and in_fence and not is_patch:
                 edits.append(parse_one_edit(current_edit, parse_type=in_fence))
                 current_edit = []
                 in_fence = False

@@ -97,6 +97,9 @@ def main(
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
     prompt: str = typer.Option("", "--prompt-text", "-pt", help="Custom prompt text."),
+    file_selector: bool = typer.Option(
+        False, "--file-selector", "-f", help="Force the request of files affected."
+    ),
 ):
     gtp_engineer(
         project_path=project_path,
@@ -112,6 +115,7 @@ def main(
         prompt_file=prompt_file,
         verbose=verbose,
         prompt=prompt,
+        file_selector=file_selector,
     )
 
 

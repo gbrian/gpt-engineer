@@ -49,6 +49,7 @@ import inspect
 import re
 import subprocess
 import os
+import logging
 
 from functools import reduce
 from enum import Enum
@@ -609,8 +610,12 @@ def improve_existing_code(ai: AI, dbs: DBs):
     messages = ai.next(messages, step_name=curr_fn())
 
     chat = messages[-1].content.strip()
-    overwrite_files_with_edits(chat, dbs)
     dbs.input.append("prompt", "\n[[AI]]\n%s" % chat)
+    try:
+        overwrite_files_with_edits(chat, dbs)
+    except Exception as ex:
+        dbs.input.append("prompt", "\nERROR: %s" % str(ex))
+        logging.error(f"[improve_existing_code] error: {ex}")
 
     return messages
 
