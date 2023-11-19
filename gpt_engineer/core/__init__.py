@@ -119,9 +119,11 @@ def gtp_engineer(
         logging.info("Copying custom prompt %s" % prompt_file)
         shutil.copyfile(prompt_file, "%s/prompt" % path)
     elif prompt:
+        logging.info("Reading prompt from command line")
+        user_prompt = input("Enter the new prompt: ")
         logging.info("Saving custom prompt text")
-        with open("%s/prompt" % path, "w") as f:
-            f.write(prompt)
+        with open("%s/prompt" % path, "a") as f:
+            f.write("\n[[PROMPT]]\n" + user_prompt)
 
     project_metadata_path = path / ".gpteng"
     memory_path = project_metadata_path / "memory"

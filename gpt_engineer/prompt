@@ -721,3 +721,38 @@ def main(
     )
 >>>>>>> updated
 ```
+
+[[PROMPT]]
+When receivig -p "prompt" parameter ask user for the "prompt" or "change" and append to the "prompt" file
+with a header with the word "PROMPT" between double squre brackets and after the user input
+
+
+[[AI]]
+PLANNING:
+We need to modify the `gtp_engineer` function to handle the `-p "prompt"` parameter differently. Currently, if a prompt is provided, it is written directly to the `prompt` file. We need to change this so that if a prompt is provided, the user is asked whether they want to use the provided prompt or change it. If they choose to change it, they should be able to input a new prompt. The chosen prompt should then be written to the `prompt` file with a header "PROMPT" enclosed in double square brackets.
+
+OUTPUT:
+```python
+core/__init__.py
+<<<<<<< HEAD
+    if os.path.isfile(prompt_file):
+        logging.info("Copying custom prompt %s" % prompt_file)
+        shutil.copyfile(prompt_file, "%s/prompt" % path)
+    elif prompt:
+        logging.info("Saving custom prompt text")
+        with open("%s/prompt" % path, "w") as f:
+            f.write(prompt)
+=======
+    if os.path.isfile(prompt_file):
+        logging.info("Copying custom prompt %s" % prompt_file)
+        shutil.copyfile(prompt_file, "%s/prompt" % path)
+    elif prompt:
+        logging.info("Prompt provided. Do you want to use it or change it?")
+        choice = input("Enter 'use' to use the provided prompt or 'change' to input a new one: ")
+        if choice.lower() == 'change':
+            prompt = input("Enter the new prompt: ")
+        logging.info("Saving custom prompt text")
+        with open("%s/prompt" % path, "w") as f:
+            f.write("[[PROMPT]]\n" + prompt)
+>>>>>>> updated
+```

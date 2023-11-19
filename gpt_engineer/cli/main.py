@@ -92,11 +92,11 @@ def main(
     prompt_file: str = typer.Option(
         False,
         "--prompt",
-        "-p",
+        "-pf",
         help="Use this prompt. This will replace workspce's prompt with file contents.",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
-    prompt: str = typer.Option("", "--prompt-text", "-pt", help="Custom prompt text."),
+    prompt: bool = typer.Option(False, "--prompt-text", "-p", help="Custom prompt text."),
     file_selector: bool = typer.Option(
         False, "--file-selector", "-f", help="Force the request of files affected."
     ),
