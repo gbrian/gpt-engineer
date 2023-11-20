@@ -607,6 +607,9 @@ def improve_existing_code(ai: AI, dbs: DBs):
 
     messages.append(HumanMessage(content=f"Request: {dbs.input['prompt']}"))
 
+    dbs.input.append(
+        "prompt", "\n[[AI_PROPMT]]\n%s" % "\n".join([str(msg) for msg in messages])
+    )
     messages = ai.next(messages, step_name=curr_fn())
 
     chat = messages[-1].content.strip()

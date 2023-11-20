@@ -756,3 +756,12 @@ core/__init__.py
             f.write("[[PROMPT]]\n" + prompt)
 >>>>>>> updated
 ```
+
+[[PROMPT]]
+Update readme.md
+[[PROMPT]]
+Update readme.md
+[[PROMPT]]
+Update readme.md
+[[PROMPT]]
+update readme.md

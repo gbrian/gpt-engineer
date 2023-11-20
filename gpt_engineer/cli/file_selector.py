@@ -298,9 +298,7 @@ class TerminalFileSelector:
                 user_input = (
                     user_input.replace(" ", ",") if " " in user_input else user_input
                 )
-                logging.info(
-                    f"[ask_for_selection] user_inputs are {type(user_input.split(',')[0])}"
-                )
+                logging.info(f"[ask_for_selection] user_inputs are {user_input}")
                 selected_files = [
                     process_selection(selection_entry)
                     for selection_entry in user_input.split(",")
