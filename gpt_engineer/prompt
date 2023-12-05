@@ -765,3 +765,455 @@ Update readme.md
 Update readme.md
 [[PROMPT]]
 update readme.md
+
+[[PROMPT]]
+PAss a workig directory to api when executing. This will be project_path
+[[AI_PROPMT]]
+content="Act as an expert software developer.\nAlways use best practices when coding.\nWhen you edit or add code, respect and use existing conventions, libraries, etc.\n\nTake requests for changes to the supplied code, and then you MUST\n1. (planning) Think step-by-step and explain the needed changes. Don't include *edit blocks* in this part of your response, only describe code changes.\n2. (output) Describe each change with an *edit block* per the example below.\n\nYou MUST format EVERY code change with an *edit block* like this:\n```python\nsome/dir/example.py\n<<<<<<< HEAD\n    # some comment\n    # Func to multiply\n    def mul(a,b)\n=======\n    # updated comment\n    # Function to add\n    def add(a,b):\n>>>>>>> updated\n```\nRemember, you can use multiple *edit blocks* per file.\n\nHere is an example reponse:\n---\nPLANNING:\nWe need to change ... because ..., therefore I will add the line `a=a+1` to the function `add_one`.\nAlso, in the class `DB`, we need to update the ...\n\nOUTPUT:\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def mul(a,b)\n=======\n    def add(a,b):\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def add_one(a,b):\n        a = a+2\n=======\n    def add_one(a,b):\n        a = a+1\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_2.py\n<<<<<<< HEAD\n    class DBS:\n        db = 'aaa'\n=======\n    class DBS:\n        db = 'bbb'\n>>>>>>> updated\n```\n---\n\nA program will parse the edit blocks you generate and replace the `HEAD` lines with the `updated` lines.\nSo edit blocks must be precise and unambiguous!\n\nEvery *edit block* must be fenced with ```...``` with the correct code language.\n\nThe `HEAD` section must be an *exact set of sequential lines* from the file! This is very important. Otherwise the parser won't work.\nNEVER SKIP LINES in the `HEAD` section!\nNEVER ELIDE LINES AND REPLACE THEM WITH A COMMENT!\nNEVER OMIT ANY WHITESPACE in the `HEAD` section!\n\nEdits to different parts of a file each need their own *edit block*.\n\nIf you want to put code in a new file, use an edit block with:\n- A new file path, including dir name if needed\n- An empty `HEAD` section\n- The new file's contents in the `updated` section\n\nUseful to know:\nAlmost always put different classes in different files.\nAlways use the programming language the user asks for.\nFor Python, you always create an appropriate requirements.txt file.\nFor NodeJS, you always create an appropriate package.json file.\nAlways add a comment briefly describing the purpose of the function definition.\nAdd comments explaining very complex bits of logic.\nAlways follow the best practices for the requested languages for folder/file structure and how to package the project.\n\n\nPython toolbelt preferences:\n- pytest\n- dataclasses\n"
+content='\n    api/app.py\n    ```\n    from flask import Flask, request, jsonify\nfrom gpt_engineer.core import gtp_engineer\n\napp = Flask(__name__)\n\n\n@app.route("/gtp_engineer", methods=["POST"])\ndef run_gtp_engineer():\n    try:\n        data = request.get_json()\n        gtp_engineer(\n            project_path=data.get("project_path"),\n            model=data.get("model"),\n            temperature=data.get("temperature"),\n            steps_config=data.get("steps_config"),\n            improve_mode=data.get("improve_mode"),\n            lite_mode=data.get("lite_mode"),\n            azure_endpoint=data.get("azure_endpoint"),\n            use_custom_preprompts=data.get("use_custom_preprompts"),\n            ai_cache=data.get("ai_cache"),\n            use_git=data.get("use_git"),\n            prompt_file=data.get("prompt_file"),\n            verbose=data.get("verbose"),\n            prompt=data.get("prompt"),\n        )\n        return jsonify({"message": "Operation completed successfully"}), 200\n    except Exception as e:\n        return jsonify({"error": str(e)}), 500\n\n\nif __name__ == "__main__":\n    app.run(debug=True)\n\n    ```\n    '
+content='Request: PAss a workig directory to api when executing. This will be project_path'
+[[AI]]
+PLANNING:
+The current code does not allow for the passing of a working directory when executing the API. To implement this, we need to modify the `run_gtp_engineer` function to accept a `working_directory` parameter from the request data. This `working_directory` will then be passed to the `gtp_engineer` function as the `project_path` parameter.
+
+OUTPUT:
+```python
+api/app.py
+<<<<<<< HEAD
+def run_gtp_engineer():
+    try:
+        data = request.get_json()
+        gtp_engineer(
+            project_path=data.get("project_path"),
+=======
+def run_gtp_engineer():
+    try:
+        data = request.get_json()
+        gtp_engineer(
+            project_path=data.get("working_directory"),
+>>>>>>> updated
+```
+This change will allow the `gtp_engineer` function to use the `working_directory` passed in the request as the project path.
+[[PROMPT]]
+When executing api user will pass a comand line parameter working_path that will be used as working_path for gpt_engineer calls
+[[AI_PROPMT]]
+content="Act as an expert software developer.\nAlways use best practices when coding.\nWhen you edit or add code, respect and use existing conventions, libraries, etc.\n\nTake requests for changes to the supplied code, and then you MUST\n1. (planning) Think step-by-step and explain the needed changes. Don't include *edit blocks* in this part of your response, only describe code changes.\n2. (output) Describe each change with an *edit block* per the example below.\n\nYou MUST format EVERY code change with an *edit block* like this:\n```python\nsome/dir/example.py\n<<<<<<< HEAD\n    # some comment\n    # Func to multiply\n    def mul(a,b)\n=======\n    # updated comment\n    # Function to add\n    def add(a,b):\n>>>>>>> updated\n```\nRemember, you can use multiple *edit blocks* per file.\n\nHere is an example reponse:\n---\nPLANNING:\nWe need to change ... because ..., therefore I will add the line `a=a+1` to the function `add_one`.\nAlso, in the class `DB`, we need to update the ...\n\nOUTPUT:\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def mul(a,b)\n=======\n    def add(a,b):\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def add_one(a,b):\n        a = a+2\n=======\n    def add_one(a,b):\n        a = a+1\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_2.py\n<<<<<<< HEAD\n    class DBS:\n        db = 'aaa'\n=======\n    class DBS:\n        db = 'bbb'\n>>>>>>> updated\n```\n---\n\nA program will parse the edit blocks you generate and replace the `HEAD` lines with the `updated` lines.\nSo edit blocks must be precise and unambiguous!\n\nEvery *edit block* must be fenced with ```...``` with the correct code language.\n\nThe `HEAD` section must be an *exact set of sequential lines* from the file! This is very important. Otherwise the parser won't work.\nNEVER SKIP LINES in the `HEAD` section!\nNEVER ELIDE LINES AND REPLACE THEM WITH A COMMENT!\nNEVER OMIT ANY WHITESPACE in the `HEAD` section!\n\nEdits to different parts of a file each need their own *edit block*.\n\nIf you want to put code in a new file, use an edit block with:\n- A new file path, including dir name if needed\n- An empty `HEAD` section\n- The new file's contents in the `updated` section\n\nUseful to know:\nAlmost always put different classes in different files.\nAlways use the programming language the user asks for.\nFor Python, you always create an appropriate requirements.txt file.\nFor NodeJS, you always create an appropriate package.json file.\nAlways add a comment briefly describing the purpose of the function definition.\nAdd comments explaining very complex bits of logic.\nAlways follow the best practices for the requested languages for folder/file structure and how to package the project.\n\n\nPython toolbelt preferences:\n- pytest\n- dataclasses\n"
+content='\n    api/app.py\n    ```\n    from flask import Flask, request, jsonify\nfrom gpt_engineer.core import gtp_engineer\n\napp = Flask(__name__)\n\n\n@app.route("/gtp_engineer", methods=["POST"])\ndef run_gtp_engineer():\n    try:\n        data = request.get_json()\n        gtp_engineer(\n            project_path=data.get("project_path"),\n            model=data.get("model"),\n            temperature=data.get("temperature"),\n            steps_config=data.get("steps_config"),\n            improve_mode=data.get("improve_mode"),\n            lite_mode=data.get("lite_mode"),\n            azure_endpoint=data.get("azure_endpoint"),\n            use_custom_preprompts=data.get("use_custom_preprompts"),\n            ai_cache=data.get("ai_cache"),\n            use_git=data.get("use_git"),\n            prompt_file=data.get("prompt_file"),\n            verbose=data.get("verbose"),\n            prompt=data.get("prompt"),\n        )\n        return jsonify({"message": "Operation completed successfully"}), 200\n    except Exception as e:\n        return jsonify({"error": str(e)}), 500\n\n\nif __name__ == "__main__":\n    app.run(debug=True)\n\n    ```\n    '
+content='Request: When executing api user will pass a comand line parameter working_path that will be used as working_path for gpt_engineer calls'
+[[PROMPT]]
+Add --api parameter if set run Flask API
+[[AI_PROPMT]]
+content="Act as an expert software developer.\nAlways use best practices when coding.\nWhen you edit or add code, respect and use existing conventions, libraries, etc.\n\nTake requests for changes to the supplied code, and then you MUST\n1. (planning) Think step-by-step and explain the needed changes. Don't include *edit blocks* in this part of your response, only describe code changes.\n2. (output) Describe each change with an *edit block* per the example below.\n\nYou MUST format EVERY code change with an *edit block* like this:\n```python\nsome/dir/example.py\n<<<<<<< HEAD\n    # some comment\n    # Func to multiply\n    def mul(a,b)\n=======\n    # updated comment\n    # Function to add\n    def add(a,b):\n>>>>>>> updated\n```\nRemember, you can use multiple *edit blocks* per file.\n\nHere is an example reponse:\n---\nPLANNING:\nWe need to change ... because ..., therefore I will add the line `a=a+1` to the function `add_one`.\nAlso, in the class `DB`, we need to update the ...\n\nOUTPUT:\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def mul(a,b)\n=======\n    def add(a,b):\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def add_one(a,b):\n        a = a+2\n=======\n    def add_one(a,b):\n        a = a+1\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_2.py\n<<<<<<< HEAD\n    class DBS:\n        db = 'aaa'\n=======\n    class DBS:\n        db = 'bbb'\n>>>>>>> updated\n```\n---\n\nA program will parse the edit blocks you generate and replace the `HEAD` lines with the `updated` lines.\nSo edit blocks must be precise and unambiguous!\n\nEvery *edit block* must be fenced with ```...``` with the correct code language.\n\nThe `HEAD` section must be an *exact set of sequential lines* from the file! This is very important. Otherwise the parser won't work.\nNEVER SKIP LINES in the `HEAD` section!\nNEVER ELIDE LINES AND REPLACE THEM WITH A COMMENT!\nNEVER OMIT ANY WHITESPACE in the `HEAD` section!\n\nEdits to different parts of a file each need their own *edit block*.\n\nIf you want to put code in a new file, use an edit block with:\n- A new file path, including dir name if needed\n- An empty `HEAD` section\n- The new file's contents in the `updated` section\n\nUseful to know:\nAlmost always put different classes in different files.\nAlways use the programming language the user asks for.\nFor Python, you always create an appropriate requirements.txt file.\nFor NodeJS, you always create an appropriate package.json file.\nAlways add a comment briefly describing the purpose of the function definition.\nAdd comments explaining very complex bits of logic.\nAlways follow the best practices for the requested languages for folder/file structure and how to package the project.\n\n\nPython toolbelt preferences:\n- pytest\n- dataclasses\n"
+content='\n    api/app.py\n    ```\n    from flask import Flask, request, jsonify\nfrom gpt_engineer.core import gtp_engineer\n\napp = Flask(__name__)\n\n\n@app.route("/gtp_engineer", methods=["POST"])\ndef run_gtp_engineer():\n    try:\n        data = request.get_json()\n        gtp_engineer(\n            project_path=data.get("project_path"),\n            model=data.get("model"),\n            temperature=data.get("temperature"),\n            steps_config=data.get("steps_config"),\n            improve_mode=data.get("improve_mode"),\n            lite_mode=data.get("lite_mode"),\n            azure_endpoint=data.get("azure_endpoint"),\n            use_custom_preprompts=data.get("use_custom_preprompts"),\n            ai_cache=data.get("ai_cache"),\n            use_git=data.get("use_git"),\n            prompt_file=data.get("prompt_file"),\n            verbose=data.get("verbose"),\n            prompt=data.get("prompt"),\n        )\n        return jsonify({"message": "Operation completed successfully"}), 200\n    except Exception as e:\n        return jsonify({"error": str(e)}), 500\n\n\nif __name__ == "__main__":\n    app.run(debug=True)\n\n    ```\n    '
+content='\n    cli/main.py\n    ```\n    """\nThis module provides a CLI tool to interact with the GPT Engineer application,\nenabling users to use OpenAI\'s models and define various parameters for the\nproject they want to generate, improve or interact with.\n\nMain Functionality:\n---------------------\n- Load environment variables needed to work with OpenAI.\n- Allow users to specify parameters such as:\n  - Project path\n  - Model type (default to GPT-4)\n  - Temperature\n  - Step configurations\n  - Code improvement mode\n  - Lite mode for lighter operations\n  - Azure endpoint for Azure OpenAI services\n  - Using project\'s preprompts or default ones\n  - Verbosity level for logging\n- Interact with AI, databases, and archive processes based on the user-defined parameters.\n\nNotes:\n- Ensure the .env file has the `OPENAI_API_KEY` or provide it in the working directory.\n- The default project path is set to `projects/example`.\n- For azure_endpoint, provide the endpoint for Azure OpenAI service.\n\n"""\n\nimport logging\nimport os\nimport shutil\nfrom pathlib import Path\n\nimport typer\n\nfrom gpt_engineer.core import gtp_engineer\nfrom gpt_engineer.core.ai import AI\nfrom gpt_engineer.core.db import DB, DBs, DBPrompt, archive\nfrom gpt_engineer.core.steps import STEPS, Config as StepsConfig\nfrom gpt_engineer.cli.collect import collect_learnings\nfrom gpt_engineer.cli.learning import check_collection_consent\n\nfrom gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE\n\napp = typer.Typer()  # creates a CLI app\n\n\n@app.command()\ndef main(\n    project_path: str = typer.Argument("projects/example", help="path"),\n    model: str = typer.Argument(MODEL, help="model id string"),\n    temperature: float = TEMPERATURE,\n    steps_config: StepsConfig = typer.Option(\n        StepsConfig.DEFAULT, "--steps", "-s", help="decide which steps to run"\n    ),\n    improve_mode: bool = typer.Option(\n        False,\n        "--improve",\n        "-i",\n        help="Improve code from existing project.",\n    ),\n    lite_mode: bool = typer.Option(\n        False,\n        "--lite",\n        "-l",\n        help="Lite mode - run only the main prompt.",\n    ),\n    azure_endpoint: str = typer.Option(\n        "",\n        "--azure",\n        "-a",\n        help="""Endpoint for your Azure OpenAI Service (https://xx.openai.azure.com).\n            In that case, the given model is the deployment name chosen in the Azure AI Studio.""",\n    ),\n    use_custom_preprompts: bool = typer.Option(\n        False,\n        "--use-custom-preprompts",\n        help="""Use your project\'s custom preprompts instead of the default ones.\n          Copies all original preprompts to the project\'s workspace if they don\'t exist there.""",\n    ),\n    ai_cache: bool = typer.Option(\n        False,\n        "--cache",\n        "-c",\n        help="Caches AI responses.",\n    ),\n    use_git: bool = typer.Option(\n        False,\n        "--git",\n        "-g",\n        help="Project uses git. Commit changes to keep track and easy changes detection.",\n    ),\n    prompt_file: str = typer.Option(\n        False,\n        "--prompt",\n        "-pf",\n        help="Use this prompt. This will replace workspce\'s prompt with file contents.",\n    ),\n    verbose: bool = typer.Option(False, "--verbose", "-v"),\n    prompt: bool = typer.Option(False, "--prompt-text", "-p", help="Custom prompt text."),\n    file_selector: bool = typer.Option(\n        False, "--file-selector", "-f", help="Force the request of files affected."\n    ),\n):\n    gtp_engineer(\n        project_path=project_path,\n        model=model,\n        temperature=temperature,\n        steps_config=steps_config,\n        improve_mode=improve_mode,\n        lite_mode=lite_mode,\n        azure_endpoint=azure_endpoint,\n        use_custom_preprompts=use_custom_preprompts,\n        ai_cache=ai_cache,\n        use_git=use_git,\n        prompt_file=prompt_file,\n        verbose=verbose,\n        prompt=prompt,\n        file_selector=file_selector,\n    )\n\n\nif __name__ == "__main__":\n    while True:\n        try:\n            app()\n        except KeyboardInterrupt:\n            break\n        except Exception as ex:\n            logging.error("Error running gpt-engineer {}", ex)\n\n    ```\n    '
+content='Request: Add --api parameter if set run Flask API'
+[[AI]]
+PLANNING:
+We need to add a new command line argument `--api` to the `main` function in the `cli/main.py` file. This argument will be a boolean flag that, when set, will run the Flask API. We will import the Flask app from `api/app.py` and run it if the `--api` flag is set. 
+
+OUTPUT:
+```python
+cli/main.py
+<<<<<<< HEAD
+import logging
+import os
+import shutil
+from pathlib import Path
+
+import typer
+
+from gpt_engineer.core import gtp_engineer
+from gpt_engineer.core.ai import AI
+from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
+from gpt_engineer.core.steps import STEPS, Config as StepsConfig
+from gpt_engineer.cli.collect import collect_learnings
+from gpt_engineer.cli.learning import check_collection_consent
+
+from gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE
+
+app = typer.Typer()  # creates a CLI app
+=======
+import logging
+import os
+import shutil
+from pathlib import Path
+
+import typer
+
+from gpt_engineer.core import gtp_engineer
+from gpt_engineer.core.ai import AI
+from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
+from gpt_engineer.core.steps import STEPS, Config as StepsConfig
+from gpt_engineer.cli.collect import collect_learnings
+from gpt_engineer.cli.learning import check_collection_consent
+from gpt_engineer.api.app import app as flask_app
+
+from gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE
+
+app = typer.Typer()  # creates a CLI app
+>>>>>>> updated
+```
+
+```python
+cli/main.py
+<<<<<<< HEAD
+    file_selector: bool = typer.Option(
+        False, "--file-selector", "-f", help="Force the request of files affected."
+    ),
+):
+    gtp_engineer(
+        project_path=project_path,
+        model=model,
+        temperature=temperature,
+        steps_config=steps_config,
+        improve_mode=improve_mode,
+        lite_mode=lite_mode,
+        azure_endpoint=azure_endpoint,
+        use_custom_preprompts=use_custom_preprompts,
+        ai_cache=ai_cache,
+        use_git=use_git,
+        prompt_file=prompt_file,
+        verbose=verbose,
+        prompt=prompt,
+        file_selector=file_selector,
+    )
+=======
+    file_selector: bool = typer.Option(
+        False, "--file-selector", "-f", help="Force the request of files affected."
+    ),
+    api: bool = typer.Option(
+        False, "--api", help="Run Flask API."
+    ),
+):
+    if api:
+        flask_app.run(debug=True)
+    else:
+        gtp_engineer(
+            project_path=project_path,
+            model=model,
+            temperature=temperature,
+            steps_config=steps_config,
+            improve_mode=improve_mode,
+            lite_mode=lite_mode,
+            azure_endpoint=azure_endpoint,
+            use_custom_preprompts=use_custom_preprompts,
+            ai_cache=ai_cache,
+            use_git=use_git,
+            prompt_file=prompt_file,
+            verbose=verbose,
+            prompt=prompt,
+            file_selector=file_selector,
+        )
+>>>>>>> updated
+```
+[[PROMPT]]
+Create a new method in api to run the Flask app, it will receive same parameters as the cli except these about "prompt"
+[[AI_PROPMT]]
+content="Act as an expert software developer.\nAlways use best practices when coding.\nWhen you edit or add code, respect and use existing conventions, libraries, etc.\n\nTake requests for changes to the supplied code, and then you MUST\n1. (planning) Think step-by-step and explain the needed changes. Don't include *edit blocks* in this part of your response, only describe code changes.\n2. (output) Describe each change with an *edit block* per the example below.\n\nYou MUST format EVERY code change with an *edit block* like this:\n```python\nsome/dir/example.py\n<<<<<<< HEAD\n    # some comment\n    # Func to multiply\n    def mul(a,b)\n=======\n    # updated comment\n    # Function to add\n    def add(a,b):\n>>>>>>> updated\n```\nRemember, you can use multiple *edit blocks* per file.\n\nHere is an example reponse:\n---\nPLANNING:\nWe need to change ... because ..., therefore I will add the line `a=a+1` to the function `add_one`.\nAlso, in the class `DB`, we need to update the ...\n\nOUTPUT:\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def mul(a,b)\n=======\n    def add(a,b):\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def add_one(a,b):\n        a = a+2\n=======\n    def add_one(a,b):\n        a = a+1\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_2.py\n<<<<<<< HEAD\n    class DBS:\n        db = 'aaa'\n=======\n    class DBS:\n        db = 'bbb'\n>>>>>>> updated\n```\n---\n\nA program will parse the edit blocks you generate and replace the `HEAD` lines with the `updated` lines.\nSo edit blocks must be precise and unambiguous!\n\nEvery *edit block* must be fenced with ```...``` with the correct code language.\n\nThe `HEAD` section must be an *exact set of sequential lines* from the file! This is very important. Otherwise the parser won't work.\nNEVER SKIP LINES in the `HEAD` section!\nNEVER ELIDE LINES AND REPLACE THEM WITH A COMMENT!\nNEVER OMIT ANY WHITESPACE in the `HEAD` section!\n\nEdits to different parts of a file each need their own *edit block*.\n\nIf you want to put code in a new file, use an edit block with:\n- A new file path, including dir name if needed\n- An empty `HEAD` section\n- The new file's contents in the `updated` section\n\nUseful to know:\nAlmost always put different classes in different files.\nAlways use the programming language the user asks for.\nFor Python, you always create an appropriate requirements.txt file.\nFor NodeJS, you always create an appropriate package.json file.\nAlways add a comment briefly describing the purpose of the function definition.\nAdd comments explaining very complex bits of logic.\nAlways follow the best practices for the requested languages for folder/file structure and how to package the project.\n\n\nPython toolbelt preferences:\n- pytest\n- dataclasses\n"
+content='\n    api/app.py\n    ```\n    from flask import Flask, request, jsonify\nfrom gpt_engineer.core import gtp_engineer\n\napp = Flask(__name__)\n\n\n@app.route("/gtp_engineer", methods=["POST"])\ndef run_gtp_engineer():\n    try:\n        data = request.get_json()\n        gtp_engineer(\n            project_path=data.get("project_path"),\n            model=data.get("model"),\n            temperature=data.get("temperature"),\n            steps_config=data.get("steps_config"),\n            improve_mode=data.get("improve_mode"),\n            lite_mode=data.get("lite_mode"),\n            azure_endpoint=data.get("azure_endpoint"),\n            use_custom_preprompts=data.get("use_custom_preprompts"),\n            ai_cache=data.get("ai_cache"),\n            use_git=data.get("use_git"),\n            prompt_file=data.get("prompt_file"),\n            verbose=data.get("verbose"),\n            prompt=data.get("prompt"),\n        )\n        return jsonify({"message": "Operation completed successfully"}), 200\n    except Exception as e:\n        return jsonify({"error": str(e)}), 500\n\n\nif __name__ == "__main__":\n    app.run(debug=True)\n\n    ```\n    '
+content='\n    cli/main.py\n    ```\n    """\nThis module provides a CLI tool to interact with the GPT Engineer application,\nenabling users to use OpenAI\'s models and define various parameters for the\nproject they want to generate, improve or interact with.\n\nMain Functionality:\n---------------------\n- Load environment variables needed to work with OpenAI.\n- Allow users to specify parameters such as:\n  - Project path\n  - Model type (default to GPT-4)\n  - Temperature\n  - Step configurations\n  - Code improvement mode\n  - Lite mode for lighter operations\n  - Azure endpoint for Azure OpenAI services\n  - Using project\'s preprompts or default ones\n  - Verbosity level for logging\n- Interact with AI, databases, and archive processes based on the user-defined parameters.\n\nNotes:\n- Ensure the .env file has the `OPENAI_API_KEY` or provide it in the working directory.\n- The default project path is set to `projects/example`.\n- For azure_endpoint, provide the endpoint for Azure OpenAI service.\n\n"""\n\nimport logging\nimport os\nimport shutil\nfrom pathlib import Path\n\nimport typer\n\nfrom gpt_engineer.core import gtp_engineer\nfrom gpt_engineer.core.ai import AI\nfrom gpt_engineer.core.db import DB, DBs, DBPrompt, archive\nfrom gpt_engineer.core.steps import STEPS, Config as StepsConfig\nfrom gpt_engineer.cli.collect import collect_learnings\nfrom gpt_engineer.cli.learning import check_collection_consent\nfrom gpt_engineer.api.app import app as flask_app\n\nfrom gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE\n\napp = typer.Typer()  # creates a CLI app\n\n\n@app.command()\ndef main(\n    project_path: str = typer.Argument("projects/example", help="path"),\n    model: str = typer.Argument(MODEL, help="model id string"),\n    temperature: float = TEMPERATURE,\n    steps_config: StepsConfig = typer.Option(\n        StepsConfig.DEFAULT, "--steps", "-s", help="decide which steps to run"\n    ),\n    improve_mode: bool = typer.Option(\n        False,\n        "--improve",\n        "-i",\n        help="Improve code from existing project.",\n    ),\n    lite_mode: bool = typer.Option(\n        False,\n        "--lite",\n        "-l",\n        help="Lite mode - run only the main prompt.",\n    ),\n    azure_endpoint: str = typer.Option(\n        "",\n        "--azure",\n        "-a",\n        help="""Endpoint for your Azure OpenAI Service (https://xx.openai.azure.com).\n            In that case, the given model is the deployment name chosen in the Azure AI Studio.""",\n    ),\n    use_custom_preprompts: bool = typer.Option(\n        False,\n        "--use-custom-preprompts",\n        help="""Use your project\'s custom preprompts instead of the default ones.\n          Copies all original preprompts to the project\'s workspace if they don\'t exist there.""",\n    ),\n    ai_cache: bool = typer.Option(\n        False,\n        "--cache",\n        "-c",\n        help="Caches AI responses.",\n    ),\n    use_git: bool = typer.Option(\n        False,\n        "--git",\n        "-g",\n        help="Project uses git. Commit changes to keep track and easy changes detection.",\n    ),\n    prompt_file: str = typer.Option(\n        False,\n        "--prompt",\n        "-pf",\n        help="Use this prompt. This will replace workspce\'s prompt with file contents.",\n    ),\n    verbose: bool = typer.Option(False, "--verbose", "-v"),\n    prompt: bool = typer.Option(False, "--prompt-text", "-p", help="Custom prompt text."),\n    file_selector: bool = typer.Option(\n        False, "--file-selector", "-f", help="Force the request of files affected."\n    ),\n    api: bool = typer.Option(\n        False, "--api", help="Run Flask API."\n    ),\n):\n    if api:\n        flask_app.run(debug=True)\n    else:\n        gtp_engineer(\n            project_path=project_path,\n            model=model,\n            temperature=temperature,\n            steps_config=steps_config,\n            improve_mode=improve_mode,\n            lite_mode=lite_mode,\n            azure_endpoint=azure_endpoint,\n            use_custom_preprompts=use_custom_preprompts,\n            ai_cache=ai_cache,\n            use_git=use_git,\n            prompt_file=prompt_file,\n            verbose=verbose,\n            prompt=prompt,\n            file_selector=file_selector,\n        )\n\n\nif __name__ == "__main__":\n    while True:\n        try:\n            app()\n        except KeyboardInterrupt:\n            break\n        except Exception as ex:\n            logging.error("Error running gpt-engineer {}", ex)\n\n    ```\n    '
+content='Request: Create a new method in api to run the Flask app, it will receive same parameters as the cli except these about "prompt"'
+[[AI]]
+PLANNING:
+We need to create a new method in the `api/app.py` file that will run the Flask app. This method will receive the same parameters as the CLI, except for the parameters related to "prompt". Therefore, we will add a new function `run_app` that will take the necessary parameters and call the `gtp_engineer` function with these parameters. This function will then return a JSON response indicating the operation's success or failure.
+
+OUTPUT:
+```python
+api/app.py
+<<<<<<< HEAD
+from flask import Flask, request, jsonify
+from gpt_engineer.core import gtp_engineer
+
+app = Flask(__name__)
+
+
+@app.route("/gtp_engineer", methods=["POST"])
+def run_gtp_engineer():
+    try:
+        data = request.get_json()
+        gtp_engineer(
+            project_path=data.get("project_path"),
+            model=data.get("model"),
+            temperature=data.get("temperature"),
+            steps_config=data.get("steps_config"),
+            improve_mode=data.get("improve_mode"),
+            lite_mode=data.get("lite_mode"),
+            azure_endpoint=data.get("azure_endpoint"),
+            use_custom_preprompts=data.get("use_custom_preprompts"),
+            ai_cache=data.get("ai_cache"),
+            use_git=data.get("use_git"),
+            prompt_file=data.get("prompt_file"),
+            verbose=data.get("verbose"),
+            prompt=data.get("prompt"),
+        )
+        return jsonify({"message": "Operation completed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+=======
+from flask import Flask, request, jsonify
+from gpt_engineer.core import gtp_engineer
+
+app = Flask(__name__)
+
+
+@app.route("/gtp_engineer", methods=["POST"])
+def run_gtp_engineer():
+    try:
+        data = request.get_json()
+        gtp_engineer(
+            project_path=data.get("project_path"),
+            model=data.get("model"),
+            temperature=data.get("temperature"),
+            steps_config=data.get("steps_config"),
+            improve_mode=data.get("improve_mode"),
+            lite_mode=data.get("lite_mode"),
+            azure_endpoint=data.get("azure_endpoint"),
+            use_custom_preprompts=data.get("use_custom_preprompts"),
+            ai_cache=data.get("ai_cache"),
+            use_git=data.get("use_git"),
+            prompt_file=data.get("prompt_file"),
+            verbose=data.get("verbose"),
+            prompt=data.get("prompt"),
+        )
+        return jsonify({"message": "Operation completed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/run_app", methods=["POST"])
+def run_app():
+    try:
+        data = request.get_json()
+        gtp_engineer(
+            project_path=data.get("project_path"),
+            model=data.get("model"),
+            temperature=data.get("temperature"),
+            steps_config=data.get("steps_config"),
+            improve_mode=data.get("improve_mode"),
+            lite_mode=data.get("lite_mode"),
+            azure_endpoint=data.get("azure_endpoint"),
+            use_custom_preprompts=data.get("use_custom_preprompts"),
+            ai_cache=data.get("ai_cache"),
+            use_git=data.get("use_git"),
+            prompt_file=data.get("prompt_file"),
+            verbose=data.get("verbose"),
+        )
+        return jsonify({"message": "Operation completed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+>>>>>>> updated
+```
+[[PROMPT]]
+Add a new function to app receiving same parameters as the cli and executing the app.run. 
+Parameters will be sored in a global dictionary. 
+app endpoints will read the parameters form the dictionary
+
+[[AI_PROPMT]]
+content="Act as an expert software developer.\nAlways use best practices when coding.\nWhen you edit or add code, respect and use existing conventions, libraries, etc.\n\nTake requests for changes to the supplied code, and then you MUST\n1. (planning) Think step-by-step and explain the needed changes. Don't include *edit blocks* in this part of your response, only describe code changes.\n2. (output) Describe each change with an *edit block* per the example below.\n\nYou MUST format EVERY code change with an *edit block* like this:\n```python\nsome/dir/example.py\n<<<<<<< HEAD\n    # some comment\n    # Func to multiply\n    def mul(a,b)\n=======\n    # updated comment\n    # Function to add\n    def add(a,b):\n>>>>>>> updated\n```\nRemember, you can use multiple *edit blocks* per file.\n\nHere is an example reponse:\n---\nPLANNING:\nWe need to change ... because ..., therefore I will add the line `a=a+1` to the function `add_one`.\nAlso, in the class `DB`, we need to update the ...\n\nOUTPUT:\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def mul(a,b)\n=======\n    def add(a,b):\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def add_one(a,b):\n        a = a+2\n=======\n    def add_one(a,b):\n        a = a+1\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_2.py\n<<<<<<< HEAD\n    class DBS:\n        db = 'aaa'\n=======\n    class DBS:\n        db = 'bbb'\n>>>>>>> updated\n```\n---\n\nA program will parse the edit blocks you generate and replace the `HEAD` lines with the `updated` lines.\nSo edit blocks must be precise and unambiguous!\n\nEvery *edit block* must be fenced with ```...``` with the correct code language.\n\nThe `HEAD` section must be an *exact set of sequential lines* from the file! This is very important. Otherwise the parser won't work.\nNEVER SKIP LINES in the `HEAD` section!\nNEVER ELIDE LINES AND REPLACE THEM WITH A COMMENT!\nNEVER OMIT ANY WHITESPACE in the `HEAD` section!\n\nEdits to different parts of a file each need their own *edit block*.\n\nIf you want to put code in a new file, use an edit block with:\n- A new file path, including dir name if needed\n- An empty `HEAD` section\n- The new file's contents in the `updated` section\n\nUseful to know:\nAlmost always put different classes in different files.\nAlways use the programming language the user asks for.\nFor Python, you always create an appropriate requirements.txt file.\nFor NodeJS, you always create an appropriate package.json file.\nAlways add a comment briefly describing the purpose of the function definition.\nAdd comments explaining very complex bits of logic.\nAlways follow the best practices for the requested languages for folder/file structure and how to package the project.\n\n\nPython toolbelt preferences:\n- pytest\n- dataclasses\n"
+content='\n    api/app.py\n    ```\n    from flask import Flask, request, jsonify\nfrom gpt_engineer.core import gtp_engineer\n\napp = Flask(__name__)\n\n\n@app.route("/gtp_engineer", methods=["POST"])\ndef run_gtp_engineer():\n    try:\n        data = request.get_json()\n        gtp_engineer(\n            project_path=data.get("project_path"),\n            model=data.get("model"),\n            temperature=data.get("temperature"),\n            steps_config=data.get("steps_config"),\n            improve_mode=data.get("improve_mode"),\n            lite_mode=data.get("lite_mode"),\n            azure_endpoint=data.get("azure_endpoint"),\n            use_custom_preprompts=data.get("use_custom_preprompts"),\n            ai_cache=data.get("ai_cache"),\n            use_git=data.get("use_git"),\n            prompt_file=data.get("prompt_file"),\n            verbose=data.get("verbose"),\n            prompt=data.get("prompt"),\n        )\n        return jsonify({"message": "Operation completed successfully"}), 200\n    except Exception as e:\n        return jsonify({"error": str(e)}), 500\n\n\nif __name__ == "__main__":\n    app.run(debug=True)\n\n    ```\n    '
+content='\n    cli/main.py\n    ```\n    """\nThis module provides a CLI tool to interact with the GPT Engineer application,\nenabling users to use OpenAI\'s models and define various parameters for the\nproject they want to generate, improve or interact with.\n\nMain Functionality:\n---------------------\n- Load environment variables needed to work with OpenAI.\n- Allow users to specify parameters such as:\n  - Project path\n  - Model type (default to GPT-4)\n  - Temperature\n  - Step configurations\n  - Code improvement mode\n  - Lite mode for lighter operations\n  - Azure endpoint for Azure OpenAI services\n  - Using project\'s preprompts or default ones\n  - Verbosity level for logging\n- Interact with AI, databases, and archive processes based on the user-defined parameters.\n\nNotes:\n- Ensure the .env file has the `OPENAI_API_KEY` or provide it in the working directory.\n- The default project path is set to `projects/example`.\n- For azure_endpoint, provide the endpoint for Azure OpenAI service.\n\n"""\n\nimport logging\nimport os\nimport shutil\nfrom pathlib import Path\n\nimport typer\n\nfrom gpt_engineer.core import gtp_engineer\nfrom gpt_engineer.core.ai import AI\nfrom gpt_engineer.core.db import DB, DBs, DBPrompt, archive\nfrom gpt_engineer.core.steps import STEPS, Config as StepsConfig\nfrom gpt_engineer.cli.collect import collect_learnings\nfrom gpt_engineer.cli.learning import check_collection_consent\nfrom gpt_engineer.api.app import app as flask_app\n\nfrom gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE\n\napp = typer.Typer()  # creates a CLI app\n\n\n@app.command()\ndef main(\n    project_path: str = typer.Argument("projects/example", help="path"),\n    model: str = typer.Argument(MODEL, help="model id string"),\n    temperature: float = TEMPERATURE,\n    steps_config: StepsConfig = typer.Option(\n        StepsConfig.DEFAULT, "--steps", "-s", help="decide which steps to run"\n    ),\n    improve_mode: bool = typer.Option(\n        False,\n        "--improve",\n        "-i",\n        help="Improve code from existing project.",\n    ),\n    lite_mode: bool = typer.Option(\n        False,\n        "--lite",\n        "-l",\n        help="Lite mode - run only the main prompt.",\n    ),\n    azure_endpoint: str = typer.Option(\n        "",\n        "--azure",\n        "-a",\n        help="""Endpoint for your Azure OpenAI Service (https://xx.openai.azure.com).\n            In that case, the given model is the deployment name chosen in the Azure AI Studio.""",\n    ),\n    use_custom_preprompts: bool = typer.Option(\n        False,\n        "--use-custom-preprompts",\n        help="""Use your project\'s custom preprompts instead of the default ones.\n          Copies all original preprompts to the project\'s workspace if they don\'t exist there.""",\n    ),\n    ai_cache: bool = typer.Option(\n        False,\n        "--cache",\n        "-c",\n        help="Caches AI responses.",\n    ),\n    use_git: bool = typer.Option(\n        False,\n        "--git",\n        "-g",\n        help="Project uses git. Commit changes to keep track and easy changes detection.",\n    ),\n    prompt_file: str = typer.Option(\n        False,\n        "--prompt",\n        "-pf",\n        help="Use this prompt. This will replace workspce\'s prompt with file contents.",\n    ),\n    verbose: bool = typer.Option(False, "--verbose", "-v"),\n    prompt: bool = typer.Option(False, "--prompt-text", "-p", help="Custom prompt text."),\n    file_selector: bool = typer.Option(\n        False, "--file-selector", "-f", help="Force the request of files affected."\n    ),\n    api: bool = typer.Option(\n        False, "--api", help="Run Flask API."\n    ),\n):\n    if api:\n        flask_app.run(debug=True)\n    else:\n        gtp_engineer(\n            project_path=project_path,\n            model=model,\n            temperature=temperature,\n            steps_config=steps_config,\n            improve_mode=improve_mode,\n            lite_mode=lite_mode,\n            azure_endpoint=azure_endpoint,\n            use_custom_preprompts=use_custom_preprompts,\n            ai_cache=ai_cache,\n            use_git=use_git,\n            prompt_file=prompt_file,\n            verbose=verbose,\n            prompt=prompt,\n            file_selector=file_selector,\n        )\n\n\nif __name__ == "__main__":\n    while True:\n        try:\n            app()\n        except KeyboardInterrupt:\n            break\n        except Exception as ex:\n            logging.error("Error running gpt-engineer {}", ex)\n\n    ```\n    '
+content='Request: Add a new function to app receiving same parameters as the cli and executing the app.run. \nParameters will be sored in a global dictionary. \napp endpoints will read the parameters form the dictionary\n'
+[[AI]]
+PLANNING:
+We need to add a new function to the Flask app that receives the same parameters as the CLI and executes the app.run. This function will store the parameters in a global dictionary. The endpoints of the Flask app will read the parameters from this dictionary. 
+
+To achieve this, we will:
+1. Define a global dictionary `app_config` in `api/app.py`.
+2. Add a new function `configure_app` in `api/app.py` that takes the same parameters as the CLI, stores them in `app_config`, and then calls `app.run`.
+3. Modify the `run_gtp_engineer` function in `api/app.py` to read parameters from `app_config` instead of from the request data.
+
+OUTPUT:
+```python
+api/app.py
+<<<<<<< HEAD
+from flask import Flask, request, jsonify
+from gpt_engineer.core import gtp_engineer
+
+app = Flask(__name__)
+
+
+@app.route("/gtp_engineer", methods=["POST"])
+def run_gtp_engineer():
+    try:
+        data = request.get_json()
+        gtp_engineer(
+            project_path=data.get("project_path"),
+            model=data.get("model"),
+            temperature=data.get("temperature"),
+            steps_config=data.get("steps_config"),
+            improve_mode=data.get("improve_mode"),
+            lite_mode=data.get("lite_mode"),
+            azure_endpoint=data.get("azure_endpoint"),
+            use_custom_preprompts=data.get("use_custom_preprompts"),
+            ai_cache=data.get("ai_cache"),
+            use_git=data.get("use_git"),
+            prompt_file=data.get("prompt_file"),
+            verbose=data.get("verbose"),
+            prompt=data.get("prompt"),
+        )
+        return jsonify({"message": "Operation completed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+=======
+from flask import Flask, jsonify
+from gpt_engineer.core import gtp_engineer
+
+app = Flask(__name__)
+app_config = {}
+
+
+def configure_app(
+    project_path,
+    model,
+    temperature,
+    steps_config,
+    improve_mode,
+    lite_mode,
+    azure_endpoint,
+    use_custom_preprompts,
+    ai_cache,
+    use_git,
+    prompt_file,
+    verbose,
+    prompt,
+):
+    app_config.update(
+        project_path=project_path,
+        model=model,
+        temperature=temperature,
+        steps_config=steps_config,
+        improve_mode=improve_mode,
+        lite_mode=lite_mode,
+        azure_endpoint=azure_endpoint,
+        use_custom_preprompts=use_custom_preprompts,
+        ai_cache=ai_cache,
+        use_git=use_git,
+        prompt_file=prompt_file,
+        verbose=verbose,
+        prompt=prompt,
+    )
+    app.run(debug=True)
+
+
+@app.route("/gtp_engineer", methods=["POST"])
+def run_gtp_engineer():
+    try:
+        gtp_engineer(**app_config)
+        return jsonify({"message": "Operation completed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+>>>>>>> updated
+```
+[[PROMPT]]
+When running the api, use run_gtp_engineer and pass the cli parameters
+[[AI_PROPMT]]
+content="Act as an expert software developer.\nAlways use best practices when coding.\nWhen you edit or add code, respect and use existing conventions, libraries, etc.\n\nTake requests for changes to the supplied code, and then you MUST\n1. (planning) Think step-by-step and explain the needed changes. Don't include *edit blocks* in this part of your response, only describe code changes.\n2. (output) Describe each change with an *edit block* per the example below.\n\nYou MUST format EVERY code change with an *edit block* like this:\n```python\nsome/dir/example.py\n<<<<<<< HEAD\n    # some comment\n    # Func to multiply\n    def mul(a,b)\n=======\n    # updated comment\n    # Function to add\n    def add(a,b):\n>>>>>>> updated\n```\nRemember, you can use multiple *edit blocks* per file.\n\nHere is an example reponse:\n---\nPLANNING:\nWe need to change ... because ..., therefore I will add the line `a=a+1` to the function `add_one`.\nAlso, in the class `DB`, we need to update the ...\n\nOUTPUT:\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def mul(a,b)\n=======\n    def add(a,b):\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_1.py\n<<<<<<< HEAD\n    def add_one(a,b):\n        a = a+2\n=======\n    def add_one(a,b):\n        a = a+1\n>>>>>>> updated\n```\n\n```python\nsome/dir/example_2.py\n<<<<<<< HEAD\n    class DBS:\n        db = 'aaa'\n=======\n    class DBS:\n        db = 'bbb'\n>>>>>>> updated\n```\n---\n\nA program will parse the edit blocks you generate and replace the `HEAD` lines with the `updated` lines.\nSo edit blocks must be precise and unambiguous!\n\nEvery *edit block* must be fenced with ```...``` with the correct code language.\n\nThe `HEAD` section must be an *exact set of sequential lines* from the file! This is very important. Otherwise the parser won't work.\nNEVER SKIP LINES in the `HEAD` section!\nNEVER ELIDE LINES AND REPLACE THEM WITH A COMMENT!\nNEVER OMIT ANY WHITESPACE in the `HEAD` section!\n\nEdits to different parts of a file each need their own *edit block*.\n\nIf you want to put code in a new file, use an edit block with:\n- A new file path, including dir name if needed\n- An empty `HEAD` section\n- The new file's contents in the `updated` section\n\nUseful to know:\nAlmost always put different classes in different files.\nAlways use the programming language the user asks for.\nFor Python, you always create an appropriate requirements.txt file.\nFor NodeJS, you always create an appropriate package.json file.\nAlways add a comment briefly describing the purpose of the function definition.\nAdd comments explaining very complex bits of logic.\nAlways follow the best practices for the requested languages for folder/file structure and how to package the project.\n\n\nPython toolbelt preferences:\n- pytest\n- dataclasses\n"
+content='\n    api/app.py\n    ```\n    from flask import Flask, jsonify\nfrom gpt_engineer.core import gtp_engineer\n\napp = Flask(__name__)\napp_config = {}\n\n\ndef run_api(\n    project_path,\n    model,\n    temperature,\n    steps_config,\n    improve_mode,\n    lite_mode,\n    azure_endpoint,\n    use_custom_preprompts,\n    ai_cache,\n    use_git,\n    prompt_file,\n    verbose,\n    prompt,\n):\n    app_config.update(\n        project_path=project_path,\n        model=model,\n        temperature=temperature,\n        steps_config=steps_config,\n        improve_mode=improve_mode,\n        lite_mode=lite_mode,\n        azure_endpoint=azure_endpoint,\n        use_custom_preprompts=use_custom_preprompts,\n        ai_cache=ai_cache,\n        use_git=use_git,\n        prompt_file=prompt_file,\n        verbose=verbose,\n        prompt=prompt,\n    )\n    app.run(debug=True)\n\n\n@app.route("/gtp_engineer", methods=["POST"])\ndef run_gtp_engineer():\n    try:\n        data = request.get_json()\n        gtp_engineer(\n            project_path=data.get("project_path"),\n            model=data.get("model"),\n            temperature=data.get("temperature"),\n            steps_config=data.get("steps_config"),\n            improve_mode=data.get("improve_mode"),\n            lite_mode=data.get("lite_mode"),\n            azure_endpoint=data.get("azure_endpoint"),\n            use_custom_preprompts=data.get("use_custom_preprompts"),\n            ai_cache=data.get("ai_cache"),\n            use_git=data.get("use_git"),\n            prompt_file=data.get("prompt_file"),\n            verbose=data.get("verbose"),\n            prompt=data.get("prompt"),\n        )\n        return jsonify({"message": "Operation completed successfully"}), 200\n    except Exception as e:\n        return jsonify({"error": str(e)}), 500\n\n    ```\n    '
+content='\n    cli/main.py\n    ```\n    """\nThis module provides a CLI tool to interact with the GPT Engineer application,\nenabling users to use OpenAI\'s models and define various parameters for the\nproject they want to generate, improve or interact with.\n\nMain Functionality:\n---------------------\n- Load environment variables needed to work with OpenAI.\n- Allow users to specify parameters such as:\n  - Project path\n  - Model type (default to GPT-4)\n  - Temperature\n  - Step configurations\n  - Code improvement mode\n  - Lite mode for lighter operations\n  - Azure endpoint for Azure OpenAI services\n  - Using project\'s preprompts or default ones\n  - Verbosity level for logging\n- Interact with AI, databases, and archive processes based on the user-defined parameters.\n\nNotes:\n- Ensure the .env file has the `OPENAI_API_KEY` or provide it in the working directory.\n- The default project path is set to `projects/example`.\n- For azure_endpoint, provide the endpoint for Azure OpenAI service.\n\n"""\n\nimport logging\nimport os\nimport shutil\nfrom pathlib import Path\n\nimport typer\n\nfrom gpt_engineer.core import gtp_engineer\nfrom gpt_engineer.core.ai import AI\nfrom gpt_engineer.core.db import DB, DBs, DBPrompt, archive\nfrom gpt_engineer.core.steps import STEPS, Config as StepsConfig\nfrom gpt_engineer.cli.collect import collect_learnings\nfrom gpt_engineer.cli.learning import check_collection_consent\nfrom gpt_engineer.api.app import app as flask_app\n\nfrom gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE\n\napp = typer.Typer()  # creates a CLI app\n\n\n@app.command()\ndef main(\n    project_path: str = typer.Argument("projects/example", help="path"),\n    model: str = typer.Argument(MODEL, help="model id string"),\n    temperature: float = TEMPERATURE,\n    steps_config: StepsConfig = typer.Option(\n        StepsConfig.DEFAULT, "--steps", "-s", help="decide which steps to run"\n    ),\n    improve_mode: bool = typer.Option(\n        False,\n        "--improve",\n        "-i",\n        help="Improve code from existing project.",\n    ),\n    lite_mode: bool = typer.Option(\n        False,\n        "--lite",\n        "-l",\n        help="Lite mode - run only the main prompt.",\n    ),\n    azure_endpoint: str = typer.Option(\n        "",\n        "--azure",\n        "-a",\n        help="""Endpoint for your Azure OpenAI Service (https://xx.openai.azure.com).\n            In that case, the given model is the deployment name chosen in the Azure AI Studio.""",\n    ),\n    use_custom_preprompts: bool = typer.Option(\n        False,\n        "--use-custom-preprompts",\n        help="""Use your project\'s custom preprompts instead of the default ones.\n          Copies all original preprompts to the project\'s workspace if they don\'t exist there.""",\n    ),\n    ai_cache: bool = typer.Option(\n        False,\n        "--cache",\n        "-c",\n        help="Caches AI responses.",\n    ),\n    use_git: bool = typer.Option(\n        False,\n        "--git",\n        "-g",\n        help="Project uses git. Commit changes to keep track and easy changes detection.",\n    ),\n    prompt_file: str = typer.Option(\n        False,\n        "--prompt",\n        "-pf",\n        help="Use this prompt. This will replace workspce\'s prompt with file contents.",\n    ),\n    verbose: bool = typer.Option(False, "--verbose", "-v"),\n    prompt: bool = typer.Option(False, "--prompt-text", "-p", help="Custom prompt text."),\n    file_selector: bool = typer.Option(\n        False, "--file-selector", "-f", help="Force the request of files affected."\n    ),\n    api: bool = typer.Option(\n        False, "--api", help="Run Flask API."\n    ),\n):\n    if api:\n        flask_app.run(debug=True)\n    else:\n        gtp_engineer(\n            project_path=project_path,\n            model=model,\n            temperature=temperature,\n            steps_config=steps_config,\n            improve_mode=improve_mode,\n            lite_mode=lite_mode,\n            azure_endpoint=azure_endpoint,\n            use_custom_preprompts=use_custom_preprompts,\n            ai_cache=ai_cache,\n            use_git=use_git,\n            prompt_file=prompt_file,\n            verbose=verbose,\n            prompt=prompt,\n            file_selector=file_selector,\n        )\n\n\nif __name__ == "__main__":\n    while True:\n        try:\n            app()\n        except KeyboardInterrupt:\n            break\n        except Exception as ex:\n            logging.error("Error running gpt-engineer {}", ex)\n\n    ```\n    '
+content='Request: When running the api, use run_gtp_engineer and pass the cli parameters'
+[[AI]]
+PLANNING:
+The current implementation of the API does not use the `run_gtp_engineer` function to pass the CLI parameters. We need to modify the `run_api` function in `api/app.py` to call `run_gtp_engineer` instead of `gtp_engineer`. We also need to modify the `run_gtp_engineer` function to accept the parameters from the `run_api` function and pass them to the `gtp_engineer` function.
+
+OUTPUT:
+```python
+api/app.py
+<<<<<<< HEAD
+def run_api(
+    project_path,
+    model,
+    temperature,
+    steps_config,
+    improve_mode,
+    lite_mode,
+    azure_endpoint,
+    use_custom_preprompts,
+    ai_cache,
+    use_git,
+    prompt_file,
+    verbose,
+    prompt,
+):
+    app_config.update(
+        project_path=project_path,
+        model=model,
+        temperature=temperature,
+        steps_config=steps_config,
+        improve_mode=improve_mode,
+        lite_mode=lite_mode,
+        azure_endpoint=azure_endpoint,
+        use_custom_preprompts=use_custom_preprompts,
+        ai_cache=ai_cache,
+        use_git=use_git,
+        prompt_file=prompt_file,
+        verbose=verbose,
+        prompt=prompt,
+    )
+    app.run(debug=True)
+=======
+def run_api():
+    app.run(debug=True)
+>>>>>>> updated
+```
+
+```python
+api/app.py
+<<<<<<< HEAD
+@app.route("/gtp_engineer", methods=["POST"])
+def run_gtp_engineer():
+    try:
+        data = request.get_json()
+        gtp_engineer(
+            project_path=data.get("project_path"),
+            model=data.get("model"),
+            temperature=data.get("temperature"),
+            steps_config=data.get("steps_config"),
+            improve_mode=data.get("improve_mode"),
+            lite_mode=data.get("lite_mode"),
+            azure_endpoint=data.get("azure_endpoint"),
+            use_custom_preprompts=data.get("use_custom_preprompts"),
+            ai_cache=data.get("ai_cache"),
+            use_git=data.get("use_git"),
+            prompt_file=data.get("prompt_file"),
+            verbose=data.get("verbose"),
+            prompt=data.get("prompt"),
+        )
+        return jsonify({"message": "Operation completed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+=======
+@app.route("/gtp_engineer", methods=["POST"])
+def run_gtp_engineer():
+    try:
+        data = request.get_json()
+        run_gtp_engineer(
+            project_path=data.get("project_path"),
+            model=data.get("model"),
+            temperature=data.get("temperature"),
+            steps_config=data.get("steps_config"),
+            improve_mode=data.get("improve_mode"),
+            lite_mode=data.get("lite_mode"),
+            azure_endpoint=data.get("azure_endpoint"),
+            use_custom_preprompts=data.get("use_custom_preprompts"),
+            ai_cache=data.get("ai_cache"),
+            use_git=data.get("use_git"),
+            prompt_file=data.get("prompt_file"),
+            verbose=data.get("verbose"),
+            prompt=data.get("prompt"),
+        )
+        return jsonify({"message": "Operation completed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+>>>>>>> updated
+```

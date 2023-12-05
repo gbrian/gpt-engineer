@@ -20,7 +20,7 @@ ENV/
 venv_test_installation/
 
 # IDE-specific files
-.vscode/
+# .vscode/ -- adding conf to help others running the project
 .idea/
 
 # Compiled Python modules

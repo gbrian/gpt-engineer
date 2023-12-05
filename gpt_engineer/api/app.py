@@ -1,7 +1,37 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from gpt_engineer.core import gtp_engineer
 
 app = Flask(__name__)
+app_config = {}
+
+
+def run_api(
+    project_path,
+    model,
+    temperature,
+    steps_config,
+    improve_mode,
+    lite_mode,
+    azure_endpoint,
+    use_custom_preprompts,
+    ai_cache,
+    use_git,
+    verbose
+):
+    app_config.update(
+        project_path=project_path,
+        model=model,
+        temperature=temperature,
+        steps_config=steps_config,
+        improve_mode=improve_mode,
+        lite_mode=lite_mode,
+        azure_endpoint=azure_endpoint,
+        use_custom_preprompts=use_custom_preprompts,
+        ai_cache=ai_cache,
+        use_git=use_git,
+        verbose=verbose,
+    )
+    app.run(debug=True)
 
 
 @app.route("/gtp_engineer", methods=["POST"])
@@ -26,7 +56,3 @@ def run_gtp_engineer():
         return jsonify({"message": "Operation completed successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-if __name__ == "__main__":
-    app.run(debug=True)

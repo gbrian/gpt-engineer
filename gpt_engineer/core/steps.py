@@ -717,6 +717,21 @@ def self_heal(ai: AI, dbs: DBs):
 
     return messages
 
+def process_prompt_and_extract_files(ai: AI, dbs: DBs):
+    """
+    Process the prompt and extract file aliases following the pattern '@file_name_regex'.
+    Find the file or files through the workspace files and replace the original prompt with their names.
+    Use these file paths for initializing metadata_db[FILE_LIST_NAME].
+    """
+    prompt = dbs.input.get("prompt")
+    file_aliases = re.findall(r'@(\w+)', prompt)
+    if len(file_aliases):
+        for alias in file_aliases:
+            file_path = next((f for f in dbs.workspace.files if f.endswith(alias)), None)
+            if file_path:
+                prompt = prompt.replace(f'@{alias}', file_path)
+                dbs.project_metadata[FILE_LIST_NAME].append(file_path)
+        dbs.input["prompt"] = prompt
 
 class Config(str, Enum):
     """

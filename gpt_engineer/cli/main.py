@@ -38,6 +38,7 @@ from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
 from gpt_engineer.core.steps import STEPS, Config as StepsConfig
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
+from gpt_engineer.api.app import run_api
 
 from gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE
 
@@ -100,24 +101,48 @@ def main(
     file_selector: bool = typer.Option(
         False, "--file-selector", "-f", help="Force the request of files affected."
     ),
+    api: bool = typer.Option(
+        False, "--api", help="Run Flask API."
+    ),
 ):
-    gtp_engineer(
-        project_path=project_path,
-        model=model,
-        temperature=temperature,
-        steps_config=steps_config,
-        improve_mode=improve_mode,
-        lite_mode=lite_mode,
-        azure_endpoint=azure_endpoint,
-        use_custom_preprompts=use_custom_preprompts,
-        ai_cache=ai_cache,
-        use_git=use_git,
-        prompt_file=prompt_file,
-        verbose=verbose,
-        prompt=prompt,
-        file_selector=file_selector,
-    )
+    if api:
+        run_api(
+            project_path,
+            model,
+            temperature,
+            steps_config,
+            improve_mode,
+            lite_mode,
+            azure_endpoint,
+            use_custom_preprompts,
+            ai_cache,
+            use_git,
+            verbose
+        )
+    else:
+        gtp_engineer(
+            project_path=project_path,
+            model=model,
+            temperature=temperature,
+            steps_config=steps_config,
+            improve_mode=improve_mode,
+            lite_mode=lite_mode,
+            azure_endpoint=azure_endpoint,
+            use_custom_preprompts=use_custom_preprompts,
+            ai_cache=ai_cache,
+            use_git=use_git,
+            prompt_file=prompt_file,
+            verbose=verbose,
+            prompt=prompt,
+            file_selector=file_selector,
+        )
 
 
 if __name__ == "__main__":
-    app()
+    while True:
+        try:
+            app()
+        except KeyboardInterrupt:
+            break
+        except Exception as ex:
+            logging.error(f"Error running gpt-engineer {ex}")

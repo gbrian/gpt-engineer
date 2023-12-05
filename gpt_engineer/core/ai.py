@@ -254,7 +254,11 @@ class AI:
         str
             The serialized messages as a JSON string.
         """
-        return json.dumps(messages_to_dict(messages))
+        try:
+            return json.dumps(messages_to_dict(messages))
+        except Exception as ex:
+            logger.error(f"serialize_messages error: {messages} {ex}")
+            raise ex
 
     @staticmethod
     def deserialize_messages(jsondictstr: str) -> List[Message]:

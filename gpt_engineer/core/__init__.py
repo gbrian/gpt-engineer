@@ -29,6 +29,8 @@ from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.cli.file_selector import clear_selected_files_list
 
+from gpt_engineer.settings import GPT_ENGINEER_METADATA_PATH
+
 
 def load_prompt(dbs: DBs):
     if dbs.input.get("prompt"):
@@ -115,29 +117,34 @@ def gtp_engineer(
     workspace_path = path
     input_path = path
 
-    if os.path.isfile(prompt_file):
-        logging.info("Copying custom prompt %s" % prompt_file)
-        shutil.copyfile(prompt_file, "%s/prompt" % path)
-    elif prompt:
-        logging.info("Reading prompt from command line")
-        user_prompt = input("Enter the new prompt: ")
-        logging.info("Saving custom prompt text")
-        with open("%s/prompt" % path, "a") as f:
-            f.write("\n[[PROMPT]]\n" + user_prompt)
+    project_metadata_path = path 
+    if GPT_ENGINEER_METADATA_PATH:
+        project_metadata_path = Path(GPT_ENGINEER_METADATA_PATH).absolute()
 
-    project_metadata_path = path / ".gpteng"
+    project_metadata_path = project_metadata_path / ".gpteng"
     memory_path = project_metadata_path / "memory"
     archive_path = project_metadata_path / "archive"
+    prompt_path = project_metadata_path
 
     dbs = DBs(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
-        input=DBPrompt(input_path),
+        input=DBPrompt(prompt_path),
         workspace=DB(workspace_path),
         preprompts=DB(preprompts_path(use_custom_preprompts, input_path)),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
     )
+
+    if os.path.isfile(prompt_file):
+        logging.info("Copying custom prompt %s" % prompt_file)
+        shutil.copyfile(prompt_file, "%s/prompt" % prompt_path)
+    elif prompt:
+        logging.info("Reading prompt from command line")
+        user_prompt = input("Enter the new prompt: ")
+        logging.info("Saving custom prompt text")
+        with open("%s/prompt" % prompt_path, "a") as f:
+            f.write("\n[[PROMPT]]\n" + user_prompt)
 
     if file_selector:
         clear_selected_files_list(dbs.project_metadata)
