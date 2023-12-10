@@ -28,6 +28,7 @@ Notes:
 import logging
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
 import typer
@@ -104,6 +105,12 @@ def main(
     api: bool = typer.Option(
         False, "--api", help="Run Flask API."
     ),
+    test: str = typer.Option(
+        "",
+        "--test",
+        "-t",
+        help="Script file or command to execute after all steps. If the test exits with non-zero code run all over again.",
+    ),
 ):
     if api:
         run_api(
@@ -117,25 +124,43 @@ def main(
             use_custom_preprompts,
             ai_cache,
             use_git,
-            verbose
+            verbose,
+            test
         )
     else:
-        gtp_engineer(
-            project_path=project_path,
-            model=model,
-            temperature=temperature,
-            steps_config=steps_config,
-            improve_mode=improve_mode,
-            lite_mode=lite_mode,
-            azure_endpoint=azure_endpoint,
-            use_custom_preprompts=use_custom_preprompts,
-            ai_cache=ai_cache,
-            use_git=use_git,
-            prompt_file=prompt_file,
-            verbose=verbose,
-            prompt=prompt,
-            file_selector=file_selector,
-        )
+        while True:
+            gtp_engineer(
+                project_path=project_path,
+                model=model,
+                temperature=temperature,
+                steps_config=steps_config,
+                improve_mode=improve_mode,
+                lite_mode=lite_mode,
+                azure_endpoint=azure_endpoint,
+                use_custom_preprompts=use_custom_preprompts,
+                ai_cache=ai_cache,
+                use_git=use_git,
+                prompt_file=prompt_file,
+                verbose=verbose,
+                prompt=prompt,
+                file_selector=file_selector,
+            )
+
+            if test:
+                print("Starting test execution...")
+                if os.path.isfile(test):
+                    result = subprocess.run(test, shell=True, capture_output=True)
+                else:
+                    result = subprocess.run(test, shell=True, capture_output=True, executable="/bin/bash")
+                print("Test stdout:\n", result.stdout.decode())
+                print("Test stderr:\n", result.stderr.decode())
+                if result.returncode == 0:
+                    print("Test execution passed.")
+                    break
+                else:
+                    print("Test execution failed.")
+            else:
+                break
 
 
 if __name__ == "__main__":
@@ -145,4 +170,4 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             break
         except Exception as ex:
-            logging.error(f"Error running gpt-engineer {ex}")
+            print(f"Error running gpt-engineer {ex}")
