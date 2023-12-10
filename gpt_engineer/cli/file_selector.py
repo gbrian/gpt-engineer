@@ -41,8 +41,6 @@ Note:
 import os
 import re
 import sys
-import tkinter as tk
-import tkinter.filedialog as fd
 import logging
 
 from pathlib import Path
@@ -405,6 +403,9 @@ def ask_for_files(metadata_db: DB, workspace_db: DB) -> None:
 
 
 def gui_file_selector(input_path: str) -> List[str]:
+    import tkinter as tk
+    import tkinter.filedialog as fd
+
     """
     Display a tkinter file selection window to select context files.
     """
