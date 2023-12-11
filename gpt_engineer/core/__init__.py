@@ -141,10 +141,11 @@ def gtp_engineer(
         shutil.copyfile(prompt_file, "%s/prompt" % prompt_path)
     elif prompt:
         logging.info("Reading prompt from command line")
-        user_prompt = input("Enter the new prompt: ")
-        logging.info("Saving custom prompt text")
-        with open("%s/prompt" % prompt_path, "a") as f:
-            f.write("\n[[PROMPT]]\n" + user_prompt)
+        user_prompt = input("Override prompt (Optional): ")
+        if len(user_prompt) != 0:
+          logging.info("Saving custom prompt text")
+          with open("%s/prompt" % prompt_path, "a") as f:
+              f.write("\n[[PROMPT]]\n" + user_prompt)
 
     if file_selector:
         clear_selected_files_list(dbs.project_metadata)
