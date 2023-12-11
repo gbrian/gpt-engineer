@@ -21,13 +21,13 @@ def test_knowledge_chat():
     assert answer is not None
 
 def test_knowledge_loader():
-    repo_path = 'tests/data'
+    path = 'tests/data'
     parser = 'parser'
-    loader = KnowledgeLoader(repo_path, '**/*.py', ['.py'], parser)
+    loader = KnowledgeLoader(path, '**/*.py', ['.py'], parser)
     documents = loader.load()
     assert isinstance(loader, KnowledgeLoader)
     assert isinstance(documents, list)
-    assert len(documents) == len(glob.glob(os.path.join(repo_path, '**/*.py'), recursive=True))
+    assert len(documents) == len(glob.glob(os.path.join(path, '**/*.py'), recursive=True))
 
 def test_knowledge_retriever():
     db = Chroma.from_documents([TEST_DOCUMENT], OpenAIEmbeddings(disallowed_special=()))
