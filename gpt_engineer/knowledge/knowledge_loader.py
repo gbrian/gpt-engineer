@@ -1,12 +1,12 @@
-import glob
-import os
+from langchain.document_loaders.generic import GenericLoader
+from langchain.document_loaders.parsers import LanguageParser
 
 class KnowledgeLoader:
-    def __init__(self, repo_path, glob, suffixes, parser):
+    def __init__(self, repo_path, glob, suffixes, language):
         self.repo_path = repo_path
         self.glob = glob
         self.suffixes = suffixes
-        self.parser = parser
+        self.language = language
 
     @classmethod
     def from_filesystem(cls, repo_path, glob, suffixes, parser):
@@ -14,8 +14,10 @@ class KnowledgeLoader:
 
     def load(self):
         # Load the knowledge from the filesystem
-        documents = []
-        for filename in glob.glob(os.path.join(self.repo_path, self.glob), recursive=True):
-            with open(filename, 'r') as file:
-                documents.append(file.read())
-        return documents
+        loader = GenericLoader.from_filesystem(
+            self.repo_path,
+            glob=self.glob,
+            suffixes=self.suffixes,
+            parser=LanguageParser(language=self.language, parser_threshold=500),
+        )
+        return loader.load()
