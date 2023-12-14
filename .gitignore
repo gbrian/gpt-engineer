@@ -82,4 +82,4 @@ poetry.lock
 .aider*
 .gpteng
 .vscode/settings.json
-tests/data/db
+tests/knowledge/db
