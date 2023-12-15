@@ -42,9 +42,11 @@ import os
 import re
 import sys
 import logging
+import re
 
 from pathlib import Path
 from typing import List, Union
+from gpt_engineer.settings import VALID_FILE_EXTENSIONS
 
 from gpt_engineer.core.db import DB, DBs
 
@@ -53,6 +55,11 @@ FILE_LIST_NAME = "file_list.txt"
 
 
 IS_NUM = re.compile(r"^[0-9]+$")
+
+OPTION_GUI = 1
+OPTION_CLI = 2
+OPTION_FIND_IN_FILES = 3
+OPTION_USE_PREVIOUS = 4
 
 
 class DisplayablePath(object):
@@ -324,6 +331,21 @@ class TerminalFileSelector:
 
         return selected_paths
 
+    def find_in_files(self, search_input: str = None):
+      search_input = search_input or input("Enter the regular expression to search for: ")
+      logging.info("Search for %s", search_input)
+      matched_files = []
+      pattern = re.compile(search_input)
+
+      selected_paths = []
+      for path in [path for path in self.db_paths if not path.path.is_dir()]:
+          with open(str(path.path), 'r') as file:
+              content = file.read()
+              if pattern.search(content):
+                  selected_paths.append(path.path)
+      logging.info("Found %s", selected_paths)
+      return selected_paths
+
 
 def is_in_ignoring_extensions(path: Path) -> bool:
     """
@@ -335,6 +357,9 @@ def is_in_ignoring_extensions(path: Path) -> bool:
     Returns:
         bool: True if the path is not in ignored rules. False otherwise.
     """
+    if path.is_file():
+        return path.suffix in VALID_FILE_EXTENSIONS
+
     is_hidden = not path.name.startswith(".")
     is_pycache = "__pycache__" not in path.name
     return is_hidden and is_pycache
@@ -356,51 +381,60 @@ def ask_for_files(metadata_db: DB, workspace_db: DB) -> None:
     use_last_string = ""
     if FILE_LIST_NAME in metadata_db and metadata_db[FILE_LIST_NAME] != "":
         use_last_string = (
-            "3. Use previous file list (available at "
+            "4. Use previous file list (available at "
             + f"{os.path.join(metadata_db.path, FILE_LIST_NAME)})\n"
         )
-        selection_number = 3
+        selection_number = OPTION_USE_PREVIOUS
     else:
-        selection_number = 1
+        selection_number = OPTION_GUI
+  
     selection_str = "\n".join(
         [
             "How do you want to select the files?",
             "",
-            "1. Use File explorer.",
-            "2. Use Command-Line.",
+            f"{OPTION_GUI}. Use File explorer.",
+            f"{OPTION_CLI}. Use Command-Line.",
+            f"{OPTION_FIND_IN_FILES}. Find in files.",
             use_last_string if len(use_last_string) > 1 else "",
             f"Select option and press Enter (default={selection_number}): ",
         ]
     )
 
     file_path_list = []
-    selected_number_str = input(selection_str)
-    if selected_number_str:
+    selected_option_str = input(selection_str)
+    if selected_option_str:
         try:
-            selection_number = int(selected_number_str)
+            selection_number = int(selected_option_str)
         except ValueError:
             print("Invalid number. Select a number from the list above.\n")
             sys.exit(1)
 
-    if selection_number == 1:
+    if selection_number == OPTION_GUI:
         # Open GUI selection
         file_path_list = gui_file_selector(workspace_db.path)
-    elif selection_number == 2:
+    elif selection_number == OPTION_CLI:
         # Open terminal selection
         file_path_list = terminal_file_selector(workspace_db.path)
+    elif selection_number == OPTION_FIND_IN_FILES:
+        # Open terminal selection
+        file_path_list = terminal_find_in_files(workspace_db.path)
+    elif selection_number == OPTION_USE_PREVIOUS and use_last_string:
+      return True
+
     if (
-        selection_number <= 0
-        or selection_number > 3
-        or (selection_number == 3 and not use_last_string)
+        selection_number < OPTION_GUI
+        or selection_number > OPTION_USE_PREVIOUS
+        or (selection_number == OPTION_USE_PREVIOUS and not use_last_string)
     ):
         print("Invalid number. Select a number from the list above.\n")
         sys.exit(1)
 
-    if not selection_number == 3:
+    if not selection_number == OPTION_USE_PREVIOUS:
         metadata_db[FILE_LIST_NAME] = "\n".join(
             str(file_path) for file_path in file_path_list
         )
 
+    return True if len(file_path_list) else False
 
 def gui_file_selector(input_path: str) -> List[str]:
     import tkinter as tk
@@ -428,3 +462,7 @@ def terminal_file_selector(input_path: str) -> List[str]:
     file_selector = TerminalFileSelector(Path(input_path))
     file_selector.display()
     return file_selector.ask_for_selection()
+
+def terminal_find_in_files(input_path: str) -> List[str]:
+    file_selector = TerminalFileSelector(Path(input_path))
+    return file_selector.find_in_files()

@@ -18,6 +18,12 @@ TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
 KNOWLEDGE_PATH = f"{GPT_ENGINEER_METADATA_PATH}/knowledge"
 
+VALID_FILE_EXTENSIONS = [
+    ".py", ".java", ".js", ".c", ".cpp", ".cs", ".go", ".rb", ".php", ".swift", ".kt", ".rs", ".sh", ".r", ".pl", ".scala", ".ts",
+    ".md", ".txt", ".html", ".css", ".xml", ".json", ".yml", ".csv", ".sql", ".bat", ".ps1", ".vbs", ".log", ".ini", ".conf", ".cfg",
+    ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"
+]
+
 ## INITIALIZE
 openai.api_key = OPENAI_API_KEY
 

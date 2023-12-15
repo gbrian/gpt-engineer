@@ -480,7 +480,8 @@ def set_improve_filelist(ai: AI, dbs: DBs):
       and they aren't directly returned by this function.
     """
     """Sets the file list for files to work with in existing code mode."""
-    ask_for_files(dbs.project_metadata, dbs.workspace)  # stores files as full paths.
+    while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
+      print(("Sorry, no files found matching your criteria"))
     return []
 
 
