@@ -1,0 +1,46 @@
+[
+    {
+        "question": "What is the purpose of the AI class in the ai.py file?",
+        "answer": "ai.py\nThe AI class provides an interface to interact with a language model for chat-based interactions. It handles token counting, message creation, serialization and deserialization of chat messages, and interfaces with the language model to get AI-generated responses."
+    },
+    {
+        "question": "What does the parse_chat function do in the chat_to_files.py file?",
+        "answer": "chat_to_files.py\nThe parse_chat function extracts all code blocks from a chat and returns them as a list of (filename, codeblock) tuples."
+    },
+    {
+        "question": "What is the DB class in the db.py file used for?",
+        "answer": "db.py\nThe DB class represents a simple database that stores its data as files in a directory. It provides an interface to a file-based database, leveraging file operations to facilitate CRUD-like interactions."
+    },
+    {
+        "question": "What does the to_files_and_memory function do in the chat_to_files.py file?",
+        "answer": "chat_to_files.py\nThe to_files_and_memory function saves chat to memory, and parses chat to extracted file and saves them to the workspace."
+    },
+    {
+        "question": "What does the archive function do in the db.py file?",
+        "answer": "db.py\nThe archive function archives the memory and workspace databases."
+    },
+    {
+        "question": "What is the purpose of the `parse_chat` function in the `chat_to_files.py` file?",
+        "answer": "The `parse_chat` function in the `chat_to_files.py` file is used to extract all code blocks from a chat and returns them as a list of (filename, codeblock) tuples.\n\n```python\ntests/knowledge/gpt_engineer_code/chat_to_files.py\n<<<<<<< HEAD\n    def parse_chat(chat) -> List[Tuple[str, str]]:\n        ...\n        return files\n\n```"
+    },
+    {
+        "question": "What does the `DB` class in the `db.py` file do?",
+        "answer": "The `DB` class in the `db.py` file represents a simple file-based key-value store where keys correspond to filenames and values to file contents. It provides an interface to a file-based database, leveraging file operations to facilitate CRUD-like interactions.\n\n```python\ntests/knowledge/gpt_engineer_code/db.py\n<<<<<<< HEAD\n    class DB:\n        ...\n    def __init__(self, path: Union[str, Path]):\n        ...\n    def __contains__(self, key: str) -> bool:\n        ...\n    def __getitem__(self, key: str) -> str:\n        ...\n    def get(self, key: str, default: Optional[Any] = None) -> Any:\n        ...\n    def __setitem__(self, key: Union[str, Path], val: str) -> None:\n        ...\n    def __delitem__(self, key: Union[str, Path]) -> None:\n        ...\n\n```"
+    },
+    {
+        "question": "What happens when the `archive` function in the `db.py` file is called?",
+        "answer": "The `archive` function in the `db.py` file archives the memory and workspace databases. It moves their contents to the archive database with a timestamp.\n\n```python\ntests/knowledge/gpt_engineer_code/db.py\n<<<<<<< HEAD\n    def archive(dbs: DBs) -> None:\n        ...\n        return []\n\n```"
+    },
+    {
+      "question": "What is the purpose of the `parse_chat` function in the `chat_to_files.py` file?",
+      "answer": "The `parse_chat` function in the `chat_to_files.py` file is used to extract all code blocks from a chat and returns them as a list of (filename, codeblock) tuples.\n\n```python\ntests/knowledge/gpt_engineer_code/chat_to_files.py\n<<<<<<< HEAD\n    def parse_chat(chat) -> List[Tuple[str, str]]:\n        ...\n        return files\n>>>>>>> updated\n```"
+  },
+  {
+      "question": "What does the `DB` class in the `db.py` file do?",
+      "answer": "The `DB` class in the `db.py` file represents a simple file-based key-value store where keys correspond to filenames and values to file contents. It provides an interface to a file-based database, leveraging file operations to facilitate CRUD-like interactions.\n\n```python\ntests/knowledge/gpt_engineer_code/db.py\n<<<<<<< HEAD\n    class DB:\n        ...\n    def __init__(self, path: Union[str, Path]):\n        ...\n    def __contains__(self, key: str) -> bool:\n        ...\n    def __getitem__(self, key: str) -> str:\n        ...\n    def get(self, key: str, default: Optional[Any] = None) -> Any:\n        ...\n    def __setitem__(self, key: Union[str, Path], val: str) -> None:\n        ...\n    def __delitem__(self, key: Union[str, Path]) -> None:\n        ...\n>>>>>>> updated\n```"
+  },
+  {
+      "question": "What happens when the `archive` function in the `db.py` file is called?",
+      "answer": "The `archive` function in the `db.py` file archives the memory and workspace databases. It moves their contents to the archive database with a timestamp.\n\n```python\ntests/knowledge/gpt_engineer_code/db.py\n<<<<<<< HEAD\n    def archive(dbs: DBs) -> None:\n        ...\n        return []\n>>>>>>> updated\n```"
+  }
+]
