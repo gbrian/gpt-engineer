@@ -7,7 +7,6 @@ class KnowledgeSplitter:
     def __init__(self, language, chunk_size, chunk_overlap):
         logger.debug('Initializing KnowledgeSplitter')
         self.language = language
-        logger.debug(f'Path: {self.path}')
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         logger.debug('KnowledgeSplitter initialized')

@@ -42,18 +42,17 @@ def load_prompt(dbs: DBs):
     return dbs.input.get("prompt")
 
 
-def preprompts_path(use_custom_preprompts: bool, input_path: Path = None) -> Path:
+def preprompts_path(input_path: Path = None) -> Path:
     original_preprompts_path = Path(__file__).parent.parent / "preprompts"
-    if not use_custom_preprompts:
-        return original_preprompts_path
-
     custom_preprompts_path = input_path / "preprompts"
     if not custom_preprompts_path.exists():
-        custom_preprompts_path.mkdir()
+        return original_preprompts_path
 
     for file in original_preprompts_path.glob("*"):
         if not (custom_preprompts_path / file.name).exists():
             (custom_preprompts_path / file.name).write_text(file.read_text())
+        else:
+          logging.info("Using local prepromt %s", file.name)
     return custom_preprompts_path
 
 
@@ -65,7 +64,6 @@ def gtp_engineer(
     improve_mode: bool,
     lite_mode: bool,
     azure_endpoint: str,
-    use_custom_preprompts: bool,
     ai_cache: bool,
     use_git: bool,
     prompt_file: str,
@@ -86,7 +84,6 @@ def gtp_engineer(
                 "improve_mode": improve_mode,
                 "lite_mode": lite_mode,
                 "azure_endpoint": azure_endpoint,
-                "use_custom_preprompts": use_custom_preprompts,
                 "ai_cache": ai_cache,
                 "use_git": use_git,
                 "prompt_file": prompt_file,
@@ -131,7 +128,7 @@ def gtp_engineer(
         logs=DB(memory_path / "logs"),
         input=DBPrompt(prompt_path),
         workspace=DB(workspace_path),
-        preprompts=DB(preprompts_path(use_custom_preprompts, input_path)),
+        preprompts=DB(preprompts_path(input_path)),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
     )

@@ -73,12 +73,6 @@ def main(
         help="""Endpoint for your Azure OpenAI Service (https://xx.openai.azure.com).
             In that case, the given model is the deployment name chosen in the Azure AI Studio.""",
     ),
-    use_custom_preprompts: bool = typer.Option(
-        False,
-        "--use-custom-preprompts",
-        help="""Use your project's custom preprompts instead of the default ones.
-          Copies all original preprompts to the project's workspace if they don't exist there.""",
-    ),
     ai_cache: bool = typer.Option(
         False,
         "--cache",
@@ -121,7 +115,6 @@ def main(
             improve_mode,
             lite_mode,
             azure_endpoint,
-            use_custom_preprompts,
             ai_cache,
             use_git,
             verbose,
@@ -137,7 +130,6 @@ def main(
                 improve_mode=improve_mode,
                 lite_mode=lite_mode,
                 azure_endpoint=azure_endpoint,
-                use_custom_preprompts=use_custom_preprompts,
                 ai_cache=ai_cache,
                 use_git=use_git,
                 prompt_file=prompt_file,

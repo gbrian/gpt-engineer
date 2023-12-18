@@ -1,6 +1,7 @@
 import os
 import logging
 import openai
+import importlib.util
 
 from dotenv import load_dotenv
 
@@ -24,6 +25,24 @@ VALID_FILE_EXTENSIONS = [
     ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"
 ]
 
+#################################################
+## User override
+## Try to import settings from 
+## .gteng/settings.py in the working directory
+#################################################
+settings_overrided = []
+try:
+    spec = importlib.util.spec_from_file_location("local_settings", ".gpteng/settings.py")
+    local_settings = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(local_settings)
+    # Update global settings with local settings
+    for key, value in local_settings.__dict__.items():
+        if key.isupper():
+            globals()[key] = value
+            settings_overrided.append(key)
+except FileNotFoundError:
+    pass
+
 ## INITIALIZE
 openai.api_key = OPENAI_API_KEY
 
@@ -38,3 +57,5 @@ logger.info(f'Model: {MODEL}')
 logger.info(f'Temperature: {TEMPERATURE}')
 logger.info(f'GPT Engineer Metadata Path: {GPT_ENGINEER_METADATA_PATH}')
 logger.info(f'Knowledge Path: {KNOWLEDGE_PATH}')
+
+logger.info(f"Settings overrided: {settings_overrided}")
