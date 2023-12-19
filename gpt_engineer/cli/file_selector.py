@@ -348,7 +348,7 @@ class TerminalFileSelector:
             search_by_path = False
             search_input = search_input[2:]
 
-          pattern = re.compile(search_input)
+          pattern = re.compile(search_input, re.IGNORECASE)
 
           path_matches = []
           for path in [path for path in all_paths if path not in selected_paths]:
