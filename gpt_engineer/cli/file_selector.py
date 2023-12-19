@@ -331,21 +331,51 @@ class TerminalFileSelector:
 
         return selected_paths
 
-    def find_in_files(self, search_input: str = None):
-      search_input = search_input or input("Enter the regular expression to search for: ")
-      logging.info("Search for %s", search_input)
-      matched_files = []
-      pattern = re.compile(search_input)
+    def find_in_files(self):
+        selected_paths = []
+        all_paths = [path for path in self.db_paths if not path.path.is_dir()]
+        while True:
+          if len(selected_paths) != 0:
+            print("Selected files:")
+            print("\n".join(f"{i + 1}. {path}" for i, path in enumerate(selected_paths)))
+          search_input = input("Search expression (Use @: prefix to search by content): ")
+          if not search_input:
+            logging.info("Found %s", selected_paths)
+            return selected_paths
 
-      selected_paths = []
-      for path in [path for path in self.db_paths if not path.path.is_dir()]:
-          with open(str(path.path), 'r') as file:
-              content = file.read()
-              if pattern.search(content):
-                  selected_paths.append(path.path)
-      logging.info("Found %s", selected_paths)
-      return selected_paths
+          search_by_path = True
+          if search_input.startswith("@:"):
+            search_by_path = False
+            search_input = search_input[2:]
 
+          pattern = re.compile(search_input)
+
+          path_matches = []
+          for path in [path for path in all_paths if path not in selected_paths]:
+              if search_by_path:
+                if pattern.search(str(path.path)):
+                    path_matches.append(path.path)
+              else:
+                with open(str(path.path), 'r') as file:
+                    content = file.read()
+                    if pattern.search(content):
+                        path_matches.append(path.path)
+      
+
+          if path_matches:
+              print(f"{len(path_matches)} Matches for: {search_input} using content: {not search_by_path}")
+              print("\n".join(f"{i + 1}. {path}" for i, path in enumerate(path_matches)))
+              user_input = input(
+                "Select files by entering the numbers separated by commas/spaces or specify range with a dash.\n"
+                + "Example: 1,2,3-5,7,9,13-15,18,20 or enter 'all' to select everything.\n"
+                + "Press '0' to cancel and ask again.\n\nSelect files (default: all):")
+              
+              if len(user_input) == 0 or user_input.lower() == 'all':
+                  selected_paths = selected_paths + path_matches
+              else:
+                  selected_paths = selected_paths + [path_matches[int(i)-1] for i in user_input.split(',') if int(i) > 0]
+          else:
+            print(f"{search_input} returned 0 matches")
 
 def is_in_ignoring_extensions(path: Path) -> bool:
     """
