@@ -42,9 +42,9 @@ def load_prompt(dbs: DBs):
     return dbs.input.get("prompt")
 
 
-def preprompts_path(input_path: Path = None) -> Path:
+def preprompts_path() -> Path:
     original_preprompts_path = Path(__file__).parent.parent / "preprompts"
-    custom_preprompts_path = input_path / "preprompts"
+    custom_preprompts_path = GPTENG_PATH / "preprompts"
     if not custom_preprompts_path.exists():
         return original_preprompts_path
 
@@ -127,7 +127,7 @@ def gtp_engineer(
         logs=DB(memory_path / "logs"),
         input=DBPrompt(prompt_path),
         workspace=DB(workspace_path),
-        preprompts=DB(preprompts_path(input_path)),
+        preprompts=DB(preprompts_path()),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
     )
