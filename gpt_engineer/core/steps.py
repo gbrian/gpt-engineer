@@ -602,16 +602,16 @@ def get_improve_prompt(ai: AI, dbs: DBs):
             "green",
           )
         )
+    input_text = "Write new prompt or Enter to continue:\n"
     if not dbs.input.get(PROMPT_FILE):
         input_text = "\nWhat do you need to improve?\n"
-        if curr_prompt:
-           input_text = "Write new prompt or Enter to continue:\n"
-        new_prompt = input(input_text)
-        if curr_prompt and not new_prompt:
-          new_prompt = curr_prompt
-        if not new_prompt:
-          raise "Prompt can not be empty."
-        dbs.input[PROMPT_FILE] = new_prompt 
+           
+    new_prompt = input(input_text)
+    if curr_prompt and not new_prompt:
+      new_prompt = curr_prompt
+    if not new_prompt:
+      raise "Prompt can not be empty."
+    dbs.input[PROMPT_FILE] = new_prompt 
     
     dbs.input.append(
         HISTORY_PROMPT_FILE, "\n[[PROPMT]]\n%s" % dbs.input[PROMPT_FILE]
