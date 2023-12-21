@@ -13,6 +13,7 @@ from typing import Iterable, Union
 from tabulate import tabulate
 from typer import run
 
+from gpt_engineer.settings import GPTENG_PATH
 
 def main(
     n_benchmarks: Union[int, None] = None,
@@ -83,7 +84,7 @@ def generate_report(benchmarks, benchmark_path):
     headers = ["Benchmark", "Ran", "Works", "Perfect", "Notes"]
     rows = []
     for bench_folder in benchmarks:
-        memory = bench_folder / ".gpteng" / "memory"
+        memory = GPTENG_PATH / "memory"
         with open(memory / "review") as f:
             review = json.loads(f.read())
             rows.append(

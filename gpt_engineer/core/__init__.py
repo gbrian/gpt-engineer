@@ -29,7 +29,7 @@ from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.cli.file_selector import clear_selected_files_list
 
-from gpt_engineer.settings import GPT_ENGINEER_METADATA_PATH, PROMPT_FILE
+from gpt_engineer.settings import GPTENG_PATH, PROMPT_FILE
 
 
 def load_prompt(dbs: DBs):
@@ -115,10 +115,9 @@ def gtp_engineer(
     input_path = path
 
     project_metadata_path = path 
-    if GPT_ENGINEER_METADATA_PATH:
-        project_metadata_path = Path(GPT_ENGINEER_METADATA_PATH).absolute()
+    if GPTENG_PATH:
+        project_metadata_path = Path(GPTENG_PATH).absolute()
 
-    project_metadata_path = project_metadata_path / ".gpteng"
     memory_path = project_metadata_path / "memory"
     archive_path = project_metadata_path / "archive"
     prompt_path = project_metadata_path

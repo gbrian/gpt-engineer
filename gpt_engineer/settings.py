@@ -21,6 +21,7 @@ TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
 
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
 KNOWLEDGE_PATH = f"{GPT_ENGINEER_METADATA_PATH}/knowledge"
+GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng"
 
 VALID_FILE_EXTENSIONS = [
     ".py", ".java", ".js", ".c", ".cpp", ".cs", ".go", ".rb", ".php", ".swift", ".kt", ".rs", ".sh", ".r", ".pl", ".scala", ".ts",
@@ -37,7 +38,7 @@ SERVER_WS = "ws://localhost:8765"  # Update this to your server's WebSocket addr
 #################################################
 settings_overrided = []
 try:
-    spec = importlib.util.spec_from_file_location("local_settings", ".gpteng/settings.py")
+    spec = importlib.util.spec_from_file_location("local_settings", f"{GPTENG_PATH}/settings.py")
     local_settings = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(local_settings)
     # Update global settings with local settings

@@ -4,7 +4,7 @@ import os
 from unittest.mock import MagicMock
 
 from gpt_engineer.core.db import DB, DBs, archive
-
+from gpt_engineer.settings import GPTENG_PATH
 
 def freeze_at(monkeypatch, time):
     datetime_mock = MagicMock(wraps=datetime.datetime)
@@ -23,7 +23,7 @@ def setup_dbs(tmp_path, dir_names):
 
 
 def test_archive(tmp_path, monkeypatch):
-    gpteng_dir = ".gpteng"
+    gpteng_dir = GPTENG_PATH
 
     dbs = setup_dbs(
         tmp_path,
