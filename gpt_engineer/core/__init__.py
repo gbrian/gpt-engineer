@@ -44,7 +44,7 @@ def load_prompt(dbs: DBs):
 
 def preprompts_path() -> Path:
     original_preprompts_path = Path(__file__).parent.parent / "preprompts"
-    custom_preprompts_path = GPTENG_PATH / "preprompts"
+    custom_preprompts_path = f"{GPTENG_PATH}/preprompts"
     if not custom_preprompts_path.exists():
         return original_preprompts_path
 
