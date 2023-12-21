@@ -12,14 +12,16 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 load_dotenv()
 
 PROMPT_FILE=os.getenv("PROMPT_FILE") or "prompt"
-HISTORY_PROMPT_FILE = os.getenv("HISTORY_PROMPT_FILE") or f"history.{PROMPT_FILE}"
+HISTORY_PROMPT_FILE = os.getenv("HISTORY_PROMPT_FILE")
+if not HISTORY_PROMPT_FILE:
+  HISTORY_PROMPT_FILE = f"history.{PROMPT_FILE}"
 
 # SETTINGS
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = os.getenv("MODEL") or "gpt-4"
 TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
 
-GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
+GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH") or "."
 KNOWLEDGE_PATH = f"{GPT_ENGINEER_METADATA_PATH}/knowledge"
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng"
 
@@ -61,7 +63,12 @@ logger.info(f'Working directory: {os.getcwd()}')
 logger.info(f'OpenAI API Key: {OPENAI_API_KEY}')
 logger.info(f'Model: {MODEL}')
 logger.info(f'Temperature: {TEMPERATURE}')
-logger.info(f'GPT Engineer Metadata Path: {GPT_ENGINEER_METADATA_PATH}')
+logger.info(f'GPT Engineer Metadata Path: {GPTENG_PATH}')
 logger.info(f'Knowledge Path: {KNOWLEDGE_PATH}')
+
+logger.info(f'Prompt file: {PROMPT_FILE}')
+logger.info(f'History prompt file: {PROMPT_FILE}')
+logger.info(f'Knowledge Path: {HISTORY_PROMPT_FILE}')
+
 
 logger.info(f"Settings overrided: {settings_overrided}")
