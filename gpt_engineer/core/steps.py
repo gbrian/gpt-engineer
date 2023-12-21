@@ -483,6 +483,24 @@ def set_improve_filelist(ai: AI, dbs: DBs):
       and they aren't directly returned by this function.
     """
     """Sets the file list for files to work with in existing code mode."""
+    file_list = dbs.project_metadata[FILE_LIST_NAME]
+    if file_list:
+      files_size = float(compute_files_size(dbs))
+      preview_str = "\n".join(
+          [
+              "-----------------------------",
+              "The following files will be used in the improvement process:",
+              f"{FILE_LIST_NAME}:",
+              colored(str(file_list), "green"),
+              "SIZE: %.2f K" % files_size,
+              "",
+              "The inserted prompt is the following:",
+              colored(f"{dbs.input[PROMPT_FILE]}", "green"),
+              "-----------------------------"
+          ]
+      )
+      print(preview_str)
+
     while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
       print(("Sorry, no files found matching your criteria"))
     
@@ -543,12 +561,12 @@ def assert_files_ready(ai: AI, dbs: DBs):
     assert (
         "file_list.txt" in dbs.project_metadata
     ), "For auto_mode file_list.txt need to be in your .gpteng folder."
-    assert "prompt" in dbs.input, "For auto_mode a prompt file must exist."
+    assert PROMPT_FILE in dbs.input, "For auto_mode a prompt file must exist."
     return []
 
 
 def compute_files_size(dbs: DBs):
-    return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)]) / 1000
+    return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
 
 
 def get_improve_prompt(ai: AI, dbs: DBs):
@@ -564,7 +582,7 @@ def get_improve_prompt(ai: AI, dbs: DBs):
             "green",
           )
         )
-    if not dbs.input.get("prompt"):
+    if not dbs.input.get(PROMPT_FILE):
         input_text = "\nWhat do you need to improve?\n"
         if curr_prompt:
            input_text = "Write new prompt or Enter to continue:\n"
@@ -574,7 +592,7 @@ def get_improve_prompt(ai: AI, dbs: DBs):
         if not new_prompt:
           raise "Prompt can not be empty."
         dbs.input[PROMPT_FILE] = new_prompt 
-
+    return []
 
 def get_file_info(dbs: DBs):
     files_info = get_code_strings(
@@ -627,16 +645,16 @@ def improve_existing_code(ai: AI, dbs: DBs):
     messages.append(HumanMessage(content=f"Request: {dbs.input[PROMPT_FILE]}"))
 
     dbs.input.append(
-        "prompt", "\n[[AI_PROPMT]]\n%s" % "\n".join([str(msg) for msg in messages])
+        PROMPT_FILE, "\n[[AI_PROPMT]]\n%s" % "\n".join([str(msg) for msg in messages])
     )
     messages = ai.next(messages, step_name=curr_fn())
 
     chat = messages[-1].content.strip()
-    dbs.input.append("prompt", "\n[[AI]]\n%s" % chat)
+    dbs.input.append(PROMPT_FILE, "\n[[AI]]\n%s" % chat)
     try:
         overwrite_files_with_edits(chat, dbs)
     except Exception as ex:
-        dbs.input.append("prompt", "\nERROR: %s" % str(ex))
+        dbs.input.append(PROMPT_FILE, "\nERROR: %s" % str(ex))
         logging.error(f"[improve_existing_code] error: {ex}")
 
     return messages
@@ -742,7 +760,7 @@ def process_prompt_and_extract_files(ai: AI, dbs: DBs):
     Find the file or files through the workspace files and replace the original prompt with their names.
     Use these file paths for initializing metadata_db[FILE_LIST_NAME].
     """
-    prompt = dbs.input.get("prompt")
+    prompt = dbs.input.get(PROMPT_FILE)
     file_aliases = re.findall(r'@(\w+)', prompt)
     if len(file_aliases):
         for alias in file_aliases:

@@ -30,6 +30,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+import traceback
 
 import typer
 
@@ -163,4 +164,4 @@ if __name__ == "__main__":
             break
         except Exception as ex:
             print(f"Error running gpt-engineer {ex}")
-            print(ex)
+            traceback.print_exception(ex)
