@@ -501,24 +501,26 @@ def set_improve_filelist(ai: AI, dbs: DBs):
       and they aren't directly returned by this function.
     """
     """Sets the file list for files to work with in existing code mode."""
-    file_list = dbs.project_metadata[FILE_LIST_NAME]
-    if file_list:
-      files_size = float(compute_files_size(dbs))
-      preview_str = "\n".join(
-          [
-              "-----------------------------",
-              "The following files will be used in the improvement process:",
-              f"{FILE_LIST_NAME}:",
-              colored(str(file_list), "green"),
-              "SIZE: %.2f K" % files_size,
-              "",
-              "The inserted prompt is the following:",
-              colored(f"{dbs.input[PROMPT_FILE]}", "green"),
-              "-----------------------------"
-          ]
-      )
-      print(preview_str)
-
+    try:
+      file_list = dbs.project_metadata[FILE_LIST_NAME]
+      if file_list:
+        files_size = float(compute_files_size(dbs))
+        preview_str = "\n".join(
+            [
+                "-----------------------------",
+                "The following files will be used in the improvement process:",
+                f"{FILE_LIST_NAME}:",
+                colored(str(file_list), "green"),
+                "SIZE: %.2f K" % files_size,
+                "",
+                "The inserted prompt is the following:",
+                colored(f"{dbs.input[PROMPT_FILE]}", "green"),
+                "-----------------------------"
+            ]
+        )
+        print(preview_str)
+    except:
+      pass
     while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
       print(("Sorry, no files found matching your criteria"))
     dbs.input.append(
