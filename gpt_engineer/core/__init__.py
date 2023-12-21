@@ -23,7 +23,7 @@ import openai
 
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
-from gpt_engineer.core.steps import STEPS, Config as StepsConfig
+from gpt_engineer.core.steps import run_steps, STEPS, Config as StepsConfig
 from gpt_engineer.core.summary import Summary
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
@@ -165,9 +165,7 @@ def gtp_engineer(
         load_prompt(dbs)
 
     steps = STEPS[steps_config]
-    for step in steps:
-        messages = step(ai, dbs)
-        dbs.logs[step.__name__] = AI.serialize_messages(messages)
+    run_steps(steps, ai, dbs)
 
     print("Total api cost: $ ", ai.token_usage_log.usage_cost())
 

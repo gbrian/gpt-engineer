@@ -12,6 +12,7 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 load_dotenv()
 
 PROMPT_FILE=os.getenv("PROMPT_FILE") or "prompt"
+HISTORY_PROMPT_FILE = os.getenv("HISTORY_PROMPT_FILE") or f"history.{PROMPT_FILE}"
 
 # SETTINGS
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

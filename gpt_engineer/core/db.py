@@ -211,7 +211,11 @@ class DBJSON(DB):
 
 class DBPrompt(DB):
     def __getitem__(self, key: str) -> object:
-        prompt = DB.__getitem__(self, key)
+        try:
+          prompt = DB.__getitem__(self, key)
+        except:
+          DB.__setitem__(self, key, "")
+          return ""
         return prompt.split("[[PROMPT]]\n")[-1]
 
     def append(self, key: str, content: str):

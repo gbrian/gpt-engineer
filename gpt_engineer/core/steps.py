@@ -51,6 +51,7 @@ import re
 import subprocess
 import os
 import logging
+import time
 
 from functools import reduce
 from enum import Enum
@@ -72,7 +73,8 @@ from gpt_engineer.core.db import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME, ask_for_files
 from gpt_engineer.cli.learning import human_review_input
 
-from gpt_engineer.settings import PROMPT_FILE
+from gpt_engineer.settings import PROMPT_FILE, HISTORY_PROMPT_FILE
+
 
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
 ASSUME_WORKING_TIMEOUT = 30
@@ -80,6 +82,22 @@ ASSUME_WORKING_TIMEOUT = 30
 # Type hint for chat messages
 Message = Union[AIMessage, HumanMessage, SystemMessage]
 
+
+def run_steps(steps, ai: AI, dbs: DBs):
+  start = time.time()
+  if not dbs.input[HISTORY_PROMPT_FILE]:
+      dbs.input[HISTORY_PROMPT_FILE] = ""
+
+  for step in steps:
+      messages = step(ai, dbs)
+      dbs.logs[step.__name__] = AI.serialize_messages(messages)
+
+  dbs.input.append(
+    HISTORY_PROMPT_FILE, f"\n[[COST]]\n{ai.token_usage_log.usage_cost()}"
+  )
+  dbs.input.append(
+    HISTORY_PROMPT_FILE, f"\n[[TIME_TAKEN]]\n{time.time() - start} secs"
+  )
 
 def get_platform_info():
     """Returns the Platform: OS, and the Python version.
@@ -503,7 +521,9 @@ def set_improve_filelist(ai: AI, dbs: DBs):
 
     while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
       print(("Sorry, no files found matching your criteria"))
-    
+    dbs.input.append(
+      HISTORY_PROMPT_FILE, f"\n[[FILES]]\n{dbs.project_metadata[FILE_LIST_NAME]}"
+    )
     return []
 
 def preview_code_improve(ai: AI, dbs: DBs):
@@ -592,6 +612,10 @@ def get_improve_prompt(ai: AI, dbs: DBs):
         if not new_prompt:
           raise "Prompt can not be empty."
         dbs.input[PROMPT_FILE] = new_prompt 
+    
+    dbs.input.append(
+        HISTORY_PROMPT_FILE, "\n[[PROPMT]]\n%s" % dbs.input[PROMPT_FILE]
+    )
     return []
 
 def get_file_info(dbs: DBs):
@@ -645,16 +669,16 @@ def improve_existing_code(ai: AI, dbs: DBs):
     messages.append(HumanMessage(content=f"Request: {dbs.input[PROMPT_FILE]}"))
 
     dbs.input.append(
-        PROMPT_FILE, "\n[[AI_PROPMT]]\n%s" % "\n".join([str(msg) for msg in messages])
+        HISTORY_PROMPT_FILE, "\n[[AI_PROPMT]]\n%s" % "\n".join([str(msg) for msg in messages])
     )
     messages = ai.next(messages, step_name=curr_fn())
 
     chat = messages[-1].content.strip()
-    dbs.input.append(PROMPT_FILE, "\n[[AI]]\n%s" % chat)
+    dbs.input.append(HISTORY_PROMPT_FILE, "\n[[AI]]\n%s" % chat)
     try:
         overwrite_files_with_edits(chat, dbs)
     except Exception as ex:
-        dbs.input.append(PROMPT_FILE, "\nERROR: %s" % str(ex))
+        dbs.input.append(HISTORY_PROMPT_FILE, "\nERROR: %s" % str(ex))
         logging.error(f"[improve_existing_code] error: {ex}")
 
     return messages
