@@ -71,6 +71,8 @@ from gpt_engineer.core.db import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME, ask_for_files
 from gpt_engineer.cli.learning import human_review_input
 
+from gpt_engineer.settings import PROMPT_FILE
+
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
 ASSUME_WORKING_TIMEOUT = 30
 
@@ -172,7 +174,7 @@ def lite_gen(ai: AI, dbs: DBs) -> List[Message]:
     set up and functional. Ensure these prerequisites before invoking `lite_gen`.
     """
     messages = ai.start(
-        dbs.input["prompt"], dbs.preprompts["file_format"], step_name=curr_fn()
+        dbs.input[PROMPT_FILE], dbs.preprompts["file_format"], step_name=curr_fn()
     )
     to_files_and_memory(messages[-1].content.strip(), dbs)
     return messages
@@ -199,7 +201,7 @@ def simple_gen(ai: AI, dbs: DBs) -> List[Message]:
     The function assumes the `ai.start` method and the `to_files` utility are correctly
     set up and functional. Ensure these prerequisites are in place before invoking `simple_gen`.
     """
-    messages = ai.start(setup_sys_prompt(dbs), dbs.input["prompt"], step_name=curr_fn())
+    messages = ai.start(setup_sys_prompt(dbs), dbs.input[PROMPT_FILE], step_name=curr_fn())
     to_files_and_memory(messages[-1].content.strip(), dbs)
     return messages
 
@@ -225,7 +227,7 @@ def clarify(ai: AI, dbs: DBs) -> List[Message]:
 
     """
     messages: List[Message] = [SystemMessage(content=dbs.preprompts["clarify"])]
-    user_input = dbs.input["prompt"]
+    user_input = dbs.input[PROMPT_FILE]
     while True:
         messages = ai.next(messages, user_input, step_name=curr_fn())
         msg = messages[-1].content.strip()
@@ -438,7 +440,7 @@ def use_feedback(ai: AI, dbs: DBs):
     """
     messages = [
         SystemMessage(content=setup_sys_prompt(dbs)),
-        HumanMessage(content=f"Instructions: {dbs.input['prompt']}"),
+        HumanMessage(content=f"Instructions: {dbs.input[PROMPT_FILE]}"),
         AIMessage(
             content=dbs.memory["all_output.txt"]
         ),  # reload previously generated code
@@ -490,7 +492,7 @@ def assert_files_ready(ai: AI, dbs: DBs):
     Verify the presence of required files for headless 'improve code' execution.
 
     This function checks the existence of 'file_list.txt' in the project metadata
-    and the presence of a 'prompt' in the input. If either of these checks fails,
+    and the presence of a [PROMPT_FILE] in the input. If either of these checks fails,
     an assertion error is raised to alert the user of the missing requirements.
 
     Parameters:
@@ -506,7 +508,7 @@ def assert_files_ready(ai: AI, dbs: DBs):
 
     Raises:
     - AssertionError: If 'file_list.txt' is not present in the project metadata
-      or if 'prompt' is not present in the input.
+      or if [PROMPT_FILE] is not present in the input.
 
     Notes:
     - This function is typically used in 'auto_mode' scenarios to ensure that the
@@ -532,7 +534,7 @@ def get_improve_prompt(ai: AI, dbs: DBs):
     """
 
     if not dbs.input.get("prompt"):
-        dbs.input["prompt"] = input(
+        dbs.input[PROMPT_FILE] = input(
             "\nWhat do you need to improve with the selected files?\n"
         )
 
@@ -545,7 +547,7 @@ def get_improve_prompt(ai: AI, dbs: DBs):
             "SIZE: %.2f K" % float(compute_files_size(dbs)),
             "",
             "The inserted prompt is the following:",
-            colored(f"{dbs.input['prompt']}", "green"),
+            colored(f"{dbs.input[PROMPT_FILE]}", "green"),
             "-----------------------------",
             "",
             "You can change these files in your project before proceeding.",
@@ -606,7 +608,7 @@ def improve_existing_code(ai: AI, dbs: DBs):
     for code_input in get_file_info(dbs):
         messages.append(HumanMessage(content=f"{code_input}"))
 
-    messages.append(HumanMessage(content=f"Request: {dbs.input['prompt']}"))
+    messages.append(HumanMessage(content=f"Request: {dbs.input[PROMPT_FILE]}"))
 
     dbs.input.append(
         "prompt", "\n[[AI_PROPMT]]\n%s" % "\n".join([str(msg) for msg in messages])
@@ -732,7 +734,7 @@ def process_prompt_and_extract_files(ai: AI, dbs: DBs):
             if file_path:
                 prompt = prompt.replace(f'@{alias}', file_path)
                 dbs.project_metadata[FILE_LIST_NAME].append(file_path)
-        dbs.input["prompt"] = prompt
+        dbs.input[PROMPT_FILE] = prompt
 
 class Config(str, Enum):
     """

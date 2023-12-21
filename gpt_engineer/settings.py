@@ -11,6 +11,8 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 # Load .env file
 load_dotenv()
 
+PROMPT_FILE=os.getenv("PROMPT_FILE") or "prompt"
+
 # SETTINGS
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = os.getenv("MODEL") or "gpt-4"
@@ -24,6 +26,8 @@ VALID_FILE_EXTENSIONS = [
     ".md", ".txt", ".html", ".css", ".xml", ".json", ".yml", ".csv", ".sql", ".bat", ".ps1", ".vbs", ".log", ".ini", ".conf", ".cfg",
     ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"
 ]
+
+SERVER_WS = "ws://localhost:8765"  # Update this to your server's WebSocket address
 
 #################################################
 ## User override

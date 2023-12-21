@@ -55,6 +55,8 @@ from termcolor import colored
 from gpt_engineer.core.db import DB, DBs
 from gpt_engineer.core.domain import Step
 
+from gpt_engineer.settings import PROMPT_FILE
+
 
 @dataclass_json
 @dataclass
@@ -238,7 +240,7 @@ def extract_learning(
     if "review" in dbs.memory:
         review = Review.from_json(dbs.memory["review"])  # type: ignore
     learning = Learning(
-        prompt=dbs.input["prompt"],
+        prompt=dbs.input[PROMPT_FILE],
         model=model,
         temperature=temperature,
         steps=json.dumps([step.__name__ for step in steps]),

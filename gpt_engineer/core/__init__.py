@@ -29,14 +29,14 @@ from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.cli.file_selector import clear_selected_files_list
 
-from gpt_engineer.settings import GPT_ENGINEER_METADATA_PATH
+from gpt_engineer.settings import GPT_ENGINEER_METADATA_PATH, PROMPT_FILE
 
 
 def load_prompt(dbs: DBs):
     if dbs.input.get("prompt"):
         return dbs.input.get("prompt")
 
-    dbs.input["prompt"] = input(
+    dbs.input[PROMPT_FILE] = input(
         "\nWhat application do you want gpt-engineer to generate?\n"
     )
     return dbs.input.get("prompt")

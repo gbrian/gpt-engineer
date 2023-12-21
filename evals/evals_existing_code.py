@@ -14,6 +14,8 @@ from eval_tools import (
 from gpt_engineer.core.chat_to_files import parse_chat
 from gpt_engineer.core.db import DB
 
+from gpt_engineer.settings import PROMPT_FILE
+
 app = typer.Typer()  # creates a CLI app
 
 
@@ -40,7 +42,7 @@ def single_evaluate(eval_ob: dict) -> list[bool]:
     workspace["file_list.txt"] = file_list_string
 
     # create the prompt
-    workspace["prompt"] = eval_ob["improve_code_prompt"]
+    workspace[PROMPT_FILE] = eval_ob["improve_code_prompt"]
 
     # Step 2.  run the project in improve code mode,
     # make sure the flag -sf is set to skip feedback

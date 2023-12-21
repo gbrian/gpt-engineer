@@ -163,3 +163,4 @@ if __name__ == "__main__":
             break
         except Exception as ex:
             print(f"Error running gpt-engineer {ex}")
+            print(ex)

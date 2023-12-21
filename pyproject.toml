@@ -29,7 +29,8 @@ dependencies = [
   'Werkzeug>=2.0',
   'gunicorn>=20.0',
   'langchain>=0.0.348',
-  'chromadb>=0.4.18'
+  'chromadb>=0.4.18',
+  'websockets'
 ]
 
 classifiers = [

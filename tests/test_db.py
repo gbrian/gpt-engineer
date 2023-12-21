@@ -1,6 +1,7 @@
 import pytest
 
 from gpt_engineer.core.db import DB, DBJSON, DBPrompt, DBs
+from gpt_engineer.settings import PROMPT_FILE
 
 
 def test_DB_operations(tmp_path):
@@ -145,11 +146,11 @@ def test_DBPrompt(tmp_path):
     db = DBPrompt(tmp_path)
 
     # Test __setitem__
-    db["prompt"] = "[[PROMPT]]\nPrompt A\n[[PROMPT]]\nPrompt B"
+    db[PROMPT_FILE] = "[[PROMPT]]\nPrompt A\n[[PROMPT]]\nPrompt B"
 
     assert (tmp_path / "prompt").is_file()
 
     # Test __getitem__
-    val = db["prompt"]
+    val = db[PROMPT_FILE]
 
     assert val == "Prompt B"
