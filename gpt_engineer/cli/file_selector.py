@@ -46,13 +46,9 @@ import re
 
 from pathlib import Path
 from typing import List, Union
-from gpt_engineer.settings import VALID_FILE_EXTENSIONS
+from gpt_engineer.settings import VALID_FILE_EXTENSIONS, FILE_LIST_NAME, IGNORE_FOLDERS
 
 from gpt_engineer.core.db import DB, DBs
-
-IGNORE_FOLDERS = {"site-packages", "node_modules", "venv"}
-FILE_LIST_NAME = "file_list.txt"
-
 
 IS_NUM = re.compile(r"^[0-9]+$")
 
@@ -60,7 +56,6 @@ OPTION_GUI = 1
 OPTION_CLI = 2
 OPTION_FIND_IN_FILES = 3
 OPTION_USE_PREVIOUS = 4
-
 
 class DisplayablePath(object):
     """

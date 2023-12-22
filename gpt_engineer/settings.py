@@ -31,6 +31,9 @@ VALID_FILE_EXTENSIONS = [
     ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"
 ]
 
+IGNORE_FOLDERS = {"site-packages", "node_modules", "venv"}
+FILE_LIST_NAME = "file_list.txt"
+
 SERVER_WS = "ws://localhost:8765"  # Update this to your server's WebSocket address
 
 #################################################
