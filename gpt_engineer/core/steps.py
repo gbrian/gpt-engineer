@@ -58,6 +58,7 @@ from enum import Enum
 from platform import platform
 from sys import version_info
 from typing import List, Union
+from pathlib import Path
 
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from termcolor import colored
@@ -546,9 +547,16 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
       HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
     )
     if len(documents):
-        knwoledge_context = "\n".join([f"{doc.metadata['source']}\n{doc.page_content}" for doc in documents ])
+        def document_to_context(doc):
+          return "\n".join([
+            f"```{doc.metadata['language']}",
+            f"#FILE: {Path(doc.metadata['source']).absolute()}",
+            doc.page_content,
+            "```"
+          ])
+        knwoledge_context = "\n".join([document_to_context(doc) for doc in documents ])
         dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
-        input_path = dbs.workspace.path
+        
         dbs.project_metadata[FILE_LIST_NAME] = "\n".join([f"{input_path}/{doc.metadata['source']}" for doc in documents])
     return []
 
