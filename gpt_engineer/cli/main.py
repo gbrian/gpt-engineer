@@ -106,6 +106,12 @@ def main(
         "-t",
         help="Script file or command to execute after all steps. If the test exits with non-zero code run all over again.",
     ),
+    build_knowledge: bool = typer.Option(
+        False,
+        "--build-knowledge",
+        "-B",
+        help="Build knowledge base.",
+    ),
 ):
     if api:
         run_api(
@@ -137,6 +143,7 @@ def main(
                 verbose=verbose,
                 prompt=prompt,
                 file_selector=file_selector,
+                build_knowledge=build_knowledge
             )
 
             if test:

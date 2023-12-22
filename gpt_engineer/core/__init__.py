@@ -72,6 +72,7 @@ def gtp_engineer(
     verbose: bool,
     prompt: str,
     file_selector: bool,
+    build_knowledge: bool
 ):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
 
@@ -92,6 +93,7 @@ def gtp_engineer(
                 "verbose": verbose,
                 "prompt": prompt,
                 "file_selector": file_selector,
+                "build_knowledge": build_knowledge
             }
         )
     )
@@ -134,6 +136,9 @@ def gtp_engineer(
         project_metadata=DB(project_metadata_path),
         knowledge=KnowledgeRetriever(prompt_path)
     )
+
+    if build_knowledge:
+        dbs.knowledge.reload()
 
     if os.path.isfile(prompt_file):
         logging.info("Copying custom prompt %s" % prompt_file)
