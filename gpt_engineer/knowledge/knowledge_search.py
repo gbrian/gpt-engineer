@@ -10,9 +10,9 @@ from gpt_engineer.knowledge.knowledge_retriever import KnowledgeRetriever
 
 logger = logging.getLogger(__name__)
 
-class KnowledgeChat:
+class KnowledgeSearch:
     def __init__(self, path, suffixes, language=Language.PYTHON):
-        logger.debug('Initializing KnowledgeChat')
+        logger.debug('Initializing KnowledgeSearch')
         self.path = path
         logger.debug(f'Path: {self.path}')
         self.llm = ChatOpenAI(model_name="gpt-4")
@@ -21,7 +21,7 @@ class KnowledgeChat:
         )
         self.retriever = KnowledgeRetriever.from_documents(self.path, suffixes, language).as_retriever()
         self.qa = ConversationalRetrievalChain.from_llm(self.llm, retriever=self.retriever, memory=self.memory)
-        logger.debug('KnowledgeChat initialized')
+        logger.debug('KnowledgeSearch initialized')
 
     @classmethod
     def from_llm(cls, path):

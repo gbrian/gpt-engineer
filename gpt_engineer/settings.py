@@ -22,7 +22,6 @@ MODEL = os.getenv("MODEL") or "gpt-4"
 TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
 
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH") or "."
-KNOWLEDGE_PATH = f"{GPT_ENGINEER_METADATA_PATH}/knowledge"
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng"
 
 VALID_FILE_EXTENSIONS = [
@@ -67,7 +66,7 @@ logger.info(f'OpenAI API Key: {OPENAI_API_KEY}')
 logger.info(f'Model: {MODEL}')
 logger.info(f'Temperature: {TEMPERATURE}')
 logger.info(f'GPT Engineer Metadata Path: {GPTENG_PATH}')
-logger.info(f'Knowledge Path: {KNOWLEDGE_PATH}')
+logger.info(f'Knowledge Path: {GPTENG_PATH}/knowled_path_list')
 
 logger.info(f'Prompt file: {PROMPT_FILE}')
 logger.info(f'History prompt file: {PROMPT_FILE}')

@@ -2,7 +2,7 @@ import argparse
 import logging
 
 from gpt_engineer.settings import KNOWLEDGE_PATH
-from gpt_engineer.knowledge.knowledge_chat import KnowledgeChat
+from gpt_engineer.knowledge.knowledge_search import KnowledgeSearch
 from gpt_engineer.knowledge.knowledge_retriever import KnowledgeRetriever
 from langchain.text_splitter import Language
 
@@ -26,7 +26,7 @@ def main():
     if args.prompt:
         logger.info(f'Asking question: {args.prompt}')
         try:
-            chat = KnowledgeChat(KNOWLEDGE_PATH, suffixes=['.py'], language=Language.PYTHON)
+            chat = KnowledgeSearch(KNOWLEDGE_PATH, suffixes=['.py'], language=Language.PYTHON)
             answer = chat.ask_question(args.prompt)
             print(answer)
             logger.info('Question answered successfully.')
