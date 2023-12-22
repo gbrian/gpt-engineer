@@ -24,16 +24,20 @@ TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH") or "."
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng"
 
+# Valid files to work and index
 VALID_FILE_EXTENSIONS = [
     ".py", ".java", ".js", ".c", ".cpp", ".cs", ".go", ".rb", ".php", ".swift", ".kt", ".rs", ".sh", ".r", ".pl", ".scala", ".ts",
     ".md", ".txt", ".html", ".css", ".xml", ".json", ".yml", ".csv", ".sql", ".bat", ".ps1", ".vbs", ".log", ".ini", ".conf", ".cfg",
     ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"
 ]
 
-IGNORE_FOLDERS = {"site-packages", "node_modules", "venv"}
-FILE_LIST_NAME = "file_list.txt"
+# Used by knowledge to split documents
+PROJECT_LANGUAGE = "python"
 
-SERVER_WS = "ws://localhost:8765"  # Update this to your server's WebSocket address
+IGNORE_FOLDERS = { "site-packages", "node_modules", "venv" }
+
+# File to store selected files for the task
+FILE_LIST_NAME = "file_list.txt"
 
 #################################################
 ## User override

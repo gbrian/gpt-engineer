@@ -24,14 +24,16 @@ def main():
             logger.error(f'Error while creating knowledge index: {e}')
 
     if args.prompt:
-        logger.info(f'Asking question: {args.prompt}')
-        try:
-            chat = KnowledgeSearch(KNOWLEDGE_PATH, suffixes=['.py'], language=Language.PYTHON)
-            answer = chat.ask_question(args.prompt)
-            print(answer)
-            logger.info('Question answered successfully.')
-        except Exception as e:
-            logger.error(f'Error while asking question: {e}')
+      logger.info(f'Asking question: {args.prompt}')
+      try:
+          chat = KnowledgeSearch(KNOWLEDGE_PATH, suffixes=['.py'], language=Language.PYTHON)
+          if chat.retriever.is_refresh_needed():
+              chat.retriever.reload()
+          answer = chat.ask_question(args.prompt)
+          print(answer)
+          logger.info('Question answered successfully.')
+      except Exception as e:
+          logger.error(f'Error while asking question: {e}')
 
 if __name__ == "__main__":
     main()
