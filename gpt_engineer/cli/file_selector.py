@@ -367,6 +367,18 @@ class TerminalFileSelector:
               
               if len(user_input) == 0 or user_input.lower() == 'all':
                   selected_paths = selected_paths + path_matches
+              elif "-" in user_input:
+                (start, end) = user_input.split("-")
+                start = int(start) - 1
+                end = int(end)
+                if start < end:
+                  while start < end:
+                    selected_paths.append(path_matches[start])
+                    start = start + 1
+                elif start == end:
+                  selected_paths.append(path_matches[start])
+                else:
+                  raise f"Invalid selection {user_input}"
               else:
                   selected_paths = selected_paths + [path_matches[int(i)-1] for i in user_input.split(',') if int(i) > 0]
           else:
