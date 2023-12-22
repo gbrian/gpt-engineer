@@ -609,8 +609,9 @@ def get_improve_prompt(ai: AI, dbs: DBs):
         input_text = "\nWhat do you need to improve?\n"
            
     new_prompt = input(input_text)
-    if curr_prompt and not new_prompt:
-      new_prompt = curr_prompt
+    if not new_prompt and curr_prompt:
+      return []
+
     if not new_prompt:
       raise "Prompt can not be empty."
     dbs.input[PROMPT_FILE] = new_prompt 
