@@ -136,6 +136,9 @@ def get_code_strings(workspace: DB, metadata_db: DB) -> dict[str, str]:
     files_paths = metadata_db[FILE_LIST_NAME].strip().split("\n")
     files = []
 
+    if not len(files_paths[0]):
+      return {}
+
     for full_file_path in files_paths:
         if os.path.isdir(full_file_path):
             for file_path in _get_all_files_in_dir(full_file_path):

@@ -501,32 +501,57 @@ def set_improve_filelist(ai: AI, dbs: DBs):
       and they aren't directly returned by this function.
     """
     """Sets the file list for files to work with in existing code mode."""
-    try:
-      file_list = dbs.project_metadata[FILE_LIST_NAME]
-      if file_list:
-        files_size = float(compute_files_size(dbs))
-        preview_str = "\n".join(
-            [
-                "-----------------------------",
-                "The following files will be used in the improvement process:",
-                f"{FILE_LIST_NAME}:",
-                colored(str(file_list), "green"),
-                "SIZE: %.2f K" % files_size,
-                "",
-                "The inserted prompt is the following:",
-                colored(f"{dbs.input[PROMPT_FILE]}", "green"),
-                "-----------------------------"
-            ]
-        )
-        print(preview_str)
-    except:
-      pass
-    while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
-      print(("Sorry, no files found matching your criteria"))
-    dbs.input.append(
-      HISTORY_PROMPT_FILE, f"\n[[FILES]]\n{dbs.project_metadata[FILE_LIST_NAME]}"
-    )
+    while True:
+      try:
+        file_list = dbs.project_metadata[FILE_LIST_NAME]
+        if file_list:
+          files_size = float(compute_files_size(dbs))
+          preview_str = "\n".join(
+              [
+                  "-----------------------------",
+                  "The following files will be used in the improvement process:",
+                  f"{FILE_LIST_NAME}:",
+                  colored(str(file_list), "green"),
+                  "SIZE: %.2f K" % files_size,
+                  "",
+                  "The inserted prompt is the following:",
+                  colored(f"{dbs.input[PROMPT_FILE]}", "green"),
+                  "-----------------------------"
+              ]
+          )
+          print(preview_str)
+      except:
+        pass
+      opt = input("\n".join([
+          "Select affected files",
+          "1. Use knowledge index",
+          "2. Use file selector",
+          "Choose an option (Empty to end):"
+      ]))
+      if opt == "":
+        break
+      if opt == "1":
+        return select_files_from_knowledge(ai, dbs)
+  
+      while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
+        print(("Sorry, no files found matching your criteria"))
+      dbs.input.append(
+        HISTORY_PROMPT_FILE, f"\n[[FILES]]\n{dbs.project_metadata[FILE_LIST_NAME]}"
+      )
     return []
+def select_files_from_knowledge(ai: AI, dbs: DBs):
+    query = dbs.input[PROMPT_FILE]
+    documents = dbs.knowledge.search(query)
+    dbs.input.append(
+      HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
+    )
+    if len(documents):
+        knwoledge_context = "\n".join([f"{doc.metadata['source']}\n{doc.page_content}" for doc in documents ])
+        dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
+        input_path = dbs.workspace.path
+        dbs.project_metadata[FILE_LIST_NAME] = "\n".join([f"{input_path}/{doc.metadata['source']}" for doc in documents])
+    return []
+
 
 def preview_code_improve(ai: AI, dbs: DBs):
     confirm_str = "\n".join(
@@ -667,7 +692,8 @@ def improve_existing_code(ai: AI, dbs: DBs):
     ]
 
     for code_input in get_file_info(dbs):
-        messages.append(HumanMessage(content=f"{code_input}"))
+        if code_input:
+          messages.append(HumanMessage(content=f"{code_input}"))
 
     messages.append(HumanMessage(content=f"Request: {dbs.input[PROMPT_FILE]}"))
 

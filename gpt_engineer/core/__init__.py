@@ -29,6 +29,8 @@ from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.cli.file_selector import clear_selected_files_list
 
+from gpt_engineer.knowledge.knowledge_retriever import KnowledgeRetriever
+
 from gpt_engineer.settings import GPTENG_PATH, PROMPT_FILE
 
 
@@ -130,6 +132,7 @@ def gtp_engineer(
         preprompts=DB(preprompts_path()),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
+        knowledge=KnowledgeRetriever(prompt_path)
     )
 
     if os.path.isfile(prompt_file):

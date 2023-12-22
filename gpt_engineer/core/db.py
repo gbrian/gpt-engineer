@@ -34,6 +34,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Union
 
+from gpt_engineer.knowledge.knowledge_retriever import KnowledgeRetriever
+
+
 
 # This class represents a simple database that stores its data as files in a directory.
 class DB:
@@ -233,7 +236,7 @@ class DBs:
     workspace: DB
     archive: DB
     project_metadata: DB
-
+    knowledge: KnowledgeRetriever
 
 def archive(dbs: DBs) -> None:
     """
