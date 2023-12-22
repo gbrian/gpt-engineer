@@ -34,7 +34,7 @@ VALID_FILE_EXTENSIONS = [
 # Used by knowledge to split documents
 PROJECT_LANGUAGE = "python"
 
-IGNORE_FOLDERS = { "site-packages", "node_modules", "venv" }
+IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng" }
 
 # File to store selected files for the task
 FILE_LIST_NAME = "file_list.txt"

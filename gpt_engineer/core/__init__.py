@@ -134,7 +134,7 @@ def gtp_engineer(
         preprompts=DB(preprompts_path()),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
-        knowledge=KnowledgeRetriever(prompt_path)
+        knowledge=KnowledgeRetriever(workspace_path)
     )
 
     if build_knowledge:
