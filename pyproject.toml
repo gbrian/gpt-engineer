@@ -28,8 +28,10 @@ dependencies = [
   'flask>=2.0.2',
   'Werkzeug>=2.0',
   'gunicorn>=20.0',
-  'chromadb==0.4.15'
+  'chromadb==0.3.29'
 ]
+
+# chromadb 0.3.29 for compatibility with Ubuntu and lower Sqlite3
 
 classifiers = [
   "Development Status :: 4 - Beta",

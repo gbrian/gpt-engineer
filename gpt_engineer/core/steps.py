@@ -540,6 +540,7 @@ def set_improve_filelist(ai: AI, dbs: DBs):
         HISTORY_PROMPT_FILE, f"\n[[FILES]]\n{dbs.project_metadata[FILE_LIST_NAME]}"
       )
     return []
+
 def select_files_from_knowledge(ai: AI, dbs: DBs):
     query = dbs.input[PROMPT_FILE]
     documents = dbs.knowledge.search(query)
@@ -556,8 +557,7 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
           ])
         knwoledge_context = "\n".join([document_to_context(doc) for doc in documents ])
         dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
-        
-        dbs.project_metadata[FILE_LIST_NAME] = "\n".join([f"{input_path}/{doc.metadata['source']}" for doc in documents])
+        dbs.project_metadata[FILE_LIST_NAME] = ""
     return []
 
 
