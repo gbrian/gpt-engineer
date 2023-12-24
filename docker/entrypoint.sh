@@ -1,5 +1,6 @@
 #!/bin/bash
-project_dir="/project"
+project_dir=$1
+shift
 
 # Run the gpt engineer script
 gpt-engineer $project_dir "$@"
