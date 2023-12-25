@@ -19,10 +19,20 @@ class KnowledgeLoader:
         self.path = path
         self.glob = "**/*"
         self.suffixes = VALID_FILE_EXTENSIONS
-        self.exclude = [f"{key}/*" for key in IGNORE_FOLDERS] + [f"{key}/*" for key in IGNORE_FILES]
         self.language = PROJECT_LANGUAGE
-        logger.debug(f'KnowledgeLoader initialized {(self.path,self.suffixes,self.exclude,self.language)}')
+        logger.debug(f'KnowledgeLoader initialized {(self.path,self.suffixes,self.language)}')
 
+    def should_index_doc (self, doc, last_update):
+          source = doc.metadata["source"]
+          if source.split("/")[-1] in IGNORE_FILES:
+            return False
+          if len([ignore_folder for ignore_folder in IGNORE_FOLDERS if f"{ignore_folder}/" in source]) != 0:
+            return False
+          if not last_update:
+            return True
+          last_doc_update = os.path.getmtime(source)
+          return True if last_doc_update > last_update else False
+        
     def load(self, last_update: datetime = None):
         logger.debug('Loading knowledge from filesystem')
         # Load the knowledge from the filesystem
@@ -30,17 +40,10 @@ class KnowledgeLoader:
             self.path,
             glob=self.glob,
             suffixes=self.suffixes,
-            exclude=self.exclude,
             parser=LanguageParser(language=self.language, parser_threshold=500),
             show_progress=True
         )
         documents = loader.load()
         # Flatten the results before returning them
-        def should_index_doc (doc):
-          if not last_update:
-            return True
-          last_doc_update = os.path.getmtime(doc.metadata["source"])
-          return True if last_doc_update > last_update else False
-        
-        documents = [doc for doc in documents if should_index_doc(doc)]
+        documents = [doc for doc in documents if self.should_index_doc(doc, last_update)]
         return documents

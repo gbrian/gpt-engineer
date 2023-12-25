@@ -35,7 +35,14 @@ VALID_FILE_EXTENSIONS = [
 PROJECT_LANGUAGE = "python"
 
 IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng" }
-IGNORE_FILES = { }
+IGNORE_FILES = { ".env" }
+
+
+# Provider to read project files
+# Options: 
+#   git: Will use "git ls-files"
+#   os: Will use Python to traverse (not implemented) 
+FILE_PROVIDER="git"
 
 # File to store selected files for the task
 FILE_LIST_NAME = "file_list.txt"
