@@ -138,7 +138,10 @@ def gtp_engineer(
     )
 
     if build_knowledge:
-        dbs.knowledge.reload()
+        # Force full re-build
+        dbs.knowledge.reset()
+    # Always refresh index to catch user changes
+    dbs.knowledge.reload()
 
     if os.path.isfile(prompt_file):
         logging.info("Copying custom prompt %s" % prompt_file)

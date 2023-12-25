@@ -3,6 +3,7 @@ project_dir=$1
 shift
 
 # Run the gpt engineer script
+cd $project_dir
 gpt-engineer $project_dir "$@"
 
 # Patch the permissions of the generated files to be owned by nobody except prompt file

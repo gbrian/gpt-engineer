@@ -11,4 +11,4 @@ COPY docker/entrypoint.sh ./entrypoint.sh
 RUN pip install --upgrade pip
 RUN sudo pip install -e .
 
-ENTRYPOINT ["bash", "/app/entrypoint.sh"]
+CMD ["bash", "/app/entrypoint.sh"]

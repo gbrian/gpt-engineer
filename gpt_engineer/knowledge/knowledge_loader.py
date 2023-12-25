@@ -1,4 +1,7 @@
 import logging
+import os
+from datetime import datetime
+
 from langchain.document_loaders.generic import GenericLoader
 from langchain.document_loaders.parsers import LanguageParser
 
@@ -19,7 +22,7 @@ class KnowledgeLoader:
         self.language = PROJECT_LANGUAGE
         logger.debug(f'KnowledgeLoader initialized {(self.path,self.suffixes,self.exclude,self.language)}')
 
-    def load(self):
+    def load(self, last_update: datetime = None):
         logger.debug('Loading knowledge from filesystem')
         # Load the knowledge from the filesystem
         loader = GenericLoader.from_filesystem(
@@ -31,5 +34,13 @@ class KnowledgeLoader:
             show_progress=True
         )
         documents = loader.load()
+        # Flatten the results before returning them
+        def should_index_doc (doc):
+          if not last_update:
+            return True
+          last_doc_update = os.path.getmtime(doc.metadata["source"])
+          return True if last_doc_update > last_update else False
+        
+        documents = [doc for doc in documents if should_index_doc(doc)]
         logger.debug(f'Loaded {len(documents)} documents {[d.metadata for d in documents]}')
         return documents
