@@ -5,4 +5,5 @@ docker run --rm -it \
   -e DEBUG=$DEBUG \
   -v $VOLUME_PATH:$VOLUME_PATH \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  --workdir=$VOLUME_PATH \
   gpt-engineer gpt-engineer $VOLUME_PATH $@
