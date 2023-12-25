@@ -60,3 +60,6 @@ run:
 	@echo -e "$(COLOR_CYAN)Running GPT Engineer on $(COLOR_GREEN)$(name)$(COLOR_CYAN) folder...$(COLOR_RESET)" && \
 	source venv/bin/activate && \
 	gpt-engineer projects/$(name)
+
+build-docker:
+	docker build -t gpt-engineer -f docker/Dockerfile .
