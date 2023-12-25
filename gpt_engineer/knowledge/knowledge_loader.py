@@ -9,7 +9,8 @@ from gpt_engineer.settings import (
   GPTENG_PATH,
   VALID_FILE_EXTENSIONS,
   PROJECT_LANGUAGE,
-  IGNORE_FOLDERS
+  IGNORE_FOLDERS,
+  IGNORE_FILES
 )
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ class KnowledgeLoader:
         self.path = path
         self.glob = "**/*"
         self.suffixes = VALID_FILE_EXTENSIONS
-        self.exclude = [f"{key}/*" for key in IGNORE_FOLDERS]
+        self.exclude = [f"{key}/*" for key in IGNORE_FOLDERS] + [f"{key}/*" for key in IGNORE_FILES]
         self.language = PROJECT_LANGUAGE
         logger.debug(f'KnowledgeLoader initialized {(self.path,self.suffixes,self.exclude,self.language)}')
 
@@ -42,5 +43,4 @@ class KnowledgeLoader:
           return True if last_doc_update > last_update else False
         
         documents = [doc for doc in documents if should_index_doc(doc)]
-        logger.debug(f'Loaded {len(documents)} documents {[d.metadata for d in documents]}')
         return documents

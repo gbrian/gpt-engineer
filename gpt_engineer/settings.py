@@ -35,6 +35,7 @@ VALID_FILE_EXTENSIONS = [
 PROJECT_LANGUAGE = "python"
 
 IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng" }
+IGNORE_FILES = { }
 
 # File to store selected files for the task
 FILE_LIST_NAME = "file_list.txt"

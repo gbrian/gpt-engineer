@@ -39,6 +39,12 @@ class KnowledgeRetriever:
         if len(documents):
           if last_update:
             self.delete_old_documents(documents)
+          else:
+            os.mkdir(self.db_path)
+            with open(f"{self.db_path}/summary", "w") as db_summary:
+              summary = "\n".join(list(dict.fromkeys([d.metadata["source"] for d in documents])))
+              db_summary.write(summary)
+        
           self.db = Chroma.from_documents(documents,
             self.embedding,
             persist_directory=self.db_path,
