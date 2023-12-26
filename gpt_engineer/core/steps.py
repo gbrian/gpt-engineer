@@ -556,11 +556,10 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
       HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
     )
     if len(documents):
-        diff_template = "<<<<<<< HEAD\n=======\n{content}\n>>>>>>> updated\n"
         # Filter out 
         documents = [validate_context(ai, dbs, query, doc) for doc in documents]
 
-        knwoledge_context = "\n".join([diff_template.format(content = document_to_context(doc)) for doc in documents if doc ])
+        knwoledge_context = "\n".join([document_to_context(doc) for doc in documents if doc ])
         dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
         dbs.project_metadata[FILE_LIST_NAME] = ""
     return []
