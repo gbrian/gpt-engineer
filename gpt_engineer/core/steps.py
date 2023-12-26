@@ -544,7 +544,7 @@ def set_improve_filelist(ai: AI, dbs: DBs):
 def document_to_context(doc):
     return "\n".join([
       f"```{doc.metadata['language']}",
-      f"#FILE: {Path(doc.metadata['source']).absolute()}",
+      f"{Path(doc.metadata['source']).absolute()}",
       doc.page_content,
       "```"
     ])
