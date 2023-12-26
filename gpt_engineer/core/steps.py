@@ -556,7 +556,9 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
       HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
     )
     if len(documents):
-        knwoledge_context = "\n".join([document_to_context(doc) for doc in documents ])
+        diff_template = "<<<<<<< HEAD\n=======\n{content}\n>>>>>>> updated\n"
+
+        knwoledge_context = "\n".join([diff_template.format(content = document_to_context(doc)) for doc in documents ])
         dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
         dbs.project_metadata[FILE_LIST_NAME] = ""
     return []
@@ -576,6 +578,7 @@ def preview_code_improve(ai: AI, dbs: DBs):
             "-----------------------------",
             "",
             "You can change these files in your project before proceeding.",
+            "(Open prompt file and use the DIFF options to remove invalid context entries)"
             "",
             "Press enter to proceed with modifications.",
             "",
