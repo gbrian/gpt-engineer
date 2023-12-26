@@ -55,6 +55,7 @@ PROJECT_LANGUAGE = "python"
 IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng" }
 IGNORE_FILES = { ".env" }
 
+KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7
 
 # Provider to read project files
 # Options: 

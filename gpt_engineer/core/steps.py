@@ -74,7 +74,7 @@ from gpt_engineer.core.db import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME, ask_for_files
 from gpt_engineer.cli.learning import human_review_input
 
-from gpt_engineer.settings import PROMPT_FILE, HISTORY_PROMPT_FILE
+from gpt_engineer.settings import PROMPT_FILE, HISTORY_PROMPT_FILE, KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE
 
 
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
@@ -557,8 +557,10 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
     )
     if len(documents):
         diff_template = "<<<<<<< HEAD\n=======\n{content}\n>>>>>>> updated\n"
+        # Filter out 
+        documents = [validate_context(ai, dbs, query, doc) for doc in documents]
 
-        knwoledge_context = "\n".join([diff_template.format(content = document_to_context(doc)) for doc in documents ])
+        knwoledge_context = "\n".join([diff_template.format(content = document_to_context(doc)) for doc in documents if doc ])
         dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
         dbs.project_metadata[FILE_LIST_NAME] = ""
     return []
@@ -652,12 +654,22 @@ def get_prompt (ai: AI, dbs: DBs):
 
     raise "We need a prompt to start"
 
+def validate_context(ai, dbs, prompt, doc):
+    system = dbs.preprompts["roadmap"] + dbs.preprompts["philosophy"]
+    validate_prompt = dbs.preprompts["validate_context"].format(prompt=prompt, context=doc.page_content)
+    messages = ai.start(system, validate_prompt, step_name=curr_fn())
+    
+    score = float(messages[-1].content.strip())
+    if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
+      return None
+    return doc
+
 def improve_prompt_with_knowledge(ai, dbs):
     template = dbs.preprompts["enrich_prompt"]
     prompt = dbs.input[PROMPT_FILE]
-    knowledge_docs = dbs.knowledge.search(prompt)
+    knowledge_docs = [validate_context(ai, dbs, prompt, doc) for doc in dbs.knowledge.search(prompt)]
 
-    context = "\n".join([document_to_context(doc) for doc in knowledge_docs])
+    context = "\n".join([document_to_context(doc) for doc in knowledge_docs if doc])
     improve_prompt = template.replace("{{ TASK }}", prompt).replace("{{ CONTEXT }}", context)
     dbs.input.append(
         HISTORY_PROMPT_FILE, f"\n[[PROPMT_IMPROVEMNET]]\n{improve_prompt}"
