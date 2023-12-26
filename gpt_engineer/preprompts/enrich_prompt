@@ -1,0 +1,9 @@
+Improve and enrich the task requested:
+TASK:
+{{ TASK }}
+
+PHILOSOPHY:
+{{ PHILOSOPHY }}
+
+CONTEXT:
+{{ CONTEXT }}

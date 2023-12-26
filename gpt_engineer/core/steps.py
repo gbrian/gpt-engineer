@@ -541,6 +541,14 @@ def set_improve_filelist(ai: AI, dbs: DBs):
       )
     return []
 
+def document_to_context(doc):
+    return "\n".join([
+      f"```{doc.metadata['language']}",
+      f"#FILE: {Path(doc.metadata['source']).absolute()}",
+      doc.page_content,
+      "```"
+    ])
+  
 def select_files_from_knowledge(ai: AI, dbs: DBs):
     query = dbs.input[PROMPT_FILE]
     documents = dbs.knowledge.search(query)
@@ -548,13 +556,6 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
       HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
     )
     if len(documents):
-        def document_to_context(doc):
-          return "\n".join([
-            f"```{doc.metadata['language']}",
-            f"#FILE: {Path(doc.metadata['source']).absolute()}",
-            doc.page_content,
-            "```"
-          ])
         knwoledge_context = "\n".join([document_to_context(doc) for doc in documents ])
         dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
         dbs.project_metadata[FILE_LIST_NAME] = ""
@@ -624,11 +625,9 @@ def compute_files_size(dbs: DBs):
     return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
 
 
-def get_improve_prompt(ai: AI, dbs: DBs):
-    """
-    Asks the user what they would like to fix.
-    """
-    curr_prompt = dbs.input[PROMPT_FILE]
+def get_prompt (ai: AI, dbs: DBs):
+    curr_prompt = dbs.input.get(PROMPT_FILE)
+    input_text = "Write new prompt or Enter to continue:\n"
     if curr_prompt:
       print(f"Current prompt at <{PROMPT_FILE}>:")
       print(
@@ -637,18 +636,48 @@ def get_improve_prompt(ai: AI, dbs: DBs):
             "green",
           )
         )
-    input_text = "Write new prompt or Enter to continue:\n"
-    if not dbs.input.get(PROMPT_FILE):
-        input_text = "\nWhat do you need to improve?\n"
-           
+      input_text = "\nChange prompt or leave it blank to continue:\n"
+      
     new_prompt = input(input_text)
-    if not new_prompt and curr_prompt:
-      return []
-
-    if not new_prompt:
-      raise "Prompt can not be empty."
-    dbs.input[PROMPT_FILE] = new_prompt 
     
+    if new_prompt:
+      dbs.input[PROMPT_FILE] = new_prompt
+      return new_prompt
+  
+    if not new_prompt and curr_prompt:
+      return curr_prompt
+
+    raise "We need a prompt to start"
+
+def improve_prompt_with_knowledge(ai, dbs):
+    template = dbs.preprompts["enrich_prompt"]
+    prompt = dbs.input[PROMPT_FILE]
+    knowledge_docs = dbs.knowledge.search(prompt)
+
+    context = "\n".join([document_to_context(doc) for doc in knowledge_docs])
+    improve_prompt = template.replace("{{ TASK }}", prompt).replace("{{ CONTEXT }}", context)
+    dbs.input.append(
+        HISTORY_PROMPT_FILE, f"\n[[PROPMT_IMPROVEMNET]]\n{improve_prompt}"
+    )
+    system = dbs.preprompts["roadmap"] + dbs.preprompts["philosophy"]
+    messages = ai.start(system, improve_prompt, step_name=curr_fn())
+    
+    dbs.input[PROMPT_FILE] = messages[-1].content.strip()
+
+def get_improve_prompt(ai: AI, dbs: DBs):
+    """
+    Asks the user what they would like to fix.
+    """
+    while True:
+        current_prompt = get_prompt(ai, dbs)
+        opt = input("\n".join([
+          "Improve prompt using knowledge? (y/N):"
+        ]))
+        if not opt or opt.lower() == "n":
+          break
+        else:
+          improve_prompt_with_knowledge(ai, dbs)
+
     dbs.input.append(
         HISTORY_PROMPT_FILE, "\n[[PROPMT]]\n%s" % dbs.input[PROMPT_FILE]
     )
