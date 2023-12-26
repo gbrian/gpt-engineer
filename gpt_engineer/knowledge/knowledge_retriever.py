@@ -67,8 +67,9 @@ class KnowledgeRetriever:
       for source in sources:
         delete_doc_ids(source_doc=source)
 
-      logger.debug(f'Documents to delete: {sources} {ids_to_delete}')
-      collection.delete(ids=ids_to_delete)
+      if len(ids_to_delete):
+        logger.debug(f'Documents to delete: {sources} {ids_to_delete}')
+        collection.delete(ids=ids_to_delete)
 
     def reset(self):
         logger.debug('Reseting retriever')

@@ -46,18 +46,21 @@ class KnowledgeLoader:
           language = LANGUAGE_FROM_EXTENSION.get(suffix)
           new_docs = None
 
-          if language and language in CURRENT_SPLITTER_LANGUAGES:
-            parser = LanguageParser(language=language, parser_threshold=500)
-            loader = GenericLoader.from_filesystem(
-                self.path,
-                glob=self.glob,
-                suffixes=[suffix],
-                parser=parser,
-                show_progress=True
-            )
-            new_docs = loader.load()
-          else:
+          try:
+            if language and language in CURRENT_SPLITTER_LANGUAGES:
+              parser = LanguageParser(language=language, parser_threshold=500)
+              loader = GenericLoader.from_filesystem(
+                  self.path,
+                  glob=self.glob,
+                  suffixes=[suffix],
+                  parser=parser,
+                  show_progress=True
+              )
+              new_docs = loader.load()
+          except KeyError:
             logger.debug(f"Not available language parser for {suffix}")
+
+          if not new_docs:  
             loader = DirectoryLoader(self.path, glob=f"**/*{suffix}", loader_cls=TextLoader)
             new_docs = loader.load()
             if language:
