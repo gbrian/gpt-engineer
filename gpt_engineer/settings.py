@@ -31,6 +31,24 @@ VALID_FILE_EXTENSIONS = [
     ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"
 ]
 
+LANGUAGE_FROM_EXTENSION = {
+    ".py": "python",
+    ".java": "java",
+    ".js": "js",
+    ".cpp": "cpp",
+    ".go": "go",
+    ".rb": "ruby",
+    ".php": "php",
+    ".swift": "swift",
+    ".kt": "kotlin",
+    ".rs": "rust",
+    ".sh": "shell",
+    ".r": "r",
+    ".pl": "perl",
+    ".scala": "scala",
+    ".ts": "ts"
+}
+
 # Used by knowledge to split documents
 PROJECT_LANGUAGE = "python"
 

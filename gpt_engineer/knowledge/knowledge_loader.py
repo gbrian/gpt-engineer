@@ -4,10 +4,16 @@ from datetime import datetime
 
 from langchain.document_loaders.generic import GenericLoader
 from langchain.document_loaders.parsers import LanguageParser
+from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain.text_splitter import Language
+
+CURRENT_SPLITTER_LANGUAGES = [lang.lower() for lang in dir(Language)]
+
 
 from gpt_engineer.settings import (
   GPTENG_PATH,
   VALID_FILE_EXTENSIONS,
+  LANGUAGE_FROM_EXTENSION,
   PROJECT_LANGUAGE,
   IGNORE_FOLDERS,
   IGNORE_FILES
@@ -19,8 +25,7 @@ class KnowledgeLoader:
         self.path = path
         self.glob = "**/*"
         self.suffixes = VALID_FILE_EXTENSIONS
-        self.language = PROJECT_LANGUAGE
-        logger.debug(f'KnowledgeLoader initialized {(self.path,self.suffixes,self.language)}')
+        logger.debug(f'KnowledgeLoader initialized {(self.path, self.suffixes)}')
 
     def should_index_doc (self, doc, last_update):
           source = doc.metadata["source"]
@@ -35,15 +40,31 @@ class KnowledgeLoader:
         
     def load(self, last_update: datetime = None):
         logger.debug('Loading knowledge from filesystem')
-        # Load the knowledge from the filesystem
-        loader = GenericLoader.from_filesystem(
-            self.path,
-            glob=self.glob,
-            suffixes=self.suffixes,
-            parser=LanguageParser(language=self.language, parser_threshold=500),
-            show_progress=True
-        )
-        documents = loader.load()
+        documents = []
+        for suffix in self.suffixes:
+          # Load the knowledge from the filesystem
+          language = LANGUAGE_FROM_EXTENSION.get(suffix)
+          new_docs = None
+
+          if language and language in CURRENT_SPLITTER_LANGUAGES:
+            parser = LanguageParser(language=language, parser_threshold=500)
+            loader = GenericLoader.from_filesystem(
+                self.path,
+                glob=self.glob,
+                suffixes=[suffix],
+                parser=parser,
+                show_progress=True
+            )
+            new_docs = loader.load()
+          else:
+            logger.debug(f"Not available language parser for {suffix}")
+            loader = DirectoryLoader(self.path, glob=f"**/*{suffix}", loader_cls=TextLoader)
+            new_docs = loader.load()
+            if language:
+                for doc in new_docs:
+                  doc.metadata["language"] = language
+          documents = documents + new_docs 
+
         # Flatten the results before returning them
         documents = [doc for doc in documents if self.should_index_doc(doc, last_update)]
         return documents
