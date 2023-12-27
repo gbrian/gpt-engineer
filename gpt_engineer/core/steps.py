@@ -543,7 +543,7 @@ def set_improve_filelist(ai: AI, dbs: DBs):
 
 def document_to_context(doc):
     return "\n".join([
-      f"```{doc.metadata['language']}",
+      f"```{doc.metadata.get('language')}",
       f"{Path(doc.metadata['source']).absolute()}",
       doc.page_content,
       "```"
@@ -677,6 +677,9 @@ def improve_prompt_with_knowledge(ai, dbs):
     messages = ai.start(system, improve_prompt, step_name=curr_fn())
     
     dbs.input[PROMPT_FILE] = messages[-1].content.strip()
+
+    file_list = "\n".join(list(dict.fromkeys([doc.metadata["source"] for doc in knowledge_docs if doc])))
+    dbs.project_metadata[FILE_LIST_NAME] = file_list
 
 def get_improve_prompt(ai: AI, dbs: DBs):
     """

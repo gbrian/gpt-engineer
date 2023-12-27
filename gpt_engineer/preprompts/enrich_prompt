@@ -1,9 +1,9 @@
-Improve and enrich the task requested:
+Think step-by-step and explain the needed changes for the task.
+Don't include *edit blocks* only describe code changes.
+Never write full code sections.
+
 TASK:
 {{ TASK }}
-
-PHILOSOPHY:
-{{ PHILOSOPHY }}
 
 CONTEXT:
 {{ CONTEXT }}
