@@ -25,6 +25,7 @@ class KnowledgeLoader:
         self.path = path
         self.glob = "**/*"
         self.suffixes = VALID_FILE_EXTENSIONS
+        self.exclude = [f"{key}/**" for key in IGNORE_FOLDERS]
         logger.debug(f'KnowledgeLoader initialized {(self.path, self.suffixes)}')
 
     def should_index_doc (self, doc, last_update):
@@ -54,6 +55,7 @@ class KnowledgeLoader:
                   glob=self.glob,
                   suffixes=[suffix],
                   parser=parser,
+                  exclude=self.exclude,
                   show_progress=True
               )
               new_docs = loader.load()
