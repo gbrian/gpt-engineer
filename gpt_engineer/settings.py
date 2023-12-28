@@ -52,7 +52,7 @@ LANGUAGE_FROM_EXTENSION = {
 # Used by knowledge to split documents
 PROJECT_LANGUAGE = "python"
 
-IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng" }
+IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng", ".git" }
 IGNORE_FILES = { ".env" }
 
 KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7
