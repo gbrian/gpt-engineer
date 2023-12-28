@@ -905,7 +905,7 @@ def create_project_summary(ai: AI, dbs: DBs):
 
     for file_changed in last_changed_file_paths:
       extension = file_changed.split(os.sep)[-1].split(".")[-1]
-      language = LANGUAGE_FROM_EXTENSION[f".{extension}"]
+      language = LANGUAGE_FROM_EXTENSION.get(f".{extension}") or extension
       logging.debug(f"Updating summary {extension} {language} {file_changed}")
       file_content = dbs.input[file_changed]
       summary_prompt = template.format(content=file_content, summary=summary, language=language, file_path=file_changed)
