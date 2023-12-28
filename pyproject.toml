@@ -28,7 +28,8 @@ dependencies = [
   'flask>=2.0.2',
   'Werkzeug>=2.0',
   'gunicorn>=20.0',
-  'chromadb>=0.4.18'
+  'chromadb>=0.4.18',
+  'esprima>=4.0.1'
 ]
 
 # chromadb 0.3.29 for compatibility with Ubuntu and lower Sqlite3
