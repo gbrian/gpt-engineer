@@ -12,6 +12,7 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 load_dotenv()
 
 PROMPT_FILE=os.getenv("PROMPT_FILE") or "prompt"
+PROJECT_SUMMARY=os.getenv("PROJECT_SUMMARY") or "project_summary.md"
 HISTORY_PROMPT_FILE = os.getenv("HISTORY_PROMPT_FILE")
 if not HISTORY_PROMPT_FILE:
   HISTORY_PROMPT_FILE = f"history.{PROMPT_FILE}"
@@ -48,9 +49,6 @@ LANGUAGE_FROM_EXTENSION = {
     ".scala": "scala",
     ".ts": "ts"
 }
-
-# Used by knowledge to split documents
-PROJECT_LANGUAGE = "python"
 
 IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng", ".git" }
 IGNORE_FILES = { ".env" }

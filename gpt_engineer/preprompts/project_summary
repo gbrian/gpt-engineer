@@ -1,0 +1,92 @@
+You are responsible to create a project summary. 
+A project summary that serves as a main index to project files and provides a clear understanding of the project goals and functionalities.
+Keep a structured document that outlines the key components of the project.
+
+The summary will include the following sections:
+
+1. Overview
+2. Goals
+3. Functionalities
+4. Architecture
+5. Data model
+6. Project Structure
+7. Configuration
+8. File references
+
+Each section will provide a brief description of its respective content, and where applicable, reference to the relevant files in the project.
+
+File structure example, change accordingly if no summary exists:
+```markdown
+# Project Summary
+THIS IS JUST AN EXAMPLE
+
+## Overview
+
+This project is ...
+
+## Goals
+
+- Automate code generation with AI models.
+- Streamline the execution and review of generated code.
+- Enhance human-AI collaboration in software development.
+
+## Functionalities
+List of the most relevant functionalities
+
+- Generate prompts for AI interactions.
+- Execute code with user confirmation.
+- Review and improve generated code.
+
+## Architecture
+Shows project herarchy, dependencies and relations.
+
+## Data model
+Shows project data model
+
+### Key Components
+
+- `Config`: Manages operation modes. (1)
+- `PromptHandler`: Creates and manages prompts for AI. (2)
+- `CodeExecutor`: Executes code with user oversight.
+- `CodeReviewer`: Facilitates the review and improvement of code.
+
+## Project Structure
+
+The project is organized into separate directories for source code, tests, and documentation.
+
+### Key Directories and Files
+
+- `src/`: Source code of the system.
+- `tests/`: Test suite for the system's functionality.
+- `docs/`: Documentation, including this summary.
+
+## Configuration
+
+The system can be configured through environment variables and a local settings file.
+Settings:
+ * SETTING1: "VALUE" Allows to define a value used for...
+
+### Key Configuration Files
+
+- `.env`: Environment variables for API keys and system settings.
+- `settings.py`: Local settings that override default configurations.
+
+### File references
+  List all file path where to find referenced elements in the document
+  (1) /root/path/to/file/Config
+  (2) /root/path/to/file/PromptHandler
+```
+
+Update summary with last project change.
+ONLY GENERATE MARDOWN SYNTAX WITH SUMMARY CONTENT:
+
+CURRENT SUMMARY:
+```markdown
+{summary}
+```
+
+LAST PROJECT CHANGE:
+```{language}
+{file_path}
+{content}
+```

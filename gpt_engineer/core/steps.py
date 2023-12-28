@@ -74,8 +74,13 @@ from gpt_engineer.core.db import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME, ask_for_files
 from gpt_engineer.cli.learning import human_review_input
 
-from gpt_engineer.settings import PROMPT_FILE, HISTORY_PROMPT_FILE, KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE
-
+from gpt_engineer.settings import (
+  PROMPT_FILE,
+  HISTORY_PROMPT_FILE,
+  KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE,
+  PROJECT_SUMMARY,
+  LANGUAGE_FROM_EXTENSION
+)
 
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
 ASSUME_WORKING_TIMEOUT = 30
@@ -663,6 +668,21 @@ def validate_context(ai, dbs, prompt, doc):
       return None
     return doc
 
+def improve_prompt_with_summary(ai, dbs):
+    template = dbs.preprompts["enrich_prompt"]
+    prompt = dbs.input[PROMPT_FILE]
+    context = dbs.project_metadata.get(PROJECT_SUMMARY)
+
+    improve_prompt = template.replace("{{ TASK }}", prompt).replace("{{ CONTEXT }}", context)
+    
+    dbs.input.append(
+        HISTORY_PROMPT_FILE, f"\n[[PROPMT_IMPROVEMNET]]\n{improve_prompt}"
+    )
+    system = dbs.preprompts["roadmap"] + dbs.preprompts["philosophy"]
+    messages = ai.start(system, improve_prompt, step_name=curr_fn())
+    
+    dbs.input[PROMPT_FILE] = messages[-1].content.strip()
+
 def improve_prompt_with_knowledge(ai, dbs):
     template = dbs.preprompts["enrich_prompt"]
     prompt = dbs.input[PROMPT_FILE]
@@ -693,7 +713,7 @@ def get_improve_prompt(ai: AI, dbs: DBs):
         if not opt or opt.lower() == "n":
           break
         else:
-          improve_prompt_with_knowledge(ai, dbs)
+          improve_prompt_with_summary(ai, dbs)
 
     dbs.input.append(
         HISTORY_PROMPT_FILE, "\n[[PROPMT]]\n%s" % dbs.input[PROMPT_FILE]
@@ -877,6 +897,30 @@ def process_prompt_and_extract_files(ai: AI, dbs: DBs):
                 dbs.project_metadata[FILE_LIST_NAME].append(file_path)
         dbs.input[PROMPT_FILE] = prompt
 
+def create_project_summary(ai: AI, dbs: DBs):
+    last_changed_file_paths = dbs.knowledge.get_last_changed_file_paths()
+    template = dbs.preprompts["project_summary"]
+    summary = dbs.project_metadata.get(PROJECT_SUMMARY) or ""
+    system = ""
+
+    for file_changed in last_changed_file_paths:
+      extension = file_changed.split(os.sep)[-1].split(".")[-1]
+      language = LANGUAGE_FROM_EXTENSION[f".{extension}"]
+      logging.debug(f"Updating summary {extension} {language} {file_changed}")
+      file_content = dbs.input[file_changed]
+      summary_prompt = template.format(content=file_content, summary=summary, language=language, file_path=file_changed)
+
+      messages = ai.start(
+          system=system, user=summary_prompt, step_name=curr_fn()
+      )
+      summary = messages[-1].content.strip().split("\n")
+      if summary[0] == '```markdown':
+        summary = summary[1:-1]
+      
+      dbs.project_metadata[PROJECT_SUMMARY] = "\n".join(summary)
+
+    return []
+
 class Config(str, Enum):
     """
     Enumeration representing different configuration modes for the code processing system.
@@ -893,6 +937,7 @@ class Config(str, Enum):
     - IMPROVE_CODE: Focuses on improving existing code based on a provided prompt.
     - EVAL_IMPROVE_CODE: Validates files and improves existing code.
     - EVAL_NEW_CODE: Evaluates newly generated code without further steps.
+    - CREATE_PROJECT_SUMMARY: Creates a document with project summary
 
     Each configuration mode dictates the sequence and type of operations performed on the code.
     """
@@ -909,6 +954,7 @@ class Config(str, Enum):
     EVAL_IMPROVE_CODE = "eval_improve_code"
     EVAL_NEW_CODE = "eval_new_code"
     SELF_HEAL = "self_heal"
+    CREATE_PROJECT_SUMMARY = "create_project_summary"
 
 
 STEPS = {
@@ -954,6 +1000,9 @@ STEPS = {
     Config.EVAL_IMPROVE_CODE: [assert_files_ready, improve_existing_code],
     Config.EVAL_NEW_CODE: [simple_gen],
     Config.SELF_HEAL: [self_heal],
+    Config.CREATE_PROJECT_SUMMARY: [
+      create_project_summary
+    ]
 }
 """
 A dictionary mapping Config modes to a list of associated processing steps.

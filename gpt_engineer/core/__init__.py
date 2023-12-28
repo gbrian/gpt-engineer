@@ -141,7 +141,7 @@ def gtp_engineer(
         # Force full re-build
         dbs.knowledge.reset()
     # Always refresh index to catch user changes
-    dbs.knowledge.reload()
+    index_changed = dbs.knowledge.reload()
 
     if os.path.isfile(prompt_file):
         logging.info("Copying custom prompt %s" % prompt_file)
@@ -173,6 +173,10 @@ def gtp_engineer(
     ]:
         archive(dbs)
         load_prompt(dbs)
+
+    if index_changed:
+      steps = STEPS[StepsConfig.CREATE_PROJECT_SUMMARY]
+      run_steps(steps, ai, dbs)
 
     steps = STEPS[steps_config]
     run_steps(steps, ai, dbs)

@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+from datetime import datetime
 
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class KnowledgeRetriever:
     db_path = f"{GPTENG_PATH}/db"
+    db_file_list = f"{GPTENG_PATH}/db/file_list"
     db = None
 
     def __init__(self, path):
@@ -21,6 +23,10 @@ class KnowledgeRetriever:
         self.path = path
         self.loader = KnowledgeLoader(self.path)
         self.embedding = OpenAIEmbeddings(disallowed_special=())
+        self.last_update = None
+        if os.path.exists(self.db_path):
+          self.last_update = os.path.getmtime(self.db_path)
+        self.last_changed_file_paths = []
         logger.debug('KnowledgeRetriever initialized')
 
     def get_db(self):
@@ -32,48 +38,68 @@ class KnowledgeRetriever:
     def reload(self):
         logger.debug('Reloading knowledge')
         # Load the knowledge from the filesystem
-        last_update = None
-        if os.path.exists(self.db_path):
-          last_update = os.path.getmtime(self.db_path)
-        documents = self.loader.load(last_update=last_update)
+        documents = self.loader.load(last_update=self.last_update)
         if len(documents):
-          if last_update:
+          if self.last_update:
             self.delete_old_documents(documents)
-          else:
-            os.mkdir(self.db_path)
-            with open(f"{self.db_path}/summary", "w") as db_summary:
-              summary = "\n".join(list(dict.fromkeys([d.metadata["source"] for d in documents])))
-              db_summary.write(summary)
-        
+          index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+          for doc in documents:
+            doc.metadata["index_date"] = f"{index_date}"
           self.db = Chroma.from_documents(documents,
             self.embedding,
             persist_directory=self.db_path,
           )
+          self.last_changed_file_paths = list(dict.fromkeys([d.metadata["source"] for d in documents]))
+          self.build_summary()
         logger.debug('Knowledge reloaded')
+        return True if len(documents) else False
+
+    def get_db_files (self):
+      # Read current files
+      if os.path.isfile(self.db_file_list):
+        with open(self.db_file_list, "r") as db_files: 
+          return db_files.read().split("\n")
+      return []
+
+    def get_last_changed_file_paths (self):
+      return self.last_changed_file_paths
+
+    def build_summary(self):
+        try:
+          os.mkdir(self.db_path, exist_ok=True)
+        except:
+          pass
+        current_files = self.get_db_files()
+        db_files = list(dict.fromkeys(self.last_changed_file_paths + current_files))
+        # Save all files
+        with open(self.db_file_list, "w") as db_file_list:
+          db_file_list.write("\n".join(db_files))
+        
 
     def delete_old_documents (self, documents):
-      logger.debug('Removing old documents')
-      ids_to_delete = []
-      collection = self.get_db()._collection
-      collection_docs = collection.get(include=['metadatas'])
-      def delete_doc_ids (source_doc):
-        for ix, metadata in enumerate(collection_docs["metadatas"]):
-            if metadata.get('source') == source_doc:
-                id_to_delete = collection_docs["ids"][ix]
-                logger.debug(f"Document to delete: {id_to_delete}: {source_doc}")
-                ids_to_delete.append(id_to_delete)
+        logger.debug('Removing old documents')
+        ids_to_delete = []
+        collection = self.get_db()._collection
+        collection_docs = collection.get(include=['metadatas'])
+        def delete_doc_ids (source_doc):
+          for ix, metadata in enumerate(collection_docs["metadatas"]):
+              if metadata.get('source') == source_doc:
+                  id_to_delete = collection_docs["ids"][ix]
+                  logger.debug(f"Document to delete: {id_to_delete}: {source_doc}")
+                  ids_to_delete.append(id_to_delete)
 
-      sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
-      for source in sources:
-        delete_doc_ids(source_doc=source)
+        sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
+        for source in sources:
+          delete_doc_ids(source_doc=source)
 
-      if len(ids_to_delete):
-        logger.debug(f'Documents to delete: {sources} {ids_to_delete}')
-        collection.delete(ids=ids_to_delete)
+        if len(ids_to_delete):
+          logger.debug(f'Documents to delete: {sources} {ids_to_delete}')
+          collection.delete(ids=ids_to_delete)
 
     def reset(self):
         logger.debug('Reseting retriever')
         self.db = None
+        self.last_update = None
         if os.path.exists(self.db_path):
             shutil.rmtree(self.db_path)
 
