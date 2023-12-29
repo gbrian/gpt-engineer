@@ -22,6 +22,9 @@ def chat_interaction(ai: AI, dbs: DBs):
         ai_messages = ai.start(system, prompt, step_name=curr_fn())
     
         response = ai_messages[-1].content.strip()
+
+        print(f"\n{response}\nCONTEXT\n{knwoledge_context}")
+
         messages.append(f"USER: {user_input}")
         messages.append(f"ASSISTANT: {response}")
 
