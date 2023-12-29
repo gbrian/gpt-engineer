@@ -256,6 +256,14 @@ def parse_edits(llm_response):
 
 
 def apply_edits(edits: List[Edit], workspace: DB):
+    def show_error(filename):
+      error = f"""
+      {colored(f"change not applied to file {filename}", "red")}
+      {edit.full_text}
+      {colored(f"Apply manually and press Enter to continue", "green")}
+      """
+      input(error)
+  
     for edit in edits:
         filename = edit.filename
         logger.info(f"apply_edits NEW FILE {edit}")
@@ -264,7 +272,9 @@ def apply_edits(edits: List[Edit], workspace: DB):
                 logger.warn(
                     f"The edit to be applied wants to create a new file `{filename}`, but that already exists. The file will be overwritten. See `.gpteng/memory` for previous version."
                 )
-            workspace[filename] = edit.after  # new file
+                show_error(filename)
+            else:
+              workspace[filename] = edit.after  # new file
         else:
             if workspace[filename].count(edit.before) > 1:
                 logger.warn(
@@ -275,12 +285,7 @@ def apply_edits(edits: List[Edit], workspace: DB):
                 edit.before, edit.after
             )  # existing file
             if curr_file == workspace[filename]:
-                error = f"""
-                {colored(f"change not applied to file {filename}", "red")}
-                {edit.full_text}
-                {colored(f"Apply manually and press Enter to continue", "green")}
-                """
-                input(error)
+                show_error(filename)
 
 
 def _get_all_files_in_dir(directory):
