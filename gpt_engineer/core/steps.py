@@ -673,7 +673,7 @@ def validate_context(ai, dbs, prompt, doc):
 def improve_prompt_with_summary(ai, dbs):
     template = dbs.preprompts["enrich_prompt"]
     prompt = dbs.input[PROMPT_FILE]
-    context = dbs.project_metadata.get(PROJECT_SUMMARY)
+    context = dbs.project_metadata.get(PROJECT_SUMMARY) if PROJECT_SUMMARY else ""
 
     improve_prompt = template.replace("{{ TASK }}", prompt).replace("{{ CONTEXT }}", context)
     
