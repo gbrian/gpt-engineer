@@ -1,0 +1,4 @@
+# Exclude the following files from the package:
+node_modules/**
+*.ts
+*.map

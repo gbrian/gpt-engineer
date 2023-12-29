@@ -1,0 +1,44 @@
+{
+  "name": "gpt-engineer",
+  "displayName": "GPT-ENGINEER",
+  "description": "Integrate gpt-engineer with Visual Studio Code",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:gpt-engineer.runTask",
+    "onCommand:gpt-engineer.improveTask",
+    "onCommand:gpt-engineer.newTask"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gpt-engineer.runTask",
+        "title": "Run Task"
+      },
+      {
+        "command": "gpt-engineer.improveTask",
+        "title": "Improve Task"
+      },
+      {
+        "command": "gpt-engineer.newTask",
+        "title": "New Task"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0",
+    "vscode": "^1.1.37",
+    "eslint": "^7.0.0"
+  }
+}
