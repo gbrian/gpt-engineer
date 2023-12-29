@@ -170,6 +170,7 @@ def gtp_engineer(
         StepsConfig.EVALUATE,
         StepsConfig.IMPROVE_CODE,
         StepsConfig.SELF_HEAL,
+        StepsConfig.CHAT,
     ]:
         archive(dbs)
         load_prompt(dbs)

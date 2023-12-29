@@ -55,6 +55,9 @@ IGNORE_FILES = { ".env" }
 
 KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7
 
+# Add a new setting for CHAT_FILE
+CHAT_FILE = os.getenv('CHAT_FILE', 'chat')
+
 # Provider to read project files
 # Options: 
 #   git: Will use "git ls-files"

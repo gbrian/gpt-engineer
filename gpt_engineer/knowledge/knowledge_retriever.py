@@ -6,6 +6,7 @@ from datetime import datetime
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.llms import OpenAI
+from langchain.schema.document import Document
 
 from gpt_engineer.settings import GPTENG_PATH
 
@@ -40,19 +41,22 @@ class KnowledgeRetriever:
         # Load the knowledge from the filesystem
         documents = self.loader.load(last_update=self.last_update)
         if len(documents):
-          if self.last_update:
-            self.delete_old_documents(documents)
-          index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
-          for doc in documents:
-            doc.metadata["index_date"] = f"{index_date}"
-          self.db = Chroma.from_documents(documents,
-            self.embedding,
-            persist_directory=self.db_path,
-          )
+          self.index_documents(documents)
           self.last_changed_file_paths = list(dict.fromkeys([d.metadata["source"] for d in documents]))
           self.build_summary()
-        logger.debug('Knowledge reloaded')
+          logger.debug('Knowledge reloaded')
         return True if len(documents) else False
+
+    def index_documents (self, documents):
+        if self.last_update:
+          self.delete_old_documents(documents)
+        index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        for doc in documents:
+          doc.metadata["index_date"] = f"{index_date}"
+        self.db = Chroma.from_documents(documents,
+          self.embedding,
+          persist_directory=self.db_path,
+        )
 
     def get_db_files (self):
       # Read current files
@@ -112,3 +116,8 @@ class KnowledgeRetriever:
     def search(self, query):
       retriever = self.as_retriever()
       return retriever.get_relevant_documents(query)
+
+    def index_document(self, text, metadata):
+        documents = [Document(page_content=text, metadata=metadata)]
+        self.delete_old_documents(documents)
+        self.index_documents(documents)

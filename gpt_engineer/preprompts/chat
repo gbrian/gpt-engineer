@@ -1,0 +1,12 @@
+This is an interactive conversation with the user about the project.
+Use previous messages and context to anser user question.
+Add to the end of the response all useful file links if any.
+
+>>>> PREVIOUS MESSAGES:
+{messages}
+
+>>>> CONTEXT:
+{context}
+
+>>>> QUESTION:
+{prompt}

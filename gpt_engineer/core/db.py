@@ -200,6 +200,10 @@ class DB:
         elif item_path.is_dir():
             shutil.rmtree(item_path)
 
+    def append(self, key: str, content: str):
+        prompt = DB.__getitem__(self, key)
+        DB.__setitem__(self, key, "%s%s" % (prompt, content))
+
 
 import json
 
@@ -220,10 +224,6 @@ class DBPrompt(DB):
           DB.__setitem__(self, key, "")
           return ""
         return prompt.split("[[PROMPT]]\n")[-1]
-
-    def append(self, key: str, content: str):
-        prompt = DB.__getitem__(self, key)
-        DB.__setitem__(self, key, "%s%s" % (prompt, content))
 
 
 # dataclass for all dbs:

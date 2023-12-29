@@ -79,7 +79,7 @@ from gpt_engineer.settings import (
   HISTORY_PROMPT_FILE,
   KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE,
   PROJECT_SUMMARY,
-  LANGUAGE_FROM_EXTENSION
+  LANGUAGE_FROM_EXTENSION,
 )
 
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
@@ -93,6 +93,8 @@ def run_steps(steps, ai: AI, dbs: DBs):
   start = time.time()
   if not dbs.input[HISTORY_PROMPT_FILE]:
       dbs.input[HISTORY_PROMPT_FILE] = ""
+  if not hasattr(steps, "__iter__"):
+    steps = [steps]
 
   for step in steps:
       messages = step(ai, dbs)
@@ -896,8 +898,12 @@ def process_prompt_and_extract_files(ai: AI, dbs: DBs):
                 prompt = prompt.replace(f'@{alias}', file_path)
                 dbs.project_metadata[FILE_LIST_NAME].append(file_path)
         dbs.input[PROMPT_FILE] = prompt
-
+    
 def create_project_summary(ai: AI, dbs: DBs):
+    if not PROJECT_SUMMARY:
+      # Prject summary is disabled
+      return []
+
     last_changed_file_paths = dbs.knowledge.get_last_changed_file_paths()
     template = dbs.preprompts["project_summary"]
     summary = dbs.project_metadata.get(PROJECT_SUMMARY) or ""
@@ -918,8 +924,15 @@ def create_project_summary(ai: AI, dbs: DBs):
         summary = summary[1:-1]
       
       dbs.project_metadata[PROJECT_SUMMARY] = "\n".join(summary)
-
+      dbs.knowledge.index_document(text=dbs.project_metadata[PROJECT_SUMMARY], metadata={
+        "source": PROJECT_SUMMARY,
+        "language": "markdown"
+      })
     return []
+
+def chat(ai: AI, dbs: DBs):
+  from gpt_engineer.core.step.chat import chat_interaction
+  return chat_interaction(ai, dbs)
 
 class Config(str, Enum):
     """
@@ -955,6 +968,7 @@ class Config(str, Enum):
     EVAL_NEW_CODE = "eval_new_code"
     SELF_HEAL = "self_heal"
     CREATE_PROJECT_SUMMARY = "create_project_summary"
+    CHAT = "chat"
 
 
 STEPS = {
@@ -1002,7 +1016,8 @@ STEPS = {
     Config.SELF_HEAL: [self_heal],
     Config.CREATE_PROJECT_SUMMARY: [
       create_project_summary
-    ]
+    ],
+    Config.CHAT: chat
 }
 """
 A dictionary mapping Config modes to a list of associated processing steps.
