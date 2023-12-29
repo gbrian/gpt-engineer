@@ -88,7 +88,7 @@ except FileNotFoundError:
 ## INITIALIZE
 openai.api_key = OPENAI_API_KEY
 
-level = logging.DEBUG if os.getenv("DEBUG") is not None else logging.INFO
+level = logging.DEBUG if os.getenv("DEBUG") in ["1", "true", "True"] else logging.INFO
 logging.basicConfig(level=level)
 
 # LOGGING
