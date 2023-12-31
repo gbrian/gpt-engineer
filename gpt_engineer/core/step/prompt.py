@@ -14,6 +14,9 @@ from gpt_engineer.settings import (
   LANGUAGE_FROM_EXTENSION,
 )
 
+MORE_INFO_IS_NEEDED="MORE INFO IS NEEDED:"
+USER_FEEDBACK="USER FEEDBACK:"
+
 def get_prompt (ai: AI, dbs: DBs):
     curr_prompt = dbs.input.get(PROMPT_FILE)
     input_text = "Write new prompt or Enter to continue:\n"
@@ -57,14 +60,17 @@ def improve_prompt_with_summary(ai:AI, dbs: DBs):
     dbs.input[PROMPT_FILE] = new_prompt
 
 def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
+    if not MORE_INFO_IS_NEEDED in prompt:
+      return prompt
+
     def is_q(question):
       question = question.strip()
       if len(question):
         return True if question[0] == '-' else False
       return False
-
+  
     logging.debug(f"Solving prompt questions")
-    more_info_needed = prompt.split("MORE INFO IS NEEDED:")[1]
+    more_info_needed = prompt.split(MORE_INFO_IS_NEEDED)[1]
     questions = [question for question in more_info_needed.split("\n") if is_q(question)]
     logging.debug(f"More info found: {more_info_needed}")
     logging.debug(f"Questions: {questions}")
@@ -87,8 +93,8 @@ def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
       if not response:
         prompt = prompt.replace(question, "")
       else:
-        prompt = prompt.replace(question, f"{question}\n{response}\n")
-    prompt = prompt.replace("MORE INFO IS NEEDED:", "USER FEEDBACK:")
+        prompt = prompt.replace(question, f"Q: {question}\nA: {response}\n")
+    prompt = prompt.replace(MORE_INFO_IS_NEEDED, USER_FEEDBACK)
     return prompt
 
 def improve_prompt_with_knowledge(ai:AI, dbs: DBs):
