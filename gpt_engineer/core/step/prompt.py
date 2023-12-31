@@ -70,7 +70,9 @@ def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
     logging.debug(f"Questions: {questions}")
     for question in questions:
       question_request = [
+        "*** QUESTION *******************************************",
         f"{question}",
+        "********************************************************",
         "Write @AI to ask AI to answer that question",
         "write your own answer",
         "Leave blank to remove the question",
@@ -86,6 +88,7 @@ def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
         prompt = prompt.replace(question, "")
       else:
         prompt = prompt.replace(question, f"{question}\n{response}\n")
+    prompt = prompt.replace("MORE INFO IS NEEDED:", "USER FEEDBACK:")
     return prompt
 
 def improve_prompt_with_knowledge(ai:AI, dbs: DBs):
