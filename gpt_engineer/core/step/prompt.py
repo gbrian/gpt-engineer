@@ -86,8 +86,8 @@ def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
       ]
       print()
       opt = input("\n".join(question_request))
-      logging.debug(f"USer response: {opt}")
-      response = None
+      logging.debug(f"User response: {opt}")
+      response = opt
       if opt.lower() == '@ai':
         response = ai_chat(ai, dbs, question, messages=[prompt])
       if not response:
