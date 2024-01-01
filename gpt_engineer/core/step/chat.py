@@ -25,7 +25,7 @@ def chat_interaction(ai: AI, dbs: DBs):
             break
 
         # Fetch relevant documents using KnowledgeRetriever
-        response = self.ai_chat(ai, dbs, user_input, messages)
+        response = ai_chat(ai, dbs, user_input, messages)
 
         print(f"\n{response}\nCONTEXT\n{knwoledge_context}")
 

@@ -13,22 +13,38 @@
     "onCommand:gpt-engineer.improveTask",
     "onCommand:gpt-engineer.newTask"
   ],
-  "main": "./extension.js",
+  "dependencies": {
+    "vue": "^3.4.0"
+  },
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "gpt-engineer.runTask",
-        "title": "Run Task"
-      },
-      {
-        "command": "gpt-engineer.improveTask",
-        "title": "Improve Task"
-      },
-      {
-        "command": "gpt-engineer.newTask",
-        "title": "New Task"
+        "command": "myExtension.showTabs",
+        "title": "Show Tabs"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "myExtensionTabs",
+          "title": "gpt-engineer assistant",
+          "icon": "media/artificial-intelligence-ai-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "myExtensionTabs": [
+        {
+          "id": "tab1",
+          "name": "Tab 1"
+        },
+        {
+          "id": "tab2",
+          "name": "Tab 2"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -17,11 +17,16 @@ To install the extension, follow the standard Visual Studio Code extension insta
 
 After installation, you can access the extension's features through the Command Palette or the dedicated GPT-ENGINEER sidebar.
 
+## Webview Features
+
+- **Single Tab**: Ensures only one webview tab is open at a time.
+- **Vue.js Integration**: Displays a Vue.js application within the webview for enhanced user interaction.
+
 ## Commands
 
-- `Run Task`: Execute the current task and generate code changes.
-- `Improve Task`: Refine the task definition and context selection.
-- `New Task`: Clear all inputs and start a new task.
+- `Run Task`: Opens a webview to execute the current task and generate code changes.
+- `Improve Task`: Opens a webview to refine the task definition and context selection.
+- `New Task`: Opens a webview to clear all inputs and start a new task.
 
 For more information, please refer to the detailed documentation provided within the extension.
 
