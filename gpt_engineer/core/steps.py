@@ -538,8 +538,10 @@ def set_improve_filelist(ai: AI, dbs: DBs):
       ]))
       if opt == "":
         break
+
       if opt == "1":
-        return select_files_from_knowledge(ai, dbs)
+        select_files_from_knowledge(ai, dbs)
+        continue
   
       while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
         print(("Sorry, no files found matching your criteria"))
@@ -562,14 +564,52 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
     dbs.input.append(
       HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
     )
-    if len(documents):
-        # Filter out 
-        documents = [validate_context(ai, dbs, query, doc) for doc in documents]
+    if documents:
+        # Filter out irrelevant documents based on a relevance score
+        relevant_documents = [doc for doc in documents if validate_context(ai, dbs, query, doc)]
+        file_list = [str(Path(doc.metadata["source"]).absolute()) for doc in relevant_documents]
+        file_list = list(dict.fromkeys(file_list))  # Remove duplicates
 
-        knwoledge_context = "\n".join([document_to_context(doc) for doc in documents if doc ])
-        dbs.input[PROMPT_FILE] = f"{query}\nCONTEXT:\n{knwoledge_context}"
-        dbs.project_metadata[FILE_LIST_NAME] = ""
+        print(f"{len(file_list)} matches using knowledge:")
+        for i, path in enumerate(file_list):
+            print(f"{i + 1}. {path}")
+
+        user_input = input(
+          "Select files by entering the numbers separated by commas/spaces or specify range with a dash.\n"
+          + "Example: 1,2,3-5,7,9,13-15,18,20 or enter 'all' to select everything.\n"
+          + "Select files (default: all): ")
+
+        selected_files = []
+        if user_input.lower() == 'all':
+            selected_files = file_list
+        elif user_input:
+            indices = parse_selection_input(user_input, len(file_list))
+            selected_files = [file_list[i] for i in indices]
+
+        dbs.project_metadata[FILE_LIST_NAME] = "\n".join(selected_files)
     return []
+
+def parse_selection_input(user_input, max_index):
+    """
+    Parses the user input for file selection and returns a list of indices.
+
+    Parameters:
+    - user_input (str): The input string containing file selection.
+    - max_index (int): The maximum index value allowed based on the file list.
+
+    Returns:
+    - list[int]: A list of indices corresponding to the user's selection.
+    """
+    selected_indices = set()
+    for selection in user_input.split(","):
+        if "-" in selection:
+            start, end = map(int, selection.split("-"))
+            selected_indices.update(range(start - 1, min(end, max_index)))
+        else:
+            index = int(selection) - 1
+            if index < max_index:
+                selected_indices.add(index)
+    return sorted(selected_indices)
 
 
 def preview_code_improve(ai: AI, dbs: DBs):
