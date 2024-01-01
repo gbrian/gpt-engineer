@@ -94,7 +94,7 @@ def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
         prompt = prompt.replace(question, "")
       else:
         prompt = prompt.replace(question, f"Q: {question}\nA: {response}\n")
-    prompt = prompt.replace(MORE_INFO_IS_NEEDED, USER_FEEDBACK)
+      prompt = prompt.replace(MORE_INFO_IS_NEEDED, USER_FEEDBACK)
     return prompt
 
 def improve_prompt_with_knowledge(ai:AI, dbs: DBs):
