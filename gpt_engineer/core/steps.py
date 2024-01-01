@@ -681,6 +681,7 @@ def validate_context(ai, dbs, prompt, doc):
     messages = ai.start(system, validate_prompt, step_name=curr_fn())
     
     score = float(messages[-1].content.strip())
+    doc.metadata["relevance_score"] = score
     if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
       return None
     return doc
