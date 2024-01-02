@@ -25,8 +25,8 @@ class KnowledgeRetriever:
         self.loader = KnowledgeLoader(self.path)
         self.embedding = OpenAIEmbeddings(disallowed_special=())
         self.last_update = None
-        if os.path.exists(self.db_path):
-          self.last_update = os.path.getmtime(self.db_path)
+        if os.path.isfile(self.db_file_list):
+          self.last_update = os.path.getmtime(self.db_file_list)
         self.last_changed_file_paths = []
         logger.debug('KnowledgeRetriever initialized')
 
@@ -47,12 +47,24 @@ class KnowledgeRetriever:
           logger.debug('Knowledge reloaded')
         return True if len(documents) else False
 
+    def enrich_document (self, doc, metadata):
+      if doc.metadata.get("indexed"):
+        raise Exception(f"Doc already indexed {doc.metadata}")
+      for k in metadata.keys():
+        doc.metadata[k] = metadata[k]
+      doc.page_content = f"DOCUMENT METADATA:\n{doc.metadata}\nDOCUMENT CONTENT:\n{doc.page_content}"
+      doc.metadata["indexed"] = 1
+      return doc
+  
     def index_documents (self, documents):
         if self.last_update:
           self.delete_old_documents(documents)
         index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        metadata = {
+          "index_date": f"{index_date}"
+        }
         for doc in documents:
-          doc.metadata["index_date"] = f"{index_date}"
+          doc = self.enrich_document(doc, metadata)
         self.db = Chroma.from_documents(documents,
           self.embedding,
           persist_directory=self.db_path,
