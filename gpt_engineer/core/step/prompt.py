@@ -60,7 +60,7 @@ def improve_prompt_with_summary(ai:AI, dbs: DBs):
     dbs.input[PROMPT_FILE] = new_prompt
 
 def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
-    if not MORE_INFO_IS_NEEDED in prompt:
+    if MORE_INFO_IS_NEEDED not in prompt:
       return prompt
 
     def is_q(question):
