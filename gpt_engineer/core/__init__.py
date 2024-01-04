@@ -74,8 +74,6 @@ def gtp_engineer(
     file_selector: bool,
     build_knowledge: bool
 ):
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-
     logging.debug(
         "gpt_engineer %s"
         % str(

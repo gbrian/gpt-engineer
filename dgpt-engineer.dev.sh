@@ -3,7 +3,7 @@ echo "Running gpt-engineer docker at VOLUME: $VOLUME_PATH"
 docker run --rm -it \
   -u $USER \
   -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  -e DEBUG=1 \
+  -e DEBUG=${DEBUG:-1} \
   -e GPT_ENGINEER_METADATA_PATH=$GPT_ENGINEER_METADATA_PATH \
   -v $VOLUME_PATH:$VOLUME_PATH \
   -v $PWD:/app \

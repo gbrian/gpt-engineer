@@ -29,7 +29,7 @@ def run_api(
         use_git=use_git,
         verbose=verbose,
     )
-    app.run(debug=True)
+    app.run()
 
 
 @app.route("/gtp_engineer", methods=["POST"])
