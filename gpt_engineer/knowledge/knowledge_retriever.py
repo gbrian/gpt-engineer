@@ -14,6 +14,12 @@ from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
 
 logger = logging.getLogger(__name__)
 
+class DBDocument (Document):
+  db_id: str = None
+  def __init__(self, id, metadata):
+    Document.__init__(self, id=id, page_content="", metadata=metadata)
+    self.db_id = id
+
 class KnowledgeRetriever:
     db_path = f"{GPTENG_PATH}/db"
     db_file_list = f"{GPTENG_PATH}/db/file_list"
@@ -40,12 +46,51 @@ class KnowledgeRetriever:
         logger.debug('Reloading knowledge')
         # Load the knowledge from the filesystem
         documents = self.loader.load(last_update=self.last_update)
-        if len(documents):
+        if documents:
           self.index_documents(documents)
           self.last_changed_file_paths = list(dict.fromkeys([d.metadata["source"] for d in documents]))
           self.build_summary()
           logger.debug('Knowledge reloaded')
+        changes = self.clean_deleted_documents()
+        if changes or documents: 
+          self.build_summary()
         return True if len(documents) else False
+
+    def get_all_documents (self):
+        logger.debug('Get all documents')
+        collection = self.get_db()._collection
+        collection_docs = collection.get(include=['metadatas'])
+        documents = []
+        ids = collection_docs["ids"]
+        metadatas = collection_docs["metadatas"]
+        for ix, _id in enumerate(ids):
+          documents.append(DBDocument(id=_id, metadata= metadatas[ix]))
+        return documents
+
+    def get_all_sources (self):
+        documents = self.get_all_documents()
+        doc_sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
+        logger.debug(f'All sources {len(doc_sources)}')        
+        return doc_sources
+        
+    def clean_deleted_documents(self):
+        logger.debug('Removing deleted documents')
+        ids_to_delete = []
+        collection = self.get_db()._collection
+        documents = self.get_all_documents()
+        
+        sources = []
+        for doc in documents:
+          source = doc.metadata["source"]
+          if not os.path.isfile(source):
+            sources.append(source)
+            ids_to_delete.append(doc.db_id)
+
+        if len(ids_to_delete):
+          logger.debug(f'Documents to delete: {sources} {ids_to_delete}')
+          collection.delete(ids=ids_to_delete)
+          return True
+        return False
 
     def enrich_document (self, doc, metadata):
       if doc.metadata.get("indexed"):
@@ -70,13 +115,6 @@ class KnowledgeRetriever:
           persist_directory=self.db_path,
         )
 
-    def get_db_files (self):
-      # Read current files
-      if os.path.isfile(self.db_file_list):
-        with open(self.db_file_list, "r") as db_files: 
-          return db_files.read().split("\n")
-      return []
-
     def get_last_changed_file_paths (self):
       return self.last_changed_file_paths
 
@@ -85,7 +123,7 @@ class KnowledgeRetriever:
           os.mkdir(self.db_path, exist_ok=True)
         except:
           pass
-        current_files = self.get_db_files()
+        current_files = self.get_all_sources()
         db_files = list(dict.fromkeys(self.last_changed_file_paths + current_files))
         # Save all files
         with open(self.db_file_list, "w") as db_file_list:
