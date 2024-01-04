@@ -2,7 +2,6 @@ import tiktoken
 import logging
 from dataclasses import dataclass
 from typing import List, Union
-from langchain.callbacks.openai_info import get_openai_token_cost_for_model
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 Message = Union[AIMessage, HumanMessage, SystemMessage]
@@ -159,11 +158,4 @@ class TokenUsageLog:
             Cost in USD.
         """
         result = 0
-        for log in self.log():
-            result += get_openai_token_cost_for_model(
-                self.model_name, log.total_prompt_tokens, is_completion=False
-            )
-            result += get_openai_token_cost_for_model(
-                self.model_name, log.total_completion_tokens, is_completion=True
-            )
         return result
