@@ -680,12 +680,18 @@ def validate_context(ai, dbs, prompt, doc):
     validate_prompt = dbs.preprompts["validate_context"].format(prompt=prompt, context=doc.page_content)
     messages = ai.start(system, validate_prompt, step_name=curr_fn())
     
-    score = float(messages[-1].content.strip())
-    doc.metadata["relevance_score"] = score
-    if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
-      return None
-    return doc
-
+    score = None
+    response = messages[-1].content.strip()
+    try:
+      score = float(response)
+      doc.metadata["relevance_score"] = score
+      if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
+        return None
+      return doc
+    except Exception as ex:
+      logging.error(f"[validate_context] failed to validate {ex}\n{prompt}\n{response}")
+    return None
+    
 def get_file_info(dbs: DBs):
     files_info = get_code_strings(
         dbs.workspace, dbs.project_metadata
@@ -899,8 +905,14 @@ def chat(ai: AI, dbs: DBs):
   return chat_interaction(ai, dbs)
 
 def get_improve_prompt(ai: AI, dbs: DBs):
-  from gpt_engineer.core.step.prompt import get_improve_prompt
-  return get_improve_prompt(ai, dbs)
+  from gpt_engineer.core.step.clarify import clarify_business_request
+  from gpt_engineer.core.step.prompt import get_prompt, set_prompt
+  logging.debug("get_improve_prompt")
+  prompt, ai_response = clarify_business_request(ai, dbs)
+  logging.debug(f"get_improve_prompt: {prompt} \n {ai_response}")
+  if ai_response:
+    set_prompt(dbs, f"USER:\n{prompt}\nANALYST:\n{ai_response}\n")
+  return []
 
 class Config(str, Enum):
     """

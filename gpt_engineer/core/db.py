@@ -232,6 +232,7 @@ class DBs:
     memory: DB
     logs: DB
     preprompts: DB
+    roles: DB
     input: DBPrompt
     workspace: DB
     archive: DB

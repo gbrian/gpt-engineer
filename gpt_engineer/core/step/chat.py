@@ -18,22 +18,23 @@ def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = []):
   response = ai_messages[-1].content.strip()
   return response, documents 
 
-def chat_interaction(ai: AI, dbs: DBs):
-    messages = []
+def chat_interaction(ai: AI, dbs: DBs, user_input: str = None, messages=[]):
     print("Entering chat mode. Type your messages below (leave blank to exit):")
     while True:
-        user_input = input("> ")
-        if user_input == "":
-            break
+        if not user_input:
+          user_input = input("> ")
+          if user_input == "":
+              break
 
         # Fetch relevant documents using KnowledgeRetriever
         response, documents = ai_chat(ai, dbs, user_input, messages)
-        references = "\n".join([f"{doc.metadata['source']} score: {doc.metadata.get('relevance_score')}\n{document_to_context(doc)}" for doc in documents])
+        references = "\n".join([f"{doc.metadata['source']} score: {doc.metadata.get('relevance_score')}" for doc in documents])
         
         print(f"\n{response}\n\nREFERENCES\n{references}")
 
         messages.append(f"USER: {user_input}")
         messages.append(f"ASSISTANT: {response}")
+        user_input = None
 
     if len(messages):
       all_messages = '\n'.join(messages)
@@ -42,4 +43,4 @@ def chat_interaction(ai: AI, dbs: DBs):
         dbs.project_metadata[CHAT_FILE] = chat_content
       else:
         dbs.project_metadata.append(CHAT_FILE, chat_content)
-    return []
+    return messages

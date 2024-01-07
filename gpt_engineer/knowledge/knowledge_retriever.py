@@ -123,8 +123,8 @@ class KnowledgeRetriever:
           os.mkdir(self.db_path, exist_ok=True)
         except:
           pass
-        current_files = self.get_all_sources()
-        db_files = list(dict.fromkeys(self.last_changed_file_paths + current_files))
+        current_files = [f"{doc.metadata['source']} {doc.metadata.get('language')}" for doc in self.get_all_documents()]
+        db_files = list(dict.fromkeys(current_files))
         # Save all files
         with open(self.db_file_list, "w") as db_file_list:
           db_file_list.write("\n".join(db_files))

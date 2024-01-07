@@ -3,6 +3,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, Language
 
 logger = logging.getLogger(__name__)
 
+
 class KnowledgeSplitter:
     def __init__(self, language, chunk_size, chunk_overlap):
         logger.debug('Initializing KnowledgeSplitter')

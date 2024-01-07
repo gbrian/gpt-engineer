@@ -130,6 +130,7 @@ def gtp_engineer(
         input=DBPrompt(prompt_path),
         workspace=DB(workspace_path),
         preprompts=DB(preprompts_path()),
+        roles=DB(preprompts_path() / "roles"),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
         knowledge=KnowledgeRetriever(workspace_path)
