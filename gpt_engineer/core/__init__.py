@@ -57,6 +57,19 @@ def preprompts_path() -> Path:
           logging.info("Using local prepromt %s", file.name)
     return custom_preprompts_path
 
+def roles_path() -> Path:
+    original_roles_path = Path(__file__).parent.parent / "preprompts/roles"
+    custom_roles_path = Path(f"{GPTENG_PATH}/preprompts/roles")
+    if not custom_roles_path.exists():
+        return original_roles_path
+
+    for file in original_roles_path.glob("*"):
+        if not (custom_roles_path / file.name).exists():
+            (custom_roles_path / file.name).write_text(file.read_text())
+        else:
+          logging.info("Using local prepromt %s", file.name)
+    return custom_roles_path
+
 
 def gtp_engineer(
     project_path: str,
@@ -130,7 +143,7 @@ def gtp_engineer(
         input=DBPrompt(prompt_path),
         workspace=DB(workspace_path),
         preprompts=DB(preprompts_path()),
-        roles=DB(preprompts_path() / "roles"),
+        roles=DB(roles_path()),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
         knowledge=KnowledgeRetriever(workspace_path)
