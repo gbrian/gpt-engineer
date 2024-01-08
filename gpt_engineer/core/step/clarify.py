@@ -27,6 +27,8 @@ QUESTION_PREFIX = re.compile(r"^\s*[0-9-.]+\.? ")
 def clarify_business_request (ai: AI, dbs: DBs):
   system = system = dbs.roles[ANALIST_ROLE] + dbs.preprompts[CLARIFY_BUSINESS_REQUEST]
   prompt = get_prompt(ai, dbs)
+
+  prompt, _ = ai_chat(ai, dbs, user_input=prompt, messages=[])
   
   messages = ai.start(system, prompt, step_name=curr_fn()) 
   auto_response = "@ai"
