@@ -911,7 +911,7 @@ def get_improve_prompt(ai: AI, dbs: DBs):
   prompt, ai_response = clarify_business_request(ai, dbs)
   logging.debug(f"get_improve_prompt: {prompt} \n {ai_response}")
   if ai_response:
-    set_prompt(dbs, f"USER:\n{prompt}\nANALYST:\n{ai_response}\n")
+    set_prompt(dbs, ai_response)
   return []
 
 class Config(str, Enum):
