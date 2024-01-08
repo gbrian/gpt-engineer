@@ -53,7 +53,7 @@ LANGUAGE_FROM_EXTENSION = {
 IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng", ".git" }
 IGNORE_FILES = { ".env" }
 
-KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7
+KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.8
 
 # Add a new setting for CHAT_FILE
 CHAT_FILE = os.getenv('CHAT_FILE', 'chat')

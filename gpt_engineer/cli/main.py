@@ -49,7 +49,7 @@ app = typer.Typer()  # creates a CLI app
 
 @app.command()
 def main(
-    project_path: str = typer.Argument("projects/example", help="path"),
+    project_path: str = typer.Argument(".", help="path"),
     model: str = typer.Argument(MODEL, help="model id string"),
     temperature: float = TEMPERATURE,
     steps_config: StepsConfig = typer.Option(
@@ -74,11 +74,11 @@ def main(
         help="""Endpoint for your Azure OpenAI Service (https://xx.openai.azure.com).
             In that case, the given model is the deployment name chosen in the Azure AI Studio.""",
     ),
-    ai_cache: bool = typer.Option(
+    chat_mode: bool = typer.Option(
         False,
-        "--cache",
+        "--chat",
         "-c",
-        help="Caches AI responses.",
+        help="Chat mode.",
     ),
     use_git: bool = typer.Option(
         False,
@@ -122,7 +122,7 @@ def main(
             improve_mode,
             lite_mode,
             azure_endpoint,
-            ai_cache,
+            chat_mode,
             use_git,
             verbose,
             test
@@ -137,7 +137,7 @@ def main(
                 improve_mode=improve_mode,
                 lite_mode=lite_mode,
                 azure_endpoint=azure_endpoint,
-                ai_cache=ai_cache,
+                chat_mode=chat_mode,
                 use_git=use_git,
                 prompt_file=prompt_file,
                 verbose=verbose,

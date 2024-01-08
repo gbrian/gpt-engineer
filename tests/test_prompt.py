@@ -39,14 +39,6 @@ def test_get_prompt_with_current_prompt_keep(mock_ai_dbs):
     with patch('builtins.input', return_value=''):
         assert get_prompt(ai, dbs) == 'Current prompt'
 
-# Test improve_prompt_with_summary function
-def test_improve_prompt_with_summary(mock_ai_dbs):
-    ai, dbs = mock_ai_dbs
-    # Setup the necessary return values and side effects
-    # ...
-    # Call the function and assert the expected outcomes
-    # ...
-
 # Test improve_prompt_with_knowledge function
 def test_improve_prompt_with_knowledge(mock_ai_dbs):
     ai, dbs = mock_ai_dbs

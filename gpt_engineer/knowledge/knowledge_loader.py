@@ -45,14 +45,14 @@ class KnowledgeLoader:
               if f".{extension}" in suffixes:
                 return True
           return False
-                
-        # logger.debug(f'Traversing filesystem {self.path} ignoring {self.exclude_folders}')
+        logger.debug(f'Traversing filesystem {self.path}')  
         for root, dirs, files in os.walk(self.path):
             invalid_dirs = [d for d in root.split(os.sep) if d in self.exclude_folders]
             if len(invalid_dirs):
               continue
             for filename in files:
-                if valid_file(filename):
+                is_valid = valid_file(filename)
+                if is_valid:
                   yield os.path.join(root, filename)
         
     def load(self, last_update: datetime = None):

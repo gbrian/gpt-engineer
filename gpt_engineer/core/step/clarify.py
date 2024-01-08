@@ -19,7 +19,7 @@ from gpt_engineer.settings import (
   HISTORY_PROMPT_FILE,
 )
 
-MORE_INFO_IS_NEEDED="MORE INFO IS NEEDED:"
+MORE_INFO_IS_NEEDED="MORE INFO IS NEEDED"
 USER_FEEDBACK="USER FEEDBACK:"
 
 QUESTION_PREFIX = re.compile(r"^\s*[0-9-.]+\.? ")
@@ -29,11 +29,12 @@ def clarify_business_request (ai: AI, dbs: DBs):
   prompt = get_prompt(ai, dbs)
   
   messages = ai.start(system, prompt, step_name=curr_fn()) 
+  auto_response = "@ai"
   while True:
     user_message = messages[-2].content.strip() 
     ai_response = messages[-1].content.strip()
-    ai_response, comments = solve_prompt_questions(ai, dbs, ai_response)
-    if not comments:
+    ai_response, comments = solve_prompt_questions(ai, dbs, ai_response, auto_response)
+    if not auto_response and not comments:
       comments = input("\n".join([
         colored("BUSINESS USER:", "green"),
         prompt,
@@ -46,6 +47,7 @@ def clarify_business_request (ai: AI, dbs: DBs):
       ]))
       if not comments:
         return prompt, ai_response
+    auto_response = None
     messages = ai.next(messages, prompt=comments, step_name=curr_fn())
   return prompt, None
 
@@ -83,7 +85,7 @@ def build_userfeedback(qas):
     user_feedback.append(f"A: {response}")
   return "\n".join(user_feedback)
 
-def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
+def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str, auto_response=None):
     has_comments = False
     if MORE_INFO_IS_NEEDED not in prompt:
       return prompt, has_comments
@@ -109,7 +111,7 @@ def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str):
         ": "
       ]
       print()
-      opt = input("\n".join(question_request))
+      opt = auto_response if auto_response else input("\n".join(question_request))
       logging.debug(f"User response: {opt}")
       response = opt
       if opt.lower() == '@ai':

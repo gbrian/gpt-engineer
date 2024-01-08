@@ -79,7 +79,7 @@ def gtp_engineer(
     improve_mode: bool,
     lite_mode: bool,
     azure_endpoint: str,
-    ai_cache: bool,
+    chat_mode: bool,
     use_git: bool,
     prompt_file: str,
     verbose: bool,
@@ -98,7 +98,7 @@ def gtp_engineer(
                 "improve_mode": improve_mode,
                 "lite_mode": lite_mode,
                 "azure_endpoint": azure_endpoint,
-                "ai_cache": ai_cache,
+                "chat_mode": chat_mode,
                 "use_git": use_git,
                 "prompt_file": prompt_file,
                 "verbose": verbose,
@@ -113,6 +113,9 @@ def gtp_engineer(
         assert not improve_mode, "Lite mode cannot improve code"
         if steps_config == StepsConfig.DEFAULT:
             steps_config = StepsConfig.LITE
+    
+    if chat_mode:
+        steps_config = StepsConfig.CHAT
 
     if improve_mode:
         assert (
@@ -173,7 +176,7 @@ def gtp_engineer(
         model_name=model,
         temperature=temperature,
         azure_endpoint=azure_endpoint,
-        cache=DB(memory_path / "cache") if ai_cache else None,
+        cache=DB(memory_path / "cache"),
     )
 
     if steps_config not in [
@@ -213,7 +216,6 @@ def index_content(
     model: str,
     temperature: float,
     azure_endpoint: str,
-    ai_cache: bool,
 ):
     """
     Index the content of files in a given path and generate a summary.
@@ -234,15 +236,13 @@ def index_content(
         The temperature setting for the AI model.
     azure_endpoint : str
         The Azure endpoint URL, if applicable.
-    ai_cache : bool
-        Whether to use AI cache.
 
     """
     ai = AI(
         model_name=model,
         temperature=temperature,
         azure_endpoint=azure_endpoint,
-        cache=DB(memory_path / "cache") if ai_cache else None,
+        cache=DB(memory_path / "cache"),
     )
     summary = Summary(ai)
     for root, dirs, files in os.walk(path):

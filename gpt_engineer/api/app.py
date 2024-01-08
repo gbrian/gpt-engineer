@@ -13,7 +13,7 @@ def run_api(
     improve_mode,
     lite_mode,
     azure_endpoint,
-    ai_cache,
+    chat_mode,
     use_git,
     verbose
 ):
@@ -25,7 +25,7 @@ def run_api(
         improve_mode=improve_mode,
         lite_mode=lite_mode,
         azure_endpoint=azure_endpoint,
-        ai_cache=ai_cache,
+        chat_mode=chat_mode,
         use_git=use_git,
         verbose=verbose,
     )
@@ -44,7 +44,7 @@ def run_gtp_engineer():
             improve_mode=data.get("improve_mode"),
             lite_mode=data.get("lite_mode"),
             azure_endpoint=data.get("azure_endpoint"),
-            ai_cache=data.get("ai_cache"),
+            chat_mode=data.get("chat_mode"),
             use_git=data.get("use_git"),
             prompt_file=data.get("prompt_file"),
             verbose=data.get("verbose"),
