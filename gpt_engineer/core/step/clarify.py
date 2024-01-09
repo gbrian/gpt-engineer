@@ -29,7 +29,7 @@ def clarify_business_request (ai: AI, dbs: DBs):
   prompt = get_prompt(ai, dbs)
 
   if input(f"Clarify prompt with {dbs.settings.role} (Y/n):") == 'n':
-    return []
+    return prompt, None
 
   logging.debug(f"[clarify_business_request]: {system} - {prompt}")
 
