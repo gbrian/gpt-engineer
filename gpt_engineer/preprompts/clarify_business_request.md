@@ -1,3 +1,3 @@
 DON'T OUTPUT A USER_STORY UNTIL YOU HAVE CLEARED OUT ALL QUESTIONS AND DOUBTS.
 ALL FILES CHANGED PATH MUST BE PRESENT ON PROJECT CONTEXT
-Add a "MORE INFO IS NEEDED" section at the end of the message to clarify questions with the user
+Add a "MORE INFO IS NEEDED" section, always at the end, of the message to clarify questions with the user.

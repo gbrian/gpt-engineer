@@ -52,6 +52,7 @@ import subprocess
 import os
 import logging
 import time
+import json
 
 from functools import reduce
 from enum import Enum
@@ -677,14 +678,18 @@ def compute_files_size(dbs: DBs):
 
 def validate_context(ai, dbs, prompt, doc, retry_count=0):
     system = dbs.roles["qa.md"]
-    validate_prompt = dbs.preprompts["validate_context"].format(prompt=prompt, context=doc.page_content)
+    validate_prompt = dbs.preprompts["validate_context"] \
+      .replace("{{ prompt }}", prompt) \
+      .replace("{{ context }}", doc.page_content)
     messages = ai.start(system, validate_prompt, step_name=curr_fn(), max_response_length=3)
     
     score = None
     response = messages[-1].content.strip()
     try:
-      score = float(response)
+      response = [l for l in response.split("\n") if l.startswith("{")][0]
+      score = float(json.loads(response).get("score"))
       doc.metadata["relevance_score"] = score
+      logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
       if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
         return None
       return doc
