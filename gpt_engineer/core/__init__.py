@@ -21,6 +21,7 @@ import shutil
 from pathlib import Path
 import openai
 
+from gpt_engineer.core.settings import Settings
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
 from gpt_engineer.core.steps import run_steps, STEPS, Config as StepsConfig
@@ -81,33 +82,31 @@ def gtp_engineer(
     azure_endpoint: str,
     chat_mode: bool,
     use_git: bool,
+    role: str,
     prompt_file: str,
     verbose: bool,
     prompt: str,
     file_selector: bool,
     build_knowledge: bool
 ):
-    logging.debug(
-        "gpt_engineer %s"
-        % str(
-            {
-                "project_path": project_path,
-                "model": model,
-                "temperature": temperature,
-                "steps_config": steps_config,
-                "improve_mode": improve_mode,
-                "lite_mode": lite_mode,
-                "azure_endpoint": azure_endpoint,
-                "chat_mode": chat_mode,
-                "use_git": use_git,
-                "prompt_file": prompt_file,
-                "verbose": verbose,
-                "prompt": prompt,
-                "file_selector": file_selector,
-                "build_knowledge": build_knowledge
-            }
-        )
+    settings = Settings(
+        project_path=project_path,
+        model=model,
+        temperature=temperature,
+        steps_config=steps_config,
+        improve_mode=improve_mode,
+        lite_mode=lite_mode,
+        azure_endpoint=azure_endpoint,
+        chat_mode=chat_mode,
+        use_git=use_git,
+        role=role,
+        prompt_file=prompt_file,
+        verbose=verbose,
+        prompt=prompt,
+        file_selector=file_selector,
+        build_knowledge=build_knowledge
     )
+    logging.debug(f"gpt_engineer {settings}")
 
     if lite_mode:
         assert not improve_mode, "Lite mode cannot improve code"
@@ -149,7 +148,8 @@ def gtp_engineer(
         roles=DB(roles_path()),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
-        knowledge=KnowledgeRetriever(workspace_path)
+        knowledge=KnowledgeRetriever(workspace_path),
+        settings=settings
     )
 
     if build_knowledge:

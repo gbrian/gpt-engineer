@@ -5,8 +5,6 @@ from gpt_engineer.core.steps import document_to_context, curr_fn, validate_conte
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
 
-from gpt_engineer.core.step.chat import chat_interaction
-
 from gpt_engineer.settings import (
   PROMPT_FILE,
   HISTORY_PROMPT_FILE,

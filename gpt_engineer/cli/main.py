@@ -55,6 +55,12 @@ def main(
     steps_config: StepsConfig = typer.Option(
         StepsConfig.DEFAULT, "--steps", "-s", help="decide which steps to run"
     ),
+    role: str = typer.Option(
+        "analyst",
+        "-r",
+        "--role",
+        help="Specify the user role.",
+    ),
     improve_mode: bool = typer.Option(
         False,
         "--improve",
@@ -139,6 +145,7 @@ def main(
                 azure_endpoint=azure_endpoint,
                 chat_mode=chat_mode,
                 use_git=use_git,
+                role=role,
                 prompt_file=prompt_file,
                 verbose=verbose,
                 prompt=prompt,

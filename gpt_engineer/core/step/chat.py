@@ -7,9 +7,9 @@ from gpt_engineer.core.db import DBs
 
 from gpt_engineer.settings import CHAT_FILE
 
-def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None):
+def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None, role=None):
   if not system:
-    system = dbs.preprompts["roadmap"] + dbs.preprompts["philosophy"]
+    system = dbs.roles[f"{role if role else 'qa'}.md"]
   else:
     logging.debug(f"[ai_chat] using custom system")
   # Fetch relevant documents using KnowledgeRetriever
@@ -25,6 +25,7 @@ def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None):
 
 def chat_interaction(ai: AI, dbs: DBs, user_input: str = None, messages=[]):
     print("Entering chat mode. Type your messages below (leave blank to exit):")
+    role = dbs.settings.role
     while True:
         if not user_input:
           user_input = input("> ")
@@ -32,7 +33,7 @@ def chat_interaction(ai: AI, dbs: DBs, user_input: str = None, messages=[]):
               break
 
         # Fetch relevant documents using KnowledgeRetriever
-        response, documents = ai_chat(ai, dbs, user_input, messages)
+        response, documents = ai_chat(ai, dbs, user_input, messages, role=role)
         references = "\n".join([f"{doc.metadata['source']} score: {doc.metadata.get('relevance_score')}" for doc in documents])
         
         print(f"\n{response}\n\nREFERENCES\n{references}")
@@ -48,4 +49,4 @@ def chat_interaction(ai: AI, dbs: DBs, user_input: str = None, messages=[]):
         dbs.project_metadata[CHAT_FILE] = chat_content
       else:
         dbs.project_metadata.append(CHAT_FILE, chat_content)
-    return messages
+    return []
