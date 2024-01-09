@@ -3,7 +3,7 @@ from unittest import mock
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
 from gpt_engineer.core.steps import validate_context
-from gpt_engineer.core.domain import Document
+from langchain_core.documents import Document
 
 class MockAI(AI):
     def start(self, system, validate_prompt, step_name):

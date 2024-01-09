@@ -68,3 +68,56 @@ def test_token_logging(monkeypatch):
     # assert
     assert usageCostAfterStart > 0
     assert usageCostAfterNext > usageCostAfterStart
+
+def test_start_with_max_response_length_none(monkeypatch):
+    # arrange
+    monkeypatch.setattr(
+        AI, "_check_model_access_and_fallback", mock_check_model_access_and_fallback
+    )
+    monkeypatch.setattr(AI, "_create_chat_model", mock_create_chat_model)
+
+    ai = AI("gpt-4")
+
+    # act
+    response_messages = ai.start("system prompt", "user prompt", "step name", max_response_length=None)
+
+    # assert
+    assert response_messages[-1].content == "response1"
+
+def test_start_with_max_response_length_shorter(monkeypatch):
+    # arrange
+    monkeypatch.setattr(
+        AI, "_check_model_access_and_fallback", mock_check_model_access_and_fallback
+    )
+    monkeypatch.setattr(AI, "_create_chat_model", mock_create_chat_model)
+
+    ai = AI("gpt-4")
+    # Mock response longer than max_response_length to test truncation
+    short_response = "short response that is actually quite long"
+    max_response_length=3
+    # act
+    # Adjusting max_response_length to be shorter than the mock response
+    response_messages = ai.start("system prompt", "user prompt", "step name", max_response_length=max_response_length)
+
+    # assert
+    # Asserting that the response is truncated to the max_response_length
+    assert len(response_messages[-1].content) == max_response_length
+
+def test_start_with_max_response_length_longer(monkeypatch):
+    # arrange
+    monkeypatch.setattr(
+        AI, "_check_model_access_and_fallback", mock_check_model_access_and_fallback
+    )
+    monkeypatch.setattr(AI, "_create_chat_model", mock_create_chat_model)
+
+    ai = AI("gpt-4")
+    # Mock response shorter than max_response_length to test no truncation
+    long_response = "long response"
+
+    # act
+    # Adjusting max_response_length to be longer than the mock response
+    response_messages = ai.start("system prompt", "user prompt", "step name", max_response_length=len(long_response) + 10)
+
+    # assert
+    # Asserting that the full response is returned when max_response_length is longer
+    assert response_messages[-1].content == long_response

@@ -1,3 +1,5 @@
+import logging
+
 from gpt_engineer.core.steps import document_to_context, validate_context, curr_fn
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
@@ -5,8 +7,11 @@ from gpt_engineer.core.db import DBs
 
 from gpt_engineer.settings import CHAT_FILE
 
-def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = []):
-  system = dbs.preprompts["roadmap"] + dbs.preprompts["philosophy"]
+def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None):
+  if not system:
+    system = dbs.preprompts["roadmap"] + dbs.preprompts["philosophy"]
+  else:
+    logging.debug(f"[ai_chat] using custom system")
   # Fetch relevant documents using KnowledgeRetriever
   documents = dbs.knowledge.search(user_input)
   documents = [doc for doc in documents if validate_context(ai, dbs, user_input, doc)]

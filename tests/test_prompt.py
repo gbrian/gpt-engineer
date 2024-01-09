@@ -7,7 +7,7 @@ are working as expected, including edge cases.
 
 import pytest
 from unittest.mock import patch, MagicMock
-from gpt_engineer.core.step.prompt import get_prompt, improve_prompt_with_summary, improve_prompt_with_knowledge, get_improve_prompt
+from gpt_engineer.core.step.prompt import get_prompt
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
 
@@ -39,23 +39,7 @@ def test_get_prompt_with_current_prompt_keep(mock_ai_dbs):
     with patch('builtins.input', return_value=''):
         assert get_prompt(ai, dbs) == 'Current prompt'
 
-# Test improve_prompt_with_knowledge function
-def test_improve_prompt_with_knowledge(mock_ai_dbs):
-    ai, dbs = mock_ai_dbs
-    # Setup the necessary return values and side effects
-    # ...
-    # Call the function and assert the expected outcomes
-    # ...
-
-# Test get_improve_prompt function
-def test_get_improve_prompt(mock_ai_dbs):
-    ai, dbs = mock_ai_dbs
-    # Setup the necessary return values and side effects
-    # ...
-    # Call the function and assert the expected outcomes
-    # ...
-
-  # Fixture to mock AI and DBs instances
+# Fixture to mock AI and DBs instances
 @pytest.fixture
 def mock_ai_dbs():
     ai = MagicMock(spec=AI)

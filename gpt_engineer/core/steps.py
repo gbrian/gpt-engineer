@@ -676,9 +676,9 @@ def compute_files_size(dbs: DBs):
     return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
 
 def validate_context(ai, dbs, prompt, doc):
-    system = dbs.preprompts["roadmap"] + dbs.preprompts["philosophy"]
+    system = ""
     validate_prompt = dbs.preprompts["validate_context"].format(prompt=prompt, context=doc.page_content)
-    messages = ai.start(system, validate_prompt, step_name=curr_fn())
+    messages = ai.start(system, validate_prompt, step_name=curr_fn(), max_response_length=3)
     
     score = None
     response = messages[-1].content.strip()
