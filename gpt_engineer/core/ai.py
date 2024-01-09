@@ -60,14 +60,6 @@ class AIStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         super().__init__()
         self.max_response_length = kwargs["max_response_length"]
 
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        """Run on new LLM token. Only available when streaming is enabled."""
-        self.current_response_length = self.current_response_length + len(token)
-        if self.current_response_length > self.max_response_length:
-            logging.error(f"Interrupting response generation, max limit reached {self.current_response_length}/{self.max_response_length}")
-            return
-        super().on_llm_new_token(token, **kwargs)
-
 class AI:
     """
     A class to interface with a language model for chat-based interactions.

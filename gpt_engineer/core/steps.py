@@ -675,7 +675,7 @@ def assert_files_ready(ai: AI, dbs: DBs):
 def compute_files_size(dbs: DBs):
     return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
 
-def validate_context(ai, dbs, prompt, doc):
+def validate_context(ai, dbs, prompt, doc, retry_count=0):
     system = dbs.roles["qa.md"]
     validate_prompt = dbs.preprompts["validate_context"].format(prompt=prompt, context=doc.page_content)
     messages = ai.start(system, validate_prompt, step_name=curr_fn(), max_response_length=3)
@@ -689,6 +689,10 @@ def validate_context(ai, dbs, prompt, doc):
         return None
       return doc
     except Exception as ex:
+      if not retry_count:
+        logging.error(f"[validate_context] re-trying failed validation {ex}\n{prompt}\n{response}")
+        return validate_context(ai, dbs, prompt, doc, retry_count=1)
+
       logging.error(f"[validate_context] failed to validate {ex}\n{prompt}\n{response}")
     return None
     
