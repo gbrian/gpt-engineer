@@ -1,13 +1,18 @@
 # INSTRUCTIONS
 ANALIZE HOW USEFULL IS THE CONTEXT BELOW RELATED WITH THE TASK. 
-RETURN A JSON OBJECT WITH THE SCORE LIKE:
-```json
-{ "score": 0.3 }
-```
 
-# TASK IS:
-{{ prompt }}
+TASK:
+"{{ prompt }}"
 
 
-# CONTEXT IS:
+CONTEXT:
 {{ context }}
+
+
+RETURN A JSON OBJECT WITH THE SCORE AND TAGS LIKE THIS:
+```json
+{ 
+  "score": 0.3,
+  "tags": "code, html, style, ..." 
+}
+```

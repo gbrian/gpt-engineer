@@ -686,7 +686,7 @@ def validate_context(ai, dbs, prompt, doc, retry_count=0):
     score = None
     response = messages[-1].content.strip()
     try:
-      response = [l for l in response.split("\n") if l.startswith("{")][0]
+      response = "\n".join([l for l in response.split("\n") if not l.startswith("```")])
       score = float(json.loads(response).get("score"))
       doc.metadata["relevance_score"] = score
       logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
