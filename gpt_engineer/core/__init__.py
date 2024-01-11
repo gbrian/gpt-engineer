@@ -87,7 +87,8 @@ def gtp_engineer(
     verbose: bool,
     prompt: str,
     file_selector: bool,
-    build_knowledge: bool
+    build_knowledge: bool,
+    update_summary: bool
 ):
     settings = Settings(
         project_path=project_path,
@@ -186,13 +187,16 @@ def gtp_engineer(
         StepsConfig.IMPROVE_CODE,
         StepsConfig.SELF_HEAL,
         StepsConfig.CHAT,
+        StepsConfig.CREATE_PROJECT_SUMMARY,
     ]:
-        archive(dbs)
-        load_prompt(dbs)
+        # archive(dbs)
+        # load_prompt(dbs)
+        pass
 
-    if index_changed:
+    if update_summary:
       steps = STEPS[StepsConfig.CREATE_PROJECT_SUMMARY]
       run_steps(steps, ai, dbs)
+      return
 
     steps = STEPS[steps_config]
     run_steps(steps, ai, dbs)

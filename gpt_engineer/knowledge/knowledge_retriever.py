@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 class DBDocument (Document):
   db_id: str = None
-  def __init__(self, id, metadata):
-    Document.__init__(self, id=id, page_content="", metadata=metadata)
+  def __init__(self, id, metadata, page_content=""):
+    Document.__init__(self, id=id, page_content=page_content, metadata=metadata)
     self.db_id = id
 
 class KnowledgeRetriever:
@@ -56,15 +56,19 @@ class KnowledgeRetriever:
           self.build_summary()
         return True if len(documents) else False
 
-    def get_all_documents (self):
+    def get_all_documents (self, include=[]):
         logger.debug('Get all documents')
         collection = self.get_db()._collection
-        collection_docs = collection.get(include=['metadatas'])
+        collection_docs = collection.get(include=include + ['metadatas'])
         documents = []
         ids = collection_docs["ids"]
         metadatas = collection_docs["metadatas"]
+        page_contents = collection_docs.get("documents", [])
         for ix, _id in enumerate(ids):
-          documents.append(DBDocument(id=_id, metadata= metadatas[ix]))
+          page_content = ""
+          if page_contents:
+            page_content = page_contents[ix]
+          documents.append(DBDocument(id=_id, page_content=page_content, metadata=metadatas[ix]))
         return documents
 
     def get_all_sources (self):

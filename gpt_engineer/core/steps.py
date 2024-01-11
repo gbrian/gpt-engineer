@@ -879,35 +879,8 @@ def process_prompt_and_extract_files(ai: AI, dbs: DBs):
         dbs.input[PROMPT_FILE] = prompt
     
 def create_project_summary(ai: AI, dbs: DBs):
-    if not PROJECT_SUMMARY:
-      # Prject summary is disabled
-      return []
-
-    last_changed_file_paths = dbs.knowledge.get_last_changed_file_paths()
-    template = dbs.preprompts["project_summary"]
-    summary = dbs.project_metadata.get(PROJECT_SUMMARY) or ""
-    system = ""
-
-    for file_changed in last_changed_file_paths:
-      extension = file_changed.split(os.sep)[-1].split(".")[-1]
-      language = LANGUAGE_FROM_EXTENSION.get(f".{extension}") or extension
-      logging.debug(f"Updating summary {extension} {language} {file_changed}")
-      file_content = dbs.input[file_changed]
-      summary_prompt = template.format(content=file_content, summary=summary, language=language, file_path=file_changed)
-
-      messages = ai.start(
-          system=system, user=summary_prompt, step_name=curr_fn()
-      )
-      summary = messages[-1].content.strip().split("\n")
-      if summary[0] == '```markdown':
-        summary = summary[1:-1]
-      
-      dbs.project_metadata[PROJECT_SUMMARY] = "\n".join(summary)
-      dbs.knowledge.index_document(text=dbs.project_metadata[PROJECT_SUMMARY], metadata={
-        "source": PROJECT_SUMMARY,
-        "language": "markdown"
-      })
-    return []
+    from gpt_engineer.core.step.documenter import create_project_summary
+    return create_project_summary(ai, dbs)
 
 def chat(ai: AI, dbs: DBs):
   from gpt_engineer.core.step.chat import chat_interaction

@@ -50,7 +50,7 @@ app = typer.Typer()  # creates a CLI app
 @app.command()
 def main(
     project_path: str = typer.Argument(".", help="path"),
-    model: str = typer.Argument(MODEL, help="model id string"),
+    model: str = typer.Option(MODEL, "--model", "-m", help="model id string"),
     temperature: float = TEMPERATURE,
     steps_config: StepsConfig = typer.Option(
         StepsConfig.DEFAULT, "--steps", "-s", help="decide which steps to run"
@@ -118,6 +118,12 @@ def main(
         "-B",
         help="Build knowledge base.",
     ),
+    update_summary: bool =  typer.Option(
+        False,
+        "--summary",
+        "-S",
+        help="Build knowledge summary.",
+    ),
 ):
     if api:
         run_api(
@@ -150,7 +156,8 @@ def main(
                 verbose=verbose,
                 prompt=prompt,
                 file_selector=file_selector,
-                build_knowledge=build_knowledge
+                build_knowledge=build_knowledge,
+                update_summary=update_summary
             )
 
             if test:
