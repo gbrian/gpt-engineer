@@ -6,7 +6,7 @@ from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
 from gpt_engineer.core.step.prompt import get_prompt, set_prompt
 from gpt_engineer.core.step.chat import ai_chat
-from gpt_engineer.core.steps import document_to_context, curr_fn, validate_context
+from gpt_engineer.core.steps import document_to_context, curr_fn
 
 from gpt_engineer.preprompts import (
   ROADMAP,
@@ -36,7 +36,7 @@ def clarify_business_request (ai: AI, dbs: DBs):
   prompt, _ = ai_chat(ai, dbs, user_input=prompt, messages=[], system=system)
   
   messages = ai.start(system, prompt, step_name=curr_fn()) 
-  auto_response = "@ai"
+  auto_response = None
   while True:
     user_message = messages[-2].content.strip() 
     ai_response = messages[-1].content.strip()
