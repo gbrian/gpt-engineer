@@ -49,11 +49,14 @@ def clarify_business_request (ai: AI, dbs: DBs):
         ai_response,
         "",
         colored("check the generated user story and write cooments if needed", "green"),
+        colored("Use '@ai: your_question...' to ask ai for help", "green"),
         colored("Or just press Enter to continue", "green"),
         colored(">", "green")
       ]))
       if not comments:
         return prompt, ai_response
+      elif comments.startswith("@ai"):
+        comments = ai.next(messages, prompt=comments, step_name=curr_fn())[-1].content.strip()
     auto_response = None
     messages = ai.next(messages, prompt=comments, step_name=curr_fn())
   return prompt, None
