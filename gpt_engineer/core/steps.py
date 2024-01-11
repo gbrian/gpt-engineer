@@ -676,7 +676,22 @@ def assert_files_ready(ai: AI, dbs: DBs):
 def compute_files_size(dbs: DBs):
     return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
 
-def validate_context(ai, dbs, prompt, doc, retry_count=0):
+def validate_context(ai, dbs, prompt, doc):
+    opt = input("\n".join([
+      colored("Please review:", "green"),
+      document_to_context(doc),
+      colored("Is this a valid context (0.0 - 1.0 (Leave empty to ask @ai)?", "green")
+    ]))
+    if not opt:
+      return ai_validate_context(ai, dbs, doc)
+    score = float(opt)
+    doc.metadata["relevance_score"] = score
+    logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
+    if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
+        return None
+    return doc
+
+def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     system = dbs.roles["qa.md"]
     validate_prompt = dbs.preprompts["validate_context"] \
       .replace("{{ prompt }}", prompt) \
