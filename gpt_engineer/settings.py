@@ -67,7 +67,7 @@ FILE_PROVIDER="git"
 # File to store selected files for the task
 FILE_LIST_NAME = "file_list.txt"
 
-USE_AI_CACHE=False
+USE_AI_CACHE=True if os.getenv("USE_AI_CACHE", "False") == "True" else False
 
 #################################################
 ## User override
