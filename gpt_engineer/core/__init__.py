@@ -32,7 +32,7 @@ from gpt_engineer.cli.file_selector import clear_selected_files_list
 
 from gpt_engineer.knowledge.knowledge_retriever import KnowledgeRetriever
 
-from gpt_engineer.settings import GPTENG_PATH, PROMPT_FILE
+from gpt_engineer.settings import GPTENG_PATH, PROMPT_FILE, USE_AI_CACHE
 
 
 def load_prompt(dbs: DBs):
@@ -177,7 +177,7 @@ def gtp_engineer(
         model_name=model,
         temperature=temperature,
         azure_endpoint=azure_endpoint,
-        cache=DB(memory_path / "cache"),
+        cache=DB(memory_path / "cache") if USE_AI_CACHE else None,
     )
 
     if steps_config not in [

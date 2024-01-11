@@ -67,6 +67,8 @@ FILE_PROVIDER="git"
 # File to store selected files for the task
 FILE_LIST_NAME = "file_list.txt"
 
+USE_AI_CACHE=False
+
 #################################################
 ## User override
 ## Try to import settings from 
