@@ -1,0 +1,4 @@
+#!/bash/bin
+cd ${CODX-APPS}/gpt-engineer
+source venv/bin/activate
+python gpt_engineer/cli/main.py $@

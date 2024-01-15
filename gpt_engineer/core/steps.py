@@ -682,7 +682,7 @@ def validate_context(ai, dbs, prompt, doc):
       document_to_context(doc),
       colored("Is this a valid context (0.0 - 1.0 (Leave empty to ask @ai)?", "green")
     ]))
-    if not opt:
+    if not opt or opt == '@ai':
       return ai_validate_context(ai, dbs, doc)
     score = float(opt)
     doc.metadata["relevance_score"] = score
