@@ -711,7 +711,7 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     except Exception as ex:
       if not retry_count:
         logging.error(f"[validate_context] re-trying failed validation {ex}\n{prompt}\n{response}")
-        return validate_context(ai, dbs, prompt, doc, retry_count=1)
+        return ai_validate_context(ai, dbs, prompt, doc, retry_count=1)
 
       logging.error(f"[validate_context] failed to validate {ex}\n{prompt}\n{response}")
     return None
