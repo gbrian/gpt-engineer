@@ -1,4 +1,5 @@
 #!/bin/bash
+WORK_DIR=$PWD
 cd ${CODX_APPS}/gpt-engineer
 source venv/bin/activate
-python gpt_engineer/cli/main.py $@
+python gpt_engineer/cli/main.py $WORK_DIR $@
