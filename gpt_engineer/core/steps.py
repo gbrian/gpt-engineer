@@ -61,6 +61,8 @@ from sys import version_info
 from typing import List, Union
 from pathlib import Path
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from termcolor import colored
 
@@ -81,6 +83,7 @@ from gpt_engineer.settings import (
   KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE,
   PROJECT_SUMMARY,
   LANGUAGE_FROM_EXTENSION,
+  KNOWLEDGE_MODEL
 )
 
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
@@ -567,7 +570,7 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
     )
     if documents:
         # Filter out irrelevant documents based on a relevance score
-        relevant_documents = [doc for doc in documents if validate_context(ai, dbs, query, doc)]
+        relevant_documents = [doc for doc in documents if parallel_validate_contexts(dbs, query, doc)]
         file_list = [str(Path(doc.metadata["source"]).absolute()) for doc in relevant_documents]
         file_list = list(dict.fromkeys(file_list))  # Remove duplicates
 
@@ -677,19 +680,27 @@ def compute_files_size(dbs: DBs):
     return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
 
 def validate_context(ai, dbs, prompt, doc):
-    opt = input("\n".join([
-      colored("Please review:", "green"),
-      document_to_context(doc),
-      colored("Is this a valid context (0.0 - 1.0 (Leave empty to ask @ai)?", "green")
-    ]))
-    if not opt or opt == '@ai':
-      return ai_validate_context(ai, dbs, doc)
-    score = float(opt)
+    # This function now handles a single document.
+    if '@ai' in doc.metadata.get('user_input', ''):
+        return ai_validate_context(ai, dbs, prompt, doc)
+    score = float(doc.metadata.get('user_input'))
     doc.metadata["relevance_score"] = score
     logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
     if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
         return None
     return doc
+
+def parallel_validate_contexts(dbs, prompt, documents):
+    ai = AI(model_name=KNOWLEDGE_MODEL)
+    # This function uses ThreadPoolExecutor to parallelize validation of contexts.
+    with ThreadPoolExecutor() as executor:
+        futures = {executor.submit(ai_validate_context, ai=ai, dbs=dbs, prompt=prompt, doc=doc): doc for doc in documents}
+        valid_documents = []
+        for future in as_completed(futures):
+            result = future.result()
+            if result is not None:
+                valid_documents.append(result)
+        return valid_documents
 
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     system = dbs.roles["qa.md"]

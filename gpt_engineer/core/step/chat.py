@@ -1,6 +1,6 @@
 import logging
 
-from gpt_engineer.core.steps import document_to_context, ai_validate_context, curr_fn
+from gpt_engineer.core.steps import document_to_context, parallel_validate_contexts, curr_fn
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
 
@@ -14,7 +14,7 @@ def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None, role
     logging.debug(f"[ai_chat] using custom system")
   # Fetch relevant documents using KnowledgeRetriever
   documents = dbs.knowledge.search(user_input)
-  documents = [doc for doc in documents if ai_validate_context(ai, dbs, user_input, doc)]
+  documents = [doc for doc in parallel_validate_contexts(dbs, user_input, documents) if doc]
 
   knwoledge_context = "\n".join([document_to_context(doc) for doc in documents])
   prompt = dbs.preprompts["chat"].format(messages="\n".join(messages), context=knwoledge_context, prompt=user_input)

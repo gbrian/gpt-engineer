@@ -169,7 +169,9 @@ class KnowledgeRetriever:
 
     def search(self, query):
       retriever = self.as_retriever()
-      return retriever.get_relevant_documents(query)
+      documents = retriever.get_relevant_documents(query)
+      logging.debug(f"[KnowledgeRetriever::search] {query} docs: {len(documents)}")
+      return documents
 
     def index_document(self, text, metadata):
         documents = [Document(page_content=text, metadata=metadata)]

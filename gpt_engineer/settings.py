@@ -20,10 +20,11 @@ if not HISTORY_PROMPT_FILE:
 # SETTINGS
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = os.getenv("MODEL") or "gpt-4"
+KNOWLEDGE_MODEL = os.getenv("KNOWLEDGE_MODEL") or "gpt-3.5-turbo"
 TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
 
-GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH") or "."
-GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng"
+GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
+GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng" if GPT_ENGINEER_METADATA_PATH else ".gpteng"
 
 # Valid files to work and index
 VALID_FILE_EXTENSIONS = [
@@ -99,6 +100,7 @@ logger.info(f'Logging level: {level}: {os.getenv("DEBUG")}')
 logger.info(f'Working directory: {os.getcwd()}')
 logger.info(f'OpenAI API Key: {OPENAI_API_KEY}')
 logger.info(f'Model: {MODEL}')
+logger.info(f'KNOWLEDGE_MODEL: {KNOWLEDGE_MODEL}')
 logger.info(f'Temperature: {TEMPERATURE}')
 logger.info(f'GPT Engineer Metadata Path: {GPTENG_PATH}')
 logger.info(f'Knowledge Path: {GPTENG_PATH}/knowled_path_list')
