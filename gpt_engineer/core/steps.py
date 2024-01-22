@@ -86,6 +86,8 @@ from gpt_engineer.settings import (
   KNOWLEDGE_MODEL
 )
 
+KNOWLEDGE_CONTEXT_SCORE_MATCH = re.compile(r"SCORE\: ([0-9\.]+)", re.MULTILINE)
+
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
 ASSUME_WORKING_TIMEOUT = 30
 
@@ -570,7 +572,7 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
     )
     if documents:
         # Filter out irrelevant documents based on a relevance score
-        relevant_documents = [doc for doc in documents if parallel_validate_contexts(dbs, query, doc)]
+        relevant_documents = [doc for doc in parallel_validate_contexts(dbs, query, documents) if doc]
         file_list = [str(Path(doc.metadata["source"]).absolute()) for doc in relevant_documents]
         file_list = list(dict.fromkeys(file_list))  # Remove duplicates
 
@@ -584,7 +586,7 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
           + "Select files (default: all): ")
 
         selected_files = []
-        if user_input.lower() == 'all':
+        if not user_input or user_input.lower() == 'all':
             selected_files = file_list
         elif user_input:
             indices = parse_selection_input(user_input, len(file_list))
@@ -700,10 +702,25 @@ def parallel_validate_contexts(dbs, prompt, documents):
             result = future.result()
             if result is not None:
                 valid_documents.append(result)
-        return valid_documents
+
+        def colored_result(doc):
+          res_str = f"{doc.metadata['source']}: {doc.metadata['relevance_score']}"
+          if doc.metadata['relevance_score'] >= KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
+            return colored(res_str, "green")
+          return colored(res_str, "red")
+
+        print("\n".join([
+          "",
+          colored(f"[VALIDATE WITH CONTEXT]: {prompt}", "green"),
+          "\n".join([colored_result(doc) for doc in valid_documents if doc]),
+          ""
+        ]))
+        return [doc for doc in valid_documents \
+          if doc and doc.metadata.get('relevance_score', 0) >= KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE]
+      
 
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
-    system = dbs.roles["qa.md"]
+    system = ""
     validate_prompt = dbs.preprompts["validate_context"] \
       .replace("{{ prompt }}", prompt) \
       .replace("{{ context }}", doc.page_content)
@@ -712,20 +729,18 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     score = None
     response = messages[-1].content.strip()
     try:
-      response = "\n".join([l for l in response.split("\n") if not l.startswith("```")])
-      score = float(json.loads(response).get("score"))
+      score_match = KNOWLEDGE_CONTEXT_SCORE_MATCH.match(response)
+      score = float(score_match.group(1))
       doc.metadata["relevance_score"] = score
-      logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
-      if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
-        return None
-      return doc
+      logging.debug(f"[validate_context] {doc.metadata.get('source')}: {score}")
     except Exception as ex:
       if not retry_count:
-        logging.error(f"[validate_context] re-trying failed validation {ex}\n{prompt}\n{response}")
+        logging.error(colored(f"[validate_context] re-trying failed validation {ex}\n{prompt}\n{response}", "red"))
         return ai_validate_context(ai, dbs, prompt, doc, retry_count=1)
 
-      logging.error(f"[validate_context] failed to validate {ex}\n{prompt}\n{response}")
-    return None
+      logging.error(colored(f"[validate_context] failed to validate {ex}\n{prompt}\n{response}", "red"))
+      doc.metadata["relevance_score"] = 0
+    return doc
     
 def get_file_info(dbs: DBs):
     files_info = get_code_strings(

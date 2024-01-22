@@ -1,31 +1,3 @@
-"""
-This module provides utilities to handle and process chat content, especially for extracting code blocks
-and managing them within a specified GPT Engineer project ("workspace"). It offers functionalities like parsing chat messages to
-retrieve code blocks, storing these blocks into a workspace, and overwriting workspace content based on
-new chat messages. Moreover, it aids in formatting and reading file content for an AI agent's input.
-
-Key Features:
-- Parse and extract code blocks from chat messages.
-- Store and overwrite files within a workspace based on chat content.
-- Format files to be used as inputs for AI agents.
-- Retrieve files and their content based on a provided list.
-
-Dependencies:
-- `os` and `pathlib`: For handling OS-level operations and path manipulations.
-- `re`: For regex-based parsing of chat content.
-- `gpt_engineer.core.db`: Database handling functionalities for the workspace.
-- `gpt_engineer.cli.file_selector`: Constants related to file selection.
-
-Functions:
-- parse_chat: Extracts code blocks from chat messages.
-- to_files_and_memory: Saves chat content to memory and adds extracted files to a workspace.
-- to_files: Adds extracted files to a workspace.
-- get_code_strings: Retrieves file names and their content.
-- format_file_to_input: Formats file content for AI input.
-- overwrite_files_with_edits: Overwrites workspace files based on parsed edits from chat.
-- apply_edits: Applies file edits to a workspace.
-"""
-
 import os
 import re
 import logging
@@ -105,33 +77,13 @@ def to_files_and_memory(chat: str, dbs: DBs):
 
 
 def to_files(chat: str, workspace: DB):
-    """
-    Parse the chat and add all extracted files to the workspace.
 
-    Parameters
-    ----------
-    chat : str
-        The chat to parse.
-    workspace : DB
-        The database containing the workspace.
-    """
     files = parse_chat(chat)
     for file_name, file_content in files:
         workspace[file_name] = file_content
 
 
 def get_code_strings(workspace: DB, metadata_db: DB) -> dict[str, str]:
-    """
-    Read file_list.txt and return file names and their content.
-    Parameters
-    ----------
-    input : dict
-        A dictionary containing the file_list.txt.
-    Returns
-    -------
-    dict[str, str]
-        A dictionary mapping file names to their content.
-    """
 
     files_paths = metadata_db[FILE_LIST_NAME].strip().split("\n")
     files = []
@@ -162,21 +114,7 @@ def get_code_strings(workspace: DB, metadata_db: DB) -> dict[str, str]:
 
 
 def format_file_to_input(file_name: str, file_content: str) -> str:
-    """
-    Format a file string to use as input to the AI agent.
-
-    Parameters
-    ----------
-    file_name : str
-        The name of the file.
-    file_content : str
-        The content of the file.
-
-    Returns
-    -------
-    str
-        The formatted file string.
-    """
+    
     file_str = f"""
     {file_name}
     ```

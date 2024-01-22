@@ -6,6 +6,7 @@ from datetime import datetime
 from langchain.document_loaders.generic import GenericLoader
 from langchain.document_loaders.parsers import LanguageParser
 from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain.text_splitter import CharacterTextSplitter
 from langchain.text_splitter import Language
 
 CURRENT_SPLITTER_LANGUAGES = [lang.lower() for lang in dir(Language)]
@@ -27,6 +28,9 @@ class KnowledgeLoader:
         self.suffixes = VALID_FILE_EXTENSIONS + [''] # Add no-extension files
         self.exclude_folders = list(IGNORE_FOLDERS)
         self.ignore_files = list(IGNORE_FILES) # Filter out no-extension files
+        self.text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=100, chunk_overlap=0
+        )
         logger.debug(f'KnowledgeLoader initialized {(self.path, self.suffixes)}')
 
     def should_index_doc (self, file_path, last_update):
@@ -60,9 +64,10 @@ class KnowledgeLoader:
         documents = []
         for file_path in list(self.find_files(self.suffixes)):
           # Load the knowledge from the filesystem
-          suffix = file_path.split(".")[-1]
+          suffix = file_path.split(".")[-1] if "." in file_path else ""
           language = LANGUAGE_FROM_EXTENSION.get(suffix)
           new_docs = None
+          loader_type = None
           if not self.should_index_doc(file_path, last_update):
             continue
           try:
@@ -74,20 +79,20 @@ class KnowledgeLoader:
                     parser=parser
                 )
                 new_docs = loader.load()
+                loader_type = "code"
             except KeyError:
               logger.debug(f"Not available language parser for {suffix}")
 
             if not new_docs:  
-              new_docs = TextLoader(file_path).load()
-          
-
-            if language:
-                for doc in new_docs:
-                  doc.metadata["language"] = language
+              new_docs = TextLoader(file_path).load_and_split(text_splitter=self.text_splitter)
+              loader_type = "text"
           except Exception as ex:
             logger.error(f"Error loading file {file_path} {ex}")
 
           if new_docs:
+            for doc in new_docs:
+              doc.metadata["language"] = language if language else ""
+              doc.metadata["loader_type"] = loader_type
             documents = documents + new_docs 
 
         logger.debug(f"Loaded {len(documents)} documents")

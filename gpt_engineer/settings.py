@@ -34,27 +34,30 @@ VALID_FILE_EXTENSIONS = [
 ]
 
 LANGUAGE_FROM_EXTENSION = {
-    ".py": "python",
-    ".java": "java",
-    ".js": "js",
-    ".cpp": "cpp",
-    ".go": "go",
-    ".rb": "ruby",
-    ".php": "php",
-    ".swift": "swift",
-    ".kt": "kotlin",
-    ".rs": "rust",
-    ".sh": "shell",
-    ".r": "r",
-    ".pl": "perl",
-    ".scala": "scala",
-    ".ts": "ts"
+    "py": "python",
+    "java": "java",
+    "js": "js",
+    "cpp": "cpp",
+    "go": "go",
+    "rb": "ruby",
+    "php": "php",
+    "swift": "swift",
+    "kt": "kotlin",
+    "rs": "rust",
+    "sh": "shell",
+    "r": "r",
+    "pl": "perl",
+    "scala": "scala",
+    "ts": "ts",
+    "md": "markdown",
+    "txt": "text",
+    "html": "html"
 }
 
 IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng", ".git" }
 IGNORE_FILES = { ".env" }
 
-KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.8
+KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7
 
 # Add a new setting for CHAT_FILE
 CHAT_FILE = os.getenv('CHAT_FILE', 'chat')

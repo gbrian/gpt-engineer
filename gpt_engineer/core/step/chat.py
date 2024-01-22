@@ -12,7 +12,7 @@ def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None, role
     system = dbs.roles[f"{role if role else 'qa'}.md"]
   else:
     logging.debug(f"[ai_chat] using custom system")
-  # Fetch relevant documents using KnowledgeRetriever
+  # Fetch relevant documents using Knowledge
   documents = dbs.knowledge.search(user_input)
   documents = [doc for doc in parallel_validate_contexts(dbs, user_input, documents) if doc]
 
@@ -32,7 +32,7 @@ def chat_interaction(ai: AI, dbs: DBs, user_input: str = None, messages=[]):
           if user_input == "":
               break
 
-        # Fetch relevant documents using KnowledgeRetriever
+        # Fetch relevant documents using Knowledge
         response, documents = ai_chat(ai, dbs, user_input, messages, role=role)
         references = "\n".join([f"{doc.metadata['source']} score: {doc.metadata.get('relevance_score')}" for doc in documents])
         

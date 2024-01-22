@@ -1,14 +1,18 @@
 import logging
 import os
 import shutil
+from slugify import slugify
 from datetime import datetime
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.llms import OpenAI
 from langchain.schema.document import Document
 
-from gpt_engineer.settings import GPTENG_PATH
+from gpt_engineer.core.ai import AI
+from gpt_engineer.settings import GPTENG_PATH, KNOWLEDGE_MODEL
 
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
 
@@ -20,29 +24,42 @@ class DBDocument (Document):
     Document.__init__(self, id=id, page_content=page_content, metadata=metadata)
     self.db_id = id
 
-class KnowledgeRetriever:
-    db_path = f"{GPTENG_PATH}/db"
-    db_file_list = f"{GPTENG_PATH}/db/file_list"
-    db = None
+class Knowledge:
+    db_path: str
+    db_file_list: str
+    index_name: str
+    db: Chroma = None
 
-    def __init__(self, path):
-        logger.debug(f'Initializing KnowledgeRetriever {path}')
+    def __init__(self, path: str, enrich_prompt: str = None):
+        logger.debug(f'Initializing Knowledge {path}')
+        
+        self.ai = AI(model_name=KNOWLEDGE_MODEL)
+
         self.path = path
+        self.enrich_prompt = enrich_prompt
+        self.index_name = slugify(str(path))
+        self.db_path = f"{GPTENG_PATH}/db/{self.index_name}"
+        self.db_file_list = f"{self.db_path}/file_list"
+
         self.loader = KnowledgeLoader(self.path)
         self.embedding = OpenAIEmbeddings(disallowed_special=())
         self.last_update = None
+        
         if os.path.isfile(self.db_file_list):
           self.last_update = os.path.getmtime(self.db_file_list)
         self.last_changed_file_paths = []
-        logger.debug('KnowledgeRetriever initialized')
-
+        logger.debug('Knowledge initialized')
+    
     def get_db(self):
       if not self.db:
         self.db = Chroma(persist_directory=self.db_path, 
                   embedding_function=self.embedding)
       return self.db
 
-    def reload(self):
+    def reload(self, full: bool = False):
+        if full:
+          self.reset()
+
         logger.debug('Reloading knowledge')
         # Load the knowledge from the filesystem
         documents = self.loader.load(last_update=self.last_update)
@@ -101,9 +118,39 @@ class KnowledgeRetriever:
         raise Exception(f"Doc already indexed {doc.metadata}")
       for k in metadata.keys():
         doc.metadata[k] = metadata[k]
-      doc.page_content = f"DOCUMENT METADATA:\n{doc.metadata}\nDOCUMENT CONTENT:\n{doc.page_content}"
+      language = doc.metadata.get('language', '')
+      prompt = doc.page_content
+      if self.enrich_prompt:
+        prompt = self.enrich_prompt.replace("{{ page_content }}", prompt) \
+                                  .replace("{{ language }}", language)
+      system = "" # Do we need it?
+      messages = self.ai.start(system, prompt, step_name="enrich_document")
+      response = messages[-1].content.strip()
+      doc.page_content = "\n".join([
+          f"File path: {doc.metadata.get('source')}",
+          f"Summary: {response}",
+          "Code:"
+          f"```{language}",
+          doc.page_content,
+          "```"
+      ])
       doc.metadata["indexed"] = 1
       return doc
+
+    def parallel_enrich(self, documents, metadata):
+      with ThreadPoolExecutor() as executor:
+        futures = {
+          executor.submit(
+            self.enrich_document,
+            doc=doc,
+            metadata=metadata): doc for doc in documents
+        }
+        valid_documents = []
+        for future in as_completed(futures):
+          result = future.result()
+          if result is not None:
+              valid_documents.append(result)
+        return valid_documents
   
     def index_documents (self, documents):
         if self.last_update:
@@ -112,8 +159,7 @@ class KnowledgeRetriever:
         metadata = {
           "index_date": f"{index_date}"
         }
-        for doc in documents:
-          doc = self.enrich_document(doc, metadata)
+        documents = self.parallel_enrich(documents, metadata=metadata)
         self.db = Chroma.from_documents(documents,
           self.embedding,
           persist_directory=self.db_path,
@@ -170,7 +216,7 @@ class KnowledgeRetriever:
     def search(self, query):
       retriever = self.as_retriever()
       documents = retriever.get_relevant_documents(query)
-      logging.debug(f"[KnowledgeRetriever::search] {query} docs: {len(documents)}")
+      logging.debug(f"[Knowledge::search] {query} docs: {len(documents)}")
       return documents
 
     def index_document(self, text, metadata):

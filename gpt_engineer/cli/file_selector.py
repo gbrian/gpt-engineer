@@ -365,7 +365,7 @@ class TerminalFileSelector:
                 + "Example: 1,2,3-5,7,9,13-15,18,20 or enter 'all' to select everything.\n"
                 + "Press '0' to cancel and ask again.\n\nSelect files (default: all):")
               
-              if len(user_input) == 0 or user_input.lower() == 'all':
+              if not user_input or user_input.lower() == 'all':
                   selected_paths = selected_paths + path_matches
               elif "-" in user_input:
                 (start, end) = user_input.split("-")
@@ -383,6 +383,8 @@ class TerminalFileSelector:
                   selected_paths = selected_paths + [path_matches[int(i)-1] for i in user_input.split(',') if int(i) > 0]
           else:
             print(f"{search_input} returned 0 matches")
+        logging.debug(f"User file list count {len(selected_paths)}")
+        return selected_paths
 
 def is_in_ignoring_extensions(path: Path) -> bool:
     """
@@ -467,6 +469,7 @@ def ask_for_files(metadata_db: DB, workspace_db: DB) -> None:
         sys.exit(1)
 
     if not selection_number == OPTION_USE_PREVIOUS:
+        logging.debug(f"Set file list {len(file_path_list)}")
         metadata_db[FILE_LIST_NAME] = "\n".join(
             str(file_path) for file_path in file_path_list
         )

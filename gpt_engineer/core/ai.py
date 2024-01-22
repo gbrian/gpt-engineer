@@ -37,6 +37,7 @@ import hashlib
 from gpt_engineer.core.token_usage import TokenUsageLog
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
 from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
@@ -52,13 +53,6 @@ Message = Union[AIMessage, HumanMessage, SystemMessage]
 
 # Set up logging
 logger = logging.getLogger(__name__)
-
-
-class AIStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
-    current_response_length = 0
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        self.max_response_length = kwargs["max_response_length"]
 
 class AI:
     """
@@ -197,8 +191,7 @@ class AI:
             response = AIMessage(content=json.loads(self.cache[md5Key])["content"])
 
         if not response:
-            callback = AIStreamingStdOutCallbackHandler(max_response_length=max_response_length) if \
-                        max_response_length else StreamingStdOutCallbackHandler() 
+            callback = StreamingStdOutCallbackHandler() 
             callbacks = [callback]
             response = self.backoff_inference(messages, callbacks)
             if self.cache:

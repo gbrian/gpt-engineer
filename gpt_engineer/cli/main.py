@@ -40,7 +40,6 @@ from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
 from gpt_engineer.core.steps import STEPS, Config as StepsConfig
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
-from gpt_engineer.api.app import run_api
 
 from gpt_engineer.settings import OPENAI_API_KEY, MODEL, TEMPERATURE
 
@@ -125,56 +124,41 @@ def main(
         help="Build knowledge summary.",
     ),
 ):
-    if api:
-        run_api(
-            project_path,
-            model,
-            temperature,
-            steps_config,
-            improve_mode,
-            lite_mode,
-            azure_endpoint,
-            chat_mode,
-            use_git,
-            verbose,
-            test
+    while True:
+        gtp_engineer(
+            project_path=project_path,
+            model=model,
+            temperature=temperature,
+            steps_config=steps_config,
+            improve_mode=improve_mode,
+            lite_mode=lite_mode,
+            azure_endpoint=azure_endpoint,
+            chat_mode=chat_mode,
+            use_git=use_git,
+            role=role,
+            prompt_file=prompt_file,
+            verbose=verbose,
+            prompt=prompt,
+            file_selector=file_selector,
+            build_knowledge=build_knowledge,
+            update_summary=update_summary
         )
-    else:
-        while True:
-            gtp_engineer(
-                project_path=project_path,
-                model=model,
-                temperature=temperature,
-                steps_config=steps_config,
-                improve_mode=improve_mode,
-                lite_mode=lite_mode,
-                azure_endpoint=azure_endpoint,
-                chat_mode=chat_mode,
-                use_git=use_git,
-                role=role,
-                prompt_file=prompt_file,
-                verbose=verbose,
-                prompt=prompt,
-                file_selector=file_selector,
-                build_knowledge=build_knowledge,
-                update_summary=update_summary
-            )
 
-            if test:
-                print("Starting test execution...")
-                if os.path.isfile(test):
-                    result = subprocess.run(test, shell=True, capture_output=True)
-                else:
-                    result = subprocess.run(test, shell=True, capture_output=True, executable="/bin/bash")
-                print("Test stdout:\n", result.stdout.decode())
-                print("Test stderr:\n", result.stderr.decode())
-                if result.returncode == 0:
-                    print("Test execution passed.")
-                    break
-                else:
-                    print("Test execution failed.")
+        if test:
+            print("Starting test execution...")
+            if os.path.isfile(test):
+                result = subprocess.run(test, shell=True, capture_output=True)
             else:
+                result = subprocess.run(test, shell=True, capture_output=True, executable="/bin/bash")
+            print("Test stdout:\n", result.stdout.decode())
+            print("Test stderr:\n", result.stderr.decode())
+            if result.returncode == 0:
+                print("Test execution passed.")
                 break
+            else:
+                print("Test execution failed.")
+        else:
+            break
 
 
 if __name__ == "__main__":

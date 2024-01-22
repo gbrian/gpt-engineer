@@ -1,18 +1,9 @@
-# INSTRUCTIONS
-ANALIZE HOW USEFULL IS THE CONTEXT BELOW RELATED WITH THE TASK. 
+How relevant is this: 
+{{ context }}
 
-TASK:
+For this task:
 "{{ prompt }}"
 
 
-CONTEXT:
-{{ context }}
-
-
-RETURN A JSON OBJECT WITH THE SCORE AND TAGS LIKE THIS:
-```json
-{ 
-  "score": 0.3,
-  "tags": "code, html, style, ..." 
-}
-```
+Return a score from 0 to 1 in a single line like:
+SCORE: 0.3

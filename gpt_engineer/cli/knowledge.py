@@ -1,5 +1,5 @@
 import typer
-from gpt_engineer.knowledge.knowledge_retriever import KnowledgeRetriever
+from gpt_engineer.knowledge.knowledge import Knowledge
 
 app = typer.Typer()
 
@@ -8,7 +8,7 @@ def knowledge(
     path: str, 
     index: bool = typer.Option(False, "--index", "-i", help="Reload documents.")
   ):
-    kr = KnowledgeRetriever(path)
+    kr = Knowledge(path)
     if index:
         kr.reload()
     

@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from gpt_engineer.core.settings import Settings
-from gpt_engineer.knowledge.knowledge_retriever import KnowledgeRetriever
+from gpt_engineer.knowledge.knowledge import Knowledge
 
 
 
@@ -238,7 +238,7 @@ class DBs:
     workspace: DB
     archive: DB
     project_metadata: DB
-    knowledge: KnowledgeRetriever
+    knowledge: Knowledge
     settings: Settings
 
 def archive(dbs: DBs) -> None:
