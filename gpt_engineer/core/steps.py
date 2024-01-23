@@ -61,8 +61,6 @@ from sys import version_info
 from typing import List, Union
 from pathlib import Path
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from termcolor import colored
 
@@ -76,17 +74,14 @@ from gpt_engineer.core.chat_to_files import (
 from gpt_engineer.core.db import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME, ask_for_files
 from gpt_engineer.cli.learning import human_review_input
+from gpt_engineer.core.context import parallel_validate_contexts
 
 from gpt_engineer.settings import (
   PROMPT_FILE,
   HISTORY_PROMPT_FILE,
-  KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE,
   PROJECT_SUMMARY,
-  LANGUAGE_FROM_EXTENSION,
-  KNOWLEDGE_MODEL
+  LANGUAGE_FROM_EXTENSION
 )
-
-KNOWLEDGE_CONTEXT_SCORE_MATCH = re.compile(r"SCORE\: ([0-9\.]+)", re.MULTILINE)
 
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
 ASSUME_WORKING_TIMEOUT = 30
@@ -680,67 +675,6 @@ def assert_files_ready(ai: AI, dbs: DBs):
 
 def compute_files_size(dbs: DBs):
     return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
-
-def validate_context(ai, dbs, prompt, doc):
-    # This function now handles a single document.
-    if '@ai' in doc.metadata.get('user_input', ''):
-        return ai_validate_context(ai, dbs, prompt, doc)
-    score = float(doc.metadata.get('user_input'))
-    doc.metadata["relevance_score"] = score
-    logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
-    if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
-        return None
-    return doc
-
-def parallel_validate_contexts(dbs, prompt, documents):
-    ai = AI(model_name=KNOWLEDGE_MODEL)
-    # This function uses ThreadPoolExecutor to parallelize validation of contexts.
-    with ThreadPoolExecutor() as executor:
-        futures = {executor.submit(ai_validate_context, ai=ai, dbs=dbs, prompt=prompt, doc=doc): doc for doc in documents}
-        valid_documents = []
-        for future in as_completed(futures):
-            result = future.result()
-            if result is not None:
-                valid_documents.append(result)
-
-        def colored_result(doc):
-          res_str = f"{doc.metadata['source']}: {doc.metadata['relevance_score']}"
-          if doc.metadata['relevance_score'] >= KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
-            return colored(res_str, "green")
-          return colored(res_str, "red")
-
-        print("\n".join([
-          "",
-          colored(f"[VALIDATE WITH CONTEXT]: {prompt}", "green"),
-          "\n".join([colored_result(doc) for doc in valid_documents if doc]),
-          ""
-        ]))
-        return [doc for doc in valid_documents \
-          if doc and doc.metadata.get('relevance_score', 0) >= KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE]
-      
-
-def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
-    system = ""
-    validate_prompt = dbs.preprompts["validate_context"] \
-      .replace("{{ prompt }}", prompt) \
-      .replace("{{ context }}", doc.page_content)
-    messages = ai.start(system, validate_prompt, step_name=curr_fn(), max_response_length=3)
-    
-    score = None
-    response = messages[-1].content.strip()
-    try:
-      score_match = KNOWLEDGE_CONTEXT_SCORE_MATCH.match(response)
-      score = float(score_match.group(1))
-      doc.metadata["relevance_score"] = score
-      logging.debug(f"[validate_context] {doc.metadata.get('source')}: {score}")
-    except Exception as ex:
-      if not retry_count:
-        logging.error(colored(f"[validate_context] re-trying failed validation {ex}\n{prompt}\n{response}", "red"))
-        return ai_validate_context(ai, dbs, prompt, doc, retry_count=1)
-
-      logging.error(colored(f"[validate_context] failed to validate {ex}\n{prompt}\n{response}", "red"))
-      doc.metadata["relevance_score"] = 0
-    return doc
     
 def get_file_info(dbs: DBs):
     files_info = get_code_strings(
@@ -929,7 +863,7 @@ def chat(ai: AI, dbs: DBs):
 
 def get_improve_prompt(ai: AI, dbs: DBs):
   from gpt_engineer.core.step.clarify import clarify_business_request
-  from gpt_engineer.core.step.prompt import get_prompt, set_prompt
+  from gpt_engineer.core.step.prompt import set_prompt
   logging.debug("get_improve_prompt")
   prompt, ai_response = clarify_business_request(ai, dbs)
   logging.debug(f"get_improve_prompt: {prompt} \n {ai_response}")

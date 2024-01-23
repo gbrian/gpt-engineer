@@ -1,9 +1,10 @@
-How relevant is this: 
+Given this context: 
+>>>>>>> BEGIN CONTEXT
 {{ context }}
-
-For this task:
-"{{ prompt }}"
+<<<<<<< END CONTEXT
 
 
-Return a score from 0 to 1 in a single line like:
-SCORE: 0.3
+Tell me a SCORE between 0 and 1 on how relevant is the context for this task.(Example: SCORE: 0.3):
+>>>>>>> BEGIN TASK
+{{ prompt }}
+<<<<<<< END TASK

@@ -25,8 +25,12 @@ USER_FEEDBACK="USER FEEDBACK:"
 QUESTION_PREFIX = re.compile(r"^\s*[0-9-.]+\.? ")
 
 def clarify_business_request (ai: AI, dbs: DBs):
-  system = dbs.roles[f"{dbs.settings.role}.md"] + dbs.preprompts[CLARIFY_BUSINESS_REQUEST] 
+  system = dbs.roles[f"{dbs.settings.role}.md"] 
   prompt = get_prompt(ai, dbs)
+
+  dbs.input.append(
+    HISTORY_PROMPT_FILE, f"\n[[PROMPT]]\n{prompt}"
+  )
 
   if input(f"Clarify prompt with {dbs.settings.role} (Y/n):") == 'n':
     return prompt, None

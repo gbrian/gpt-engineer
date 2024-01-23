@@ -108,6 +108,7 @@ logger.info(f'KNOWLEDGE_MODEL: {KNOWLEDGE_MODEL}')
 logger.info(f'Temperature: {TEMPERATURE}')
 logger.info(f'GPT Engineer Metadata Path: {GPTENG_PATH}')
 logger.info(f'Knowledge Path: {GPTENG_PATH}/knowled_path_list')
+logger.info(f'Knowledge enrich documents: {ENRICH_DOCUMENTS}')
 
 logger.info(f'Prompt file: {PROMPT_FILE}')
 logger.info(f'History prompt file: {PROMPT_FILE}')
