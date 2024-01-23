@@ -12,7 +12,7 @@ from langchain.llms import OpenAI
 from langchain.schema.document import Document
 
 from gpt_engineer.core.ai import AI
-from gpt_engineer.settings import GPTENG_PATH, KNOWLEDGE_MODEL
+from gpt_engineer.settings import GPTENG_PATH, KNOWLEDGE_MODEL, ENRICH_DOCUMENTS
 
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
 
@@ -121,17 +121,18 @@ class Knowledge:
       language = doc.metadata.get('language', '')
       source = doc.metadata.get('source')
       response = ""
-      try:
-        prompt = doc.page_content
-        if self.enrich_prompt:
-          prompt = self.enrich_prompt.replace("{{ page_content }}", prompt) \
-                                    .replace("{{ language }}", language)
-        system = "" # Do we need it?
-        messages = self.ai.start(system, prompt, step_name="enrich_document")
-        response = messages[-1].content.strip()
-      except Exception as ex:
-        logger.debug(f"Error enriching document {source}: {ex}")
-        pass
+      if ENRICH_DOCUMENTS:
+        try:
+          prompt = doc.page_content
+          if self.enrich_prompt:
+            prompt = self.enrich_prompt.replace("{{ page_content }}", prompt) \
+                                      .replace("{{ language }}", language)
+          system = "" # Do we need it?
+          messages = self.ai.start(system, prompt, step_name="enrich_document")
+          response = messages[-1].content.strip()
+        except Exception as ex:
+          logger.debug(f"Error enriching document {source}: {ex}")
+          pass
       doc.page_content = "\n".join([
           f"File path: {source}",
           f"Summary: {response}",

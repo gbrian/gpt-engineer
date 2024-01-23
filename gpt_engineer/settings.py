@@ -22,6 +22,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = os.getenv("MODEL") or "gpt-4"
 KNOWLEDGE_MODEL = os.getenv("KNOWLEDGE_MODEL") or "gpt-3.5-turbo"
 TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
+ENRICH_DOCUMENTS = True if os.getenv("ENRICH_DOCUMENTS", None) is not None else False
 
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng" if GPT_ENGINEER_METADATA_PATH else ".gpteng"
