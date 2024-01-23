@@ -103,7 +103,11 @@ def main(
         False, "--file-selector", "-f", help="Force the request of files affected."
     ),
     api: bool = typer.Option(
-        False, "--api", help="Run Flask API."
+        False, "--api", help="Run GPT Engineer API."
+    ),
+    port: int = typer.Option(8066,
+      "--port",
+      help="API port"
     ),
     test: str = typer.Option(
         "",
@@ -124,6 +128,12 @@ def main(
         help="Build knowledge summary.",
     ),
 ):
+    if api:
+        logging.info(f"API MODE")
+        import os
+        os.system(f"uvicorn main:app --host 0.0.0.0 --port {port} --reload")
+        return
+
     while True:
         gtp_engineer(
             project_path=project_path,
@@ -162,11 +172,12 @@ def main(
 
 
 if __name__ == "__main__":
-    while True:
-        try:
-            app()
-        except KeyboardInterrupt:
-            break
-        except Exception as ex:
-            print(f"Error running gpt-engineer {ex}")
-            traceback.print_exception(ex)
+        while True:
+            logging.info(f"CLI MODE")
+            try:
+                app()
+            except KeyboardInterrupt:
+                break
+            except Exception as ex:
+                print(f"Error running gpt-engineer {ex}")
+                traceback.print_exception(ex)

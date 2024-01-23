@@ -1,12 +1,21 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 
-api = FastAPI()
+class Message(BaseModel):
+    user: str
+    message: str
 
-@api.get("/chat")
-def chat_with_knowledge(input: str):
+app = FastAPI()
+
+@app.get("/health")
+def chat_with_knowledge():
+  return "ok"
+
+@app.post("/chat")
+def chat_with_knowledge(message: Message):
     # Perform search on Knowledge using the input
     # Return the search results as response
     
     # Placeholder code for now
     search_results = ["doc1", "doc2", "doc3"]
-    return {"search_results": search_results}
+    return {"message": message, "search_results": search_results}

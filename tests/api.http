@@ -1,0 +1,11 @@
+### Check API
+GET http://0.0.0.0:8066/health
+
+
+### Chat
+POST http://0.0.0.0:8066/chat
+
+{
+  "user": "isme",
+  "message": "Hello!"
+}
