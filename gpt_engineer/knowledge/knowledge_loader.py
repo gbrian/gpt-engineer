@@ -29,7 +29,7 @@ class KnowledgeLoader:
         self.exclude_folders = list(IGNORE_FOLDERS)
         self.ignore_files = list(IGNORE_FILES) # Filter out no-extension files
         self.text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
-            chunk_size=100, chunk_overlap=0
+            chunk_size=500, chunk_overlap=0
         )
         logger.debug(f'KnowledgeLoader initialized {(self.path, self.suffixes)}')
 
@@ -73,7 +73,7 @@ class KnowledgeLoader:
           try:
             try:
               if language and language in CURRENT_SPLITTER_LANGUAGES:
-                parser = LanguageParser(language=language, parser_threshold=500)
+                parser = LanguageParser(language=language)
                 loader = GenericLoader.from_filesystem(
                     file_path,
                     parser=parser

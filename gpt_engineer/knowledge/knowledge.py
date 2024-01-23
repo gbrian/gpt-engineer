@@ -119,15 +119,21 @@ class Knowledge:
       for k in metadata.keys():
         doc.metadata[k] = metadata[k]
       language = doc.metadata.get('language', '')
-      prompt = doc.page_content
-      if self.enrich_prompt:
-        prompt = self.enrich_prompt.replace("{{ page_content }}", prompt) \
-                                  .replace("{{ language }}", language)
-      system = "" # Do we need it?
-      messages = self.ai.start(system, prompt, step_name="enrich_document")
-      response = messages[-1].content.strip()
+      source = doc.metadata.get('source')
+      response = ""
+      try:
+        prompt = doc.page_content
+        if self.enrich_prompt:
+          prompt = self.enrich_prompt.replace("{{ page_content }}", prompt) \
+                                    .replace("{{ language }}", language)
+        system = "" # Do we need it?
+        messages = self.ai.start(system, prompt, step_name="enrich_document")
+        response = messages[-1].content.strip()
+      except Exception as ex:
+        logger.debug(f"Error enriching document {source}: {ex}")
+        pass
       doc.page_content = "\n".join([
-          f"File path: {doc.metadata.get('source')}",
+          f"File path: {source}",
           f"Summary: {response}",
           "Code:"
           f"```{language}",
