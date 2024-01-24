@@ -2,7 +2,7 @@ import logging
 
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
-from gpt_engineer.core.steps import curr_fn
+from gpt_engineer.core.utils import curr_fn
 from gpt_engineer.core.chat_to_files import parse_edits
 
 

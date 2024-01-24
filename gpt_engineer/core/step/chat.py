@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from gpt_engineer.core.steps import document_to_context, curr_fn
+from gpt_engineer.core.utils import curr_fn, document_to_context
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
 from gpt_engineer.core.context import parallel_validate_contexts

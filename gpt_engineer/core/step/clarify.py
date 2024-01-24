@@ -6,7 +6,8 @@ from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DBs
 from gpt_engineer.core.step.prompt import get_prompt, set_prompt
 from gpt_engineer.core.step.chat import ai_chat
-from gpt_engineer.core.steps import document_to_context, curr_fn
+from gpt_engineer.core.utils import document_to_context, curr_fn
+from gpt_engineer.core.context import parallel_validate_contexts
 
 from gpt_engineer.preprompts import (
   ROADMAP,
@@ -19,36 +20,36 @@ from gpt_engineer.settings import (
   HISTORY_PROMPT_FILE,
 )
 
-MORE_INFO_IS_NEEDED="MORE INFO IS NEEDED"
+MORE_INFO_IS_NEEDED="MORE INFO NEEDED"
 USER_FEEDBACK="USER FEEDBACK:"
 
 QUESTION_PREFIX = re.compile(r"^\s*[0-9-.]+\.? ")
 
 def clarify_business_request (ai: AI, dbs: DBs):
-  system = dbs.roles[f"{dbs.settings.role}.md"] 
   prompt = get_prompt(ai, dbs)
-
   dbs.input.append(
     HISTORY_PROMPT_FILE, f"\n[[PROMPT]]\n{prompt}"
   )
-
-  if input(f"Clarify prompt with {dbs.settings.role} (Y/n):") == 'n':
+  if input(f"Clarify prompt (Y/n):") == 'n':
     return prompt, None
 
-  logging.debug(f"[clarify_business_request]: {system} - {prompt}")
-
-  prompt, _ = ai_chat(ai, dbs, user_input=prompt, messages=[], system=system)
+  clarify_template = dbs.preprompts["clarify_business_request"]
   
-  messages = ai.start(system, prompt, step_name=curr_fn()) 
   auto_response = None
+  ai_response = None 
   while True:
-    user_message = messages[-2].content.strip() 
+    documents = dbs.knowledge.search(prompt)
+    documents = [doc for doc in parallel_validate_contexts(dbs, prompt, documents) if doc]
+    context = "\n".join([document_to_context(doc) for doc in documents])
+    
+    prompt = clarify_template.replace("{{ context }}", context).replace("{{ prompt }}", prompt)
+
+    messages = ai.start("", prompt, step_name=curr_fn()) 
+  
     ai_response = messages[-1].content.strip()
     ai_response, comments = solve_prompt_questions(ai, dbs, ai_response, auto_response)
     if not auto_response and not comments:
       comments = input("\n".join([
-        colored("BUSINESS USER:", "green"),
-        prompt,
         colored("ANALYST", "green"),
         ai_response,
         "",
@@ -58,12 +59,9 @@ def clarify_business_request (ai: AI, dbs: DBs):
         colored(">", "green")
       ]))
       if not comments:
-        return prompt, ai_response
-      elif comments.startswith("@ai"):
-        comments = ai.next(messages, prompt=comments, step_name=curr_fn())[-1].content.strip()
-    auto_response = None
-    messages = ai.next(messages, prompt=comments, step_name=curr_fn())
-  return prompt, None
+        break
+    prompt = f"{ai_response}\nCOMMNENTS:\n{comments}"
+  return prompt, ai_response
 
 def get_more_info_needed(prompt):
   if MORE_INFO_IS_NEEDED not in prompt:
@@ -100,18 +98,13 @@ def build_userfeedback(qas):
   return "\n".join(user_feedback)
 
 def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str, auto_response=None):
-    has_comments = False
-    if MORE_INFO_IS_NEEDED not in prompt:
+    questions = get_more_info_needed(prompt)
+    has_comments = True if questions is not None and len(questions) else False
+
+    if not has_comments:
       return prompt, has_comments
 
-    def is_q(question):
-      question = question.strip()
-      if len(question):
-        return True if question[0] == '-' else False
-      return False
-  
     logging.debug(f"Solving prompt questions")
-    questions = get_more_info_needed(prompt)
     logging.debug(f"Questions: {questions}")
     qas = []
     for question in questions:
@@ -134,5 +127,4 @@ def solve_prompt_questions(ai:AI, dbs: DBs, prompt: str, auto_response=None):
       qas.append((question, response))
     
     prompt = replace_more_info_by_user_feedback(prompt, qas)
-    user_feedback = build_userfeedback([qa for qa in qas if qa[1]])
-    return prompt, user_feedback
+    return prompt, True

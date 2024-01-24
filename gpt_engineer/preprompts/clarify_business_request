@@ -1,0 +1,8 @@
+Given this context:
+>>>>> START CONTEXT
+{{ context }}
+<<<<< END CONTEXT
+
+Clarify this request.
+If you have more question append a "MORE INFO NEEDED" section with the questions:
+{{ prompt }}

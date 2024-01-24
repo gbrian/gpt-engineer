@@ -64,7 +64,7 @@ def test_solve_prompt_with_questions_and_valid_answers(mock_ai_dbs):
     answers replacing the questions.
     """
     ai, dbs = mock_ai_dbs
-    prompt = "This is a prompt with questions:\nMORE INFO IS NEEDED:\n- Question 1\n- Question 2"
+    prompt = "This is a prompt with questions:\nMORE INFO NEEDED:\n- Question 1\n- Question 2"
     user_answers = ["Answer 1", "Answer 2"]
     with patch('builtins.input', side_effect=user_answers):
         result = solve_prompt_questions(ai, dbs, prompt)
@@ -79,7 +79,7 @@ def test_solve_prompt_with_questions_and_ai_answers(mock_ai_dbs):
     with the AI's answers replacing the questions.
     """
     ai, dbs = mock_ai_dbs
-    prompt = "This is a prompt with questions:\nMORE INFO IS NEEDED:\n- Question 1\n- Question 2"
+    prompt = "This is a prompt with questions:\nMORE INFO NEEDED:\n- Question 1\n- Question 2"
     ai_answers = ["AI Answer 1", "AI Answer 2"]
     ai_chat_responses = [MagicMock(content=ai_answers[0]), MagicMock(content=ai_answers[1])]
     ai_chat_side_effects = [ai_chat_responses[0], ai_chat_responses[1]]
@@ -97,7 +97,7 @@ def test_solve_prompt_with_questions_and_blank_answers(mock_ai_dbs):
     questions removed.
     """
     ai, dbs = mock_ai_dbs
-    prompt = "This is a prompt with questions:\nMORE INFO IS NEEDED:\n- Question 1\n- Question 2"
+    prompt = "This is a prompt with questions:\nMORE INFO NEEDED:\n- Question 1\n- Question 2"
     with patch('builtins.input', side_effect=["", ""]):
         result = solve_prompt_questions(ai, dbs, prompt)
     assert "- Question 1" not in result
@@ -111,7 +111,7 @@ def test_solve_prompt_with_questions_and_invalid_input(mock_ai_dbs):
     with the next question or end the process.
     """
     ai, dbs = mock_ai_dbs
-    prompt = "This is a prompt with questions:\nMORE INFO IS NEEDED:\n- Question 1\n- Question 2"
+    prompt = "This is a prompt with questions:\nMORE INFO NEEDED:\n- Question 1\n- Question 2"
     user_input = ["Invalid input", ""]
     with patch('builtins.input', side_effect=user_input):
         result = solve_prompt_questions(ai, dbs, prompt)
@@ -126,7 +126,7 @@ def test_solve_prompt_with_exceptions(mock_ai_dbs):
     and return an appropriate error message or raise an exception.
     """
     ai, dbs = mock_ai_dbs
-    prompt = "This is a prompt with questions:\nMORE INFO IS NEEDED:\n- Question 1\n- Question 2"
+    prompt = "This is a prompt with questions:\nMORE INFO NEEDED:\n- Question 1\n- Question 2"
     ai.side_effect = Exception("AI error")
     with patch('builtins.input', return_value="@AI"):
         with pytest.raises(Exception) as excinfo:

@@ -71,6 +71,7 @@ from gpt_engineer.core.chat_to_files import (
     overwrite_files_with_edits,
     to_files_and_memory,
 )
+from gpt_engineer.core.utils import curr_fn
 from gpt_engineer.core.db import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME, ask_for_files
 from gpt_engineer.cli.learning import human_review_input
@@ -163,21 +164,6 @@ def setup_sys_prompt_existing_code(dbs: DBs) -> str:
         + "\nUseful to know:\n"
         + dbs.preprompts["philosophy"]
     )
-
-
-def curr_fn() -> str:
-    """
-    Retrieves the name of the calling function.
-
-    This function uses Python's inspection capabilities to dynamically fetch the
-    name of the function that called `curr_fn()`. This approach ensures that the
-    function's name isn't hardcoded, making it more resilient to refactoring and
-    changes to function names.
-
-    Returns:
-    - str: The name of the function that called `curr_fn()`.
-    """
-    return inspect.stack()[1].function
 
 
 def lite_gen(ai: AI, dbs: DBs) -> List[Message]:
@@ -550,14 +536,6 @@ def set_improve_filelist(ai: AI, dbs: DBs):
         HISTORY_PROMPT_FILE, f"\n[[FILES]]\n{dbs.project_metadata[FILE_LIST_NAME]}"
       )
     return []
-
-def document_to_context(doc):
-    return "\n".join([
-      f"```{doc.metadata.get('language')}",
-      f"{Path(doc.metadata['source']).absolute()}",
-      doc.page_content,
-      "```"
-    ])
   
 def select_files_from_knowledge(ai: AI, dbs: DBs):
     query = dbs.input[PROMPT_FILE]
