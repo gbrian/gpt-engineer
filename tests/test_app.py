@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
-from gpt_engineer.api.app import api
+from gpt_engineer.api.app import app
 
-client = TestClient(api)
+client = TestClient(app)
 
 def test_chat_with_knowledge():
     response = client.get("/chat", params={"input": "test"})

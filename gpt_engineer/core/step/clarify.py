@@ -74,7 +74,7 @@ def get_more_info_needed(prompt):
         # logging.debug(f"{question} IS NOT A QUESTION")
       return False
   
-  more_info_needed = prompt.split(MORE_INFO_IS_NEEDED)[1]
+  more_info_needed = prompt.split(MORE_INFO_IS_NEEDED)[-1]
   more_info_questions = more_info_needed.split("\n")
   questions = [question for question in more_info_questions if is_q(question)]
   logging.debug(f"[get_more_info_needed]:\n{more_info_questions}\n{questions}")
