@@ -72,7 +72,7 @@ from gpt_engineer.core.chat_to_files import (
     to_files_and_memory,
 )
 from gpt_engineer.core.utils import curr_fn
-from gpt_engineer.core.db import DBs
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME, ask_for_files
 from gpt_engineer.cli.learning import human_review_input
 from gpt_engineer.core.context import parallel_validate_contexts

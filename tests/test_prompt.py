@@ -9,7 +9,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from gpt_engineer.core.step.prompt import get_prompt
 from gpt_engineer.core.ai import AI
-from gpt_engineer.core.db import DBs
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.step.clarify import solve_prompt_questions
 
 # Fixture to mock AI and DBs instances

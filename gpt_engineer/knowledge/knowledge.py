@@ -12,11 +12,20 @@ from langchain.llms import OpenAI
 from langchain.schema.document import Document
 
 from gpt_engineer.core.ai import AI
-from gpt_engineer.settings import GPTENG_PATH, KNOWLEDGE_MODEL, ENRICH_DOCUMENTS
+from gpt_engineer.settings import (
+  GPTENG_PATH,
+  KNOWLEDGE_MODEL,
+  KNOWLEDGE_ENRICH_DOCUMENTS,
+  KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS
+)
 
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
+from gpt_engineer.knowledge.knowledge_prompts import KnowledgePrompts
 
 logger = logging.getLogger(__name__)
+
+def make_tag (tag):
+  return f"TAG_{tag.replace(' ', '_')}"
 
 class DBDocument (Document):
   db_id: str = None
@@ -30,13 +39,13 @@ class Knowledge:
     index_name: str
     db: Chroma = None
 
-    def __init__(self, path: str, enrich_prompt: str = None):
+    def __init__(self, path: str, knowledge_prompts: KnowledgePrompts):
         logger.debug(f'Initializing Knowledge {path}')
         
         self.ai = AI(model_name=KNOWLEDGE_MODEL)
 
         self.path = path
-        self.enrich_prompt = enrich_prompt
+        self.knowledge_prompts = knowledge_prompts
         self.index_name = slugify(str(path))
         self.db_path = f"{GPTENG_PATH}/db/{self.index_name}"
         self.db_file_list = f"{self.db_path}/file_list"
@@ -120,22 +129,30 @@ class Knowledge:
         doc.metadata[k] = metadata[k]
       language = doc.metadata.get('language', '')
       source = doc.metadata.get('source')
-      response = ""
-      if ENRICH_DOCUMENTS:
+      summary = ""
+
+      if KNOWLEDGE_ENRICH_DOCUMENTS:
         try:
-          prompt = doc.page_content
-          if self.enrich_prompt:
-            prompt = self.enrich_prompt.replace("{{ page_content }}", prompt) \
-                                      .replace("{{ language }}", language)
-          system = "" # Do we need it?
+          prompt, system = self.knowledge_prompts.enrich_document_prompt(doc)
           messages = self.ai.start(system, prompt, step_name="enrich_document")
-          response = messages[-1].content.strip()
+          summary = messages[-1].content.strip()
         except Exception as ex:
           logger.debug(f"Error enriching document {source}: {ex}")
           pass
+      if KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS:
+        try:
+          prompt, system = self.knowledge_prompts.extract_document_tags(doc)
+          messages = self.ai.start(system, prompt, step_name="extract_document_tags")
+          response = messages[-1].content.strip()
+          keywords = [make_tag(k) for k in response.split(",")]
+          doc.metadata["keywords"] = ", ".join(keywords)
+        except Exception as ex:
+          logger.debug(f"Error extracting document keywords {source}: {ex}")
+          pass
+       
       doc.page_content = "\n".join([
-          f"File path: {source}",
-          f"Summary: {response}",
+          f"Meta data: {str(doc.metadata)}",
+          f"Summary: {summary}",
           "Code:"
           f"```{language}",
           doc.page_content,
@@ -221,10 +238,24 @@ class Knowledge:
         )
 
     def search(self, query):
+      if KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS:
+        keywords = self.extract_query_keywords(query)
+        query = f"{query}\n{[make_tag(k) for k in keywords]}"
+
       retriever = self.as_retriever()
       documents = retriever.get_relevant_documents(query)
       logging.debug(f"[Knowledge::search] {query} docs: {len(documents)}")
       return documents
+
+    def extract_query_keywords(self, query):
+      try:
+        prompt, system = self.knowledge_prompts.extract_query_tags(query)
+        messages = self.ai.start(system, prompt, step_name="extract_query_tags")
+        response = messages[-1].content.strip()
+        keywords = [f"TAG_{k}" for k in response.split(",")]
+        return keywords
+      except Exception as ex:
+        logger.debug(f"Error extracting document keywords {source}: {ex}")
 
     def index_document(self, text, metadata):
         documents = [Document(page_content=text, metadata=metadata)]

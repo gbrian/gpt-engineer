@@ -23,13 +23,15 @@ import openai
 
 from gpt_engineer.core.settings import Settings
 from gpt_engineer.core.ai import AI
-from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
+from gpt_engineer.core.db import DB, DBPrompt
+from gpt_engineer.core.dbs import DBs, archive
 from gpt_engineer.core.steps import run_steps, STEPS, Config as StepsConfig
 from gpt_engineer.core.summary import Summary
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.cli.file_selector import clear_selected_files_list
 
+from gpt_engineer.knowledge.knowledge_prompts import KnowledgePrompts
 from gpt_engineer.knowledge.knowledge import Knowledge
 
 from gpt_engineer.settings import GPTENG_PATH, PROMPT_FILE, USE_AI_CACHE
@@ -141,6 +143,7 @@ def gtp_engineer(
     prompt_path = project_metadata_path
 
     preprompts_db = DB(preprompts_path())
+    knowledge_prompts = KnowledgePrompts(preprompts_db)
     dbs = DBs(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
@@ -151,7 +154,7 @@ def gtp_engineer(
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
         knowledge=Knowledge(workspace_path,
-          enrich_prompt=preprompts_db["enrich_document"]),
+          knowledge_prompts=knowledge_prompts),
         settings=settings
     )
 

@@ -3,7 +3,7 @@ import re
 from termcolor import colored
 
 from gpt_engineer.core.ai import AI
-from gpt_engineer.core.db import DBs
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.step.prompt import get_prompt, set_prompt
 from gpt_engineer.core.step.chat import ai_chat
 from gpt_engineer.core.utils import document_to_context, curr_fn

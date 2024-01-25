@@ -2,7 +2,10 @@ import logging
 import pytest
 from unittest.mock import patch, MagicMock
 
-from gpt_engineer.core.db import DB, DBs
+from gpt_engineer.core.db import DB
+from gpt_engineer.core.dbs import DBs
+
+from gpt_engineer.knowledge.knowledge_prompts import KnowledgePrompts
 from gpt_engineer.knowledge.knowledge import Knowledge
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
 
@@ -32,8 +35,9 @@ def test_knowledge_loader(mock_ai_dbs):
   
 def test_knowledge(mock_ai_dbs):
     dbs = mock_ai_dbs
+    knowledge_prompts = KnowledgePrompts(dbs.preprompts)
     knowledge = Knowledge(
-        path, enrich_prompt=dbs.preprompts["enrich_document"])
+        path, knowledge_prompts=knowledge_prompts)
 
     knowledge.reload(full=True)
 

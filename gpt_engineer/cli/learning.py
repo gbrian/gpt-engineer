@@ -52,7 +52,9 @@ from typing import List, Optional
 from dataclasses_json import dataclass_json
 from termcolor import colored
 
-from gpt_engineer.core.db import DB, DBs
+from gpt_engineer.core.db import DB
+from gpt_engineer.core.dbs import DBs
+
 from gpt_engineer.core.domain import Step
 
 from gpt_engineer.settings import PROMPT_FILE

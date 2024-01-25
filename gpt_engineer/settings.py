@@ -22,7 +22,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MODEL = os.getenv("MODEL") or "gpt-4"
 KNOWLEDGE_MODEL = os.getenv("KNOWLEDGE_MODEL") or "gpt-3.5-turbo"
 TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
-ENRICH_DOCUMENTS = True if os.getenv("ENRICH_DOCUMENTS", None) is not None else False
+KNOWLEDGE_ENRICH_DOCUMENTS = True if os.getenv("KNOWLEDGE_ENRICH_DOCUMENTS", None) is not None else False
+KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS = True if os.getenv("KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS", None) is not None else False
 
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng" if GPT_ENGINEER_METADATA_PATH else ".gpteng"
@@ -108,7 +109,8 @@ logger.info(f'KNOWLEDGE_MODEL: {KNOWLEDGE_MODEL}')
 logger.info(f'Temperature: {TEMPERATURE}')
 logger.info(f'GPT Engineer Metadata Path: {GPTENG_PATH}')
 logger.info(f'Knowledge Path: {GPTENG_PATH}/knowled_path_list')
-logger.info(f'Knowledge enrich documents: {ENRICH_DOCUMENTS}')
+logger.info(f'Knowledge enrich documents: {KNOWLEDGE_ENRICH_DOCUMENTS}')
+logger.info(f'Knowledge enrich documents with tags: {KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS}')
 
 logger.info(f'Prompt file: {PROMPT_FILE}')
 logger.info(f'History prompt file: {PROMPT_FILE}')

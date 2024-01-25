@@ -3,7 +3,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from gpt_engineer.core.ai import AI
-from gpt_engineer.core.db import DB, DBs
+from gpt_engineer.core.db import DB
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.context import ai_validate_context, parallel_validate_contexts
 from langchain.schema.document import Document
 

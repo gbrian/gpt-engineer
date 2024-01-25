@@ -3,7 +3,8 @@ import os
 
 from unittest.mock import MagicMock
 
-from gpt_engineer.core.db import DB, DBs, archive
+from gpt_engineer.core.db import DB
+from gpt_engineer.core.dbs import DBs, archive
 from gpt_engineer.settings import GPTENG_PATH
 
 def freeze_at(monkeypatch, time):

@@ -35,7 +35,8 @@ from termcolor import colored
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from gpt_engineer.core.db import DB, DBs
+from gpt_engineer.core.db import DB
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.cli.file_selector import FILE_LIST_NAME
 
 

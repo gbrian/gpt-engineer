@@ -48,7 +48,8 @@ from pathlib import Path
 from typing import List, Union
 from gpt_engineer.settings import VALID_FILE_EXTENSIONS, FILE_LIST_NAME, IGNORE_FOLDERS
 
-from gpt_engineer.core.db import DB, DBs
+from gpt_engineer.core.db import DB
+from gpt_engineer.core.dbs import DBs
 
 IS_NUM = re.compile(r"^[0-9]+$")
 

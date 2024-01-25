@@ -1,6 +1,8 @@
 import pytest
 
-from gpt_engineer.core.db import DB, DBJSON, DBPrompt, DBs
+from gpt_engineer.core.db import DB, DBJSON, DBPrompt
+from gpt_engineer.core.dbs import DBs
+
 from gpt_engineer.settings import PROMPT_FILE
 
 

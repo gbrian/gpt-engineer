@@ -3,7 +3,7 @@ from termcolor import colored
 
 from gpt_engineer.core.steps import curr_fn
 from gpt_engineer.core.ai import AI
-from gpt_engineer.core.db import DBs
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.context import validate_context
 
 from gpt_engineer.settings import (

@@ -28,7 +28,7 @@ import hashlib
 from typing import List
 
 from gpt_engineer.core import steps
-from gpt_engineer.core.db import DBs
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.domain import Step
 from gpt_engineer.cli.learning import Learning, extract_learning
 
@@ -39,7 +39,7 @@ import hashlib
 from typing import List
 
 from gpt_engineer.core import steps
-from gpt_engineer.core.db import DBs
+from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.domain import Step
 from gpt_engineer.cli.learning import Learning, extract_learning
 

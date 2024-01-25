@@ -36,7 +36,8 @@ import typer
 
 from gpt_engineer.core import gtp_engineer
 from gpt_engineer.core.ai import AI
-from gpt_engineer.core.db import DB, DBs, DBPrompt, archive
+from gpt_engineer.core.db import DB, DBPrompt
+from gpt_engineer.core.dbs import DBs, archive
 from gpt_engineer.core.steps import STEPS, Config as StepsConfig
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
