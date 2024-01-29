@@ -30,7 +30,7 @@ def clarify_business_request (ai: AI, dbs: DBs):
   dbs.input.append(
     HISTORY_PROMPT_FILE, f"\n[[PROMPT]]\n{prompt}"
   )
-  if input(f"Clarify prompt (Y/n):") == 'n':
+  if input(f"Clarify prompt (y/N):") != 'y':
     return prompt, None
 
   clarify_template = dbs.preprompts["clarify_business_request"]

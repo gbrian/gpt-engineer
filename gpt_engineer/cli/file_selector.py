@@ -440,42 +440,35 @@ def ask_for_files(metadata_db: DB, workspace_db: DB) -> None:
         ]
     )
 
-    file_path_list = []
+    file_path_list = metadata_db[FILE_LIST_NAME].split("\n")
     selected_option_str = input(selection_str)
     if selected_option_str:
+      while not selection_number:
         try:
             selection_number = int(selected_option_str)
+            if (
+              selection_number < OPTION_GUI
+              or selection_number > OPTION_USE_PREVIOUS
+              or (selection_number == OPTION_USE_PREVIOUS and not use_last_string)
+            ):
+              print("Invalid number. Select a number from the list above.\n")
+            else:
+              break
         except ValueError:
             print("Invalid number. Select a number from the list above.\n")
             sys.exit(1)
 
-    if selection_number == OPTION_GUI:
-        # Open GUI selection
-        file_path_list = gui_file_selector(workspace_db.path)
-    elif selection_number == OPTION_CLI:
-        # Open terminal selection
-        file_path_list = terminal_file_selector(workspace_db.path)
-    elif selection_number == OPTION_FIND_IN_FILES:
-        # Open terminal selection
-        file_path_list = terminal_find_in_files(workspace_db.path)
-    elif selection_number == OPTION_USE_PREVIOUS and use_last_string:
-      return True
-
-    if (
-        selection_number < OPTION_GUI
-        or selection_number > OPTION_USE_PREVIOUS
-        or (selection_number == OPTION_USE_PREVIOUS and not use_last_string)
-    ):
-        print("Invalid number. Select a number from the list above.\n")
-        sys.exit(1)
-
-    if not selection_number == OPTION_USE_PREVIOUS:
-        logging.debug(f"Set file list {len(file_path_list)}")
-        metadata_db[FILE_LIST_NAME] = "\n".join(
-            str(file_path) for file_path in file_path_list
-        )
-
-    return True if len(file_path_list) else False
+      if selection_number == OPTION_GUI:
+          # Open GUI selection
+          file_path_list = file_path_list + gui_file_selector(workspace_db.path)
+      elif selection_number == OPTION_CLI:
+          # Open terminal selection
+          file_path_list = file_path_list + terminal_file_selector(workspace_db.path)
+      elif selection_number == OPTION_FIND_IN_FILES:
+          # Open terminal selection
+          file_path_list = file_path_list + terminal_find_in_files(workspace_db.path)
+    metadata_db[FILE_LIST_NAME] = "\n".join(list(dict.fromkeys(file_path_list)))
+    return file_path_list
 
 def gui_file_selector(input_path: str) -> List[str]:
     import tkinter as tk

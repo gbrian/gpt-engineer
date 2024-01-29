@@ -24,6 +24,8 @@ KNOWLEDGE_MODEL = os.getenv("KNOWLEDGE_MODEL") or "gpt-3.5-turbo"
 TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
 KNOWLEDGE_ENRICH_DOCUMENTS = True if os.getenv("KNOWLEDGE_ENRICH_DOCUMENTS", None) is not None else False
 KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS = True if os.getenv("KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS", None) is not None else False
+KNOWLEDGE_SEARCH_DOCUMENT_COUNT = os.getenv("KNOWLEDGE_SEARCH_DOCUMENT_COUNT", 10)
+KNOWLEDGE_SEARCH_TYPE = os.getenv("KNOWLEDGE_SEARCH_TYPE", "similarity")  # Also test "mmr"
 
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng" if GPT_ENGINEER_METADATA_PATH else ".gpteng"
@@ -32,7 +34,7 @@ GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng" if GPT_ENGINEER_METADATA_PAT
 VALID_FILE_EXTENSIONS = [
     ".py", ".java", ".js", ".c", ".cpp", ".cs", ".go", ".rb", ".php", ".swift", ".kt", ".rs", ".sh", ".r", ".pl", ".scala", ".ts",
     ".md", ".txt", ".html", ".css", ".xml", ".json", ".yml", ".csv", ".sql", ".bat", ".ps1", ".vbs", ".log", ".ini", ".conf", ".cfg",
-    ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"
+    ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf", ".qa"
 ]
 
 LANGUAGE_FROM_EXTENSION = {
@@ -111,6 +113,9 @@ logger.info(f'GPT Engineer Metadata Path: {GPTENG_PATH}')
 logger.info(f'Knowledge Path: {GPTENG_PATH}/knowled_path_list')
 logger.info(f'Knowledge enrich documents: {KNOWLEDGE_ENRICH_DOCUMENTS}')
 logger.info(f'Knowledge enrich documents with tags: {KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS}')
+logger.info(f'Knowledge search document count: {KNOWLEDGE_SEARCH_DOCUMENT_COUNT}')
+logger.info(f'Knowledge search type: {KNOWLEDGE_SEARCH_TYPE}')
+
 
 logger.info(f'Prompt file: {PROMPT_FILE}')
 logger.info(f'History prompt file: {PROMPT_FILE}')

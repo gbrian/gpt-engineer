@@ -81,7 +81,7 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
         logging.error(colored(f"[validate_context] re-trying failed validation\n{prompt}\n{response}", "red"))
         return ai_validate_context(ai, dbs, prompt, doc, retry_count=1)
 
-      logging.error(colored(f"[validate_context] failed to validate {ex}\n{prompt}\n{response}", "red"))
+      logging.error(colored(f"[validate_context] failed to validate {prompt}\n{response}", "red"))
       score = -1
     
     doc.metadata["relevance_score"] = score

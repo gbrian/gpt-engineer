@@ -78,10 +78,10 @@ from gpt_engineer.cli.learning import human_review_input
 from gpt_engineer.core.context import parallel_validate_contexts
 
 from gpt_engineer.settings import (
-  PROMPT_FILE,
-  HISTORY_PROMPT_FILE,
-  PROJECT_SUMMARY,
-  LANGUAGE_FROM_EXTENSION
+    PROMPT_FILE,
+    HISTORY_PROMPT_FILE,
+    PROJECT_SUMMARY,
+    LANGUAGE_FROM_EXTENSION
 )
 
 MAX_SELF_HEAL_ATTEMPTS = 2  # constants for self healing code
@@ -92,22 +92,23 @@ Message = Union[AIMessage, HumanMessage, SystemMessage]
 
 
 def run_steps(steps, ai: AI, dbs: DBs):
-  start = time.time()
-  if not dbs.input[HISTORY_PROMPT_FILE]:
-      dbs.input[HISTORY_PROMPT_FILE] = ""
-  if not hasattr(steps, "__iter__"):
-    steps = [steps]
+    start = time.time()
+    if not dbs.input[HISTORY_PROMPT_FILE]:
+        dbs.input[HISTORY_PROMPT_FILE] = ""
+    if not hasattr(steps, "__iter__"):
+        steps = [steps]
 
-  for step in steps:
-      messages = step(ai, dbs)
-      dbs.logs[step.__name__] = AI.serialize_messages(messages)
+    for step in steps:
+        messages = step(ai, dbs)
+        dbs.logs[step.__name__] = AI.serialize_messages(messages)
 
-  dbs.input.append(
-    HISTORY_PROMPT_FILE, f"\n[[COST]]\n{ai.token_usage_log.usage_cost()}"
-  )
-  dbs.input.append(
-    HISTORY_PROMPT_FILE, f"\n[[TIME_TAKEN]]\n{time.time() - start} secs"
-  )
+    dbs.input.append(
+        HISTORY_PROMPT_FILE, f"\n[[COST]]\n{ai.token_usage_log.usage_cost()}"
+    )
+    dbs.input.append(
+        HISTORY_PROMPT_FILE, f"\n[[TIME_TAKEN]]\n{time.time() - start} secs"
+    )
+
 
 def get_platform_info():
     """Returns the Platform: OS, and the Python version.
@@ -160,7 +161,8 @@ def setup_sys_prompt_existing_code(dbs: DBs) -> str:
     - str: The constructed system prompt focused on existing code improvement for the AI.
     """
     return (
-        dbs.preprompts["improve"].replace("FILE_FORMAT", dbs.preprompts["file_format"])
+        dbs.preprompts["improve"].replace(
+            "FILE_FORMAT", dbs.preprompts["file_format"])
         + "\nUseful to know:\n"
         + dbs.preprompts["philosophy"]
     )
@@ -215,7 +217,8 @@ def simple_gen(ai: AI, dbs: DBs) -> List[Message]:
     The function assumes the `ai.start` method and the `to_files` utility are correctly
     set up and functional. Ensure these prerequisites are in place before invoking `simple_gen`.
     """
-    messages = ai.start(setup_sys_prompt(dbs), dbs.input[PROMPT_FILE], step_name=curr_fn())
+    messages = ai.start(setup_sys_prompt(
+        dbs), dbs.input[PROMPT_FILE], step_name=curr_fn())
     to_files_and_memory(messages[-1].content.strip(), dbs)
     return messages
 
@@ -240,7 +243,8 @@ def clarify(ai: AI, dbs: DBs) -> List[Message]:
       interactions.
 
     """
-    messages: List[Message] = [SystemMessage(content=dbs.preprompts["clarify"])]
+    messages: List[Message] = [SystemMessage(
+        content=dbs.preprompts["clarify"])]
     user_input = dbs.input[PROMPT_FILE]
     while True:
         messages = ai.next(messages, user_input, step_name=curr_fn())
@@ -304,7 +308,8 @@ def gen_clarified_code(ai: AI, dbs: DBs) -> List[dict]:
     ]  # skip the first clarify message, which was the original clarify priming prompt
     messages = ai.next(
         messages,
-        dbs.preprompts["generate"].replace("FILE_FORMAT", dbs.preprompts["file_format"]),
+        dbs.preprompts["generate"].replace(
+            "FILE_FORMAT", dbs.preprompts["file_format"]),
         step_name=curr_fn(),
     )
 
@@ -418,7 +423,8 @@ def gen_entrypoint(ai: AI, dbs: DBs) -> List[dict]:
             "Do not use placeholders, use example values (like . for a folder argument) "
             "if necessary.\n"
         ),
-        user="Information about the codebase:\n\n" + dbs.memory["all_output.txt"],
+        user="Information about the codebase:\n\n" +
+        dbs.memory["all_output.txt"],
         step_name=curr_fn(),
     )
     print()
@@ -460,7 +466,8 @@ def use_feedback(ai: AI, dbs: DBs):
         ),  # reload previously generated code
     ]
     if dbs.input["feedback"]:
-        messages = ai.next(messages, dbs.input["feedback"], step_name=curr_fn())
+        messages = ai.next(
+            messages, dbs.input["feedback"], step_name=curr_fn())
         to_files_and_memory(messages[-1].content.strip(), dbs)
         return messages
     else:
@@ -497,56 +504,63 @@ def set_improve_filelist(ai: AI, dbs: DBs):
     """
     """Sets the file list for files to work with in existing code mode."""
     while True:
-      try:
-        file_list = dbs.project_metadata[FILE_LIST_NAME]
-        if file_list:
-          files_size = float(compute_files_size(dbs))
-          preview_str = "\n".join(
-              [
-                  "-----------------------------",
-                  "The following files will be used in the improvement process:",
-                  f"{FILE_LIST_NAME}:",
-                  colored(str(file_list), "green"),
-                  "SIZE: %.2f K" % files_size,
-                  "",
-                  "The inserted prompt is the following:",
-                  colored(f"{dbs.input[PROMPT_FILE]}", "green"),
-                  "-----------------------------"
-              ]
-          )
-          print(preview_str)
-      except:
-        pass
-      opt = input("\n".join([
-          "Select affected files",
-          "1. Use knowledge index",
-          "2. Use file selector",
-          "Choose an option (Empty to end):"
-      ]))
-      if opt == "":
-        break
+        try:
+            file_list = dbs.project_metadata[FILE_LIST_NAME]
+            files_size = float(compute_files_size(dbs)) if file_list else 0
+            preview_str = "\n".join(
+                [
+                    "-----------------------------",
+                    "The following files will be used in the improvement process:",
+                    f"{FILE_LIST_NAME}:",
+                    colored(str(file_list), "green"),
+                    "SIZE: %.2f K" % files_size,
+                    "",
+                    "The inserted prompt is the following:",
+                    colored(f"{dbs.input[PROMPT_FILE]}", "green"),
+                    "-----------------------------"
+                ]
+            )
+            print(preview_str)
+        except:
+            pass
+        opt = input("\n".join([
+            "Select affected files",
+            "0. Reset list",
+            "1. Use knowledge index",
+            "2. Use file selector",
+            "Choose an option (Empty to end):"
+        ]))
+        if opt == "":
+            break
+        if opt == "0":
+            dbs.project_metadata[FILE_LIST_NAME] = ""
+            continue
 
-      if opt == "1":
-        select_files_from_knowledge(ai, dbs)
-        continue
-  
-      while not ask_for_files(dbs.project_metadata, dbs.workspace):  # stores files as full paths.
-        print(("Sorry, no files found matching your criteria"))
-      dbs.input.append(
-        HISTORY_PROMPT_FILE, f"\n[[FILES]]\n{dbs.project_metadata[FILE_LIST_NAME]}"
-      )
+        if opt.startswith("1"):
+            select_files_from_knowledge(ai, dbs, opt[1:].strip())
+            continue
+
+        # stores files as full paths.
+        while not ask_for_files(dbs.project_metadata, dbs.workspace):
+            print(("Sorry, no files found matching your criteria"))
+        dbs.input.append(
+            HISTORY_PROMPT_FILE, f"\n[[FILES]]\n{dbs.project_metadata[FILE_LIST_NAME]}"
+        )
     return []
-  
-def select_files_from_knowledge(ai: AI, dbs: DBs):
-    query = dbs.input[PROMPT_FILE]
+
+
+def select_files_from_knowledge(ai: AI, dbs: DBs, prompt: str):
+    query = prompt if len(prompt) else dbs.input[PROMPT_FILE]
     documents = dbs.knowledge.search(query)
     dbs.input.append(
-      HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
+        HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
     )
     if documents:
         # Filter out irrelevant documents based on a relevance score
-        relevant_documents = [doc for doc in parallel_validate_contexts(dbs, query, documents) if doc]
-        file_list = [str(Path(doc.metadata["source"]).absolute()) for doc in relevant_documents]
+        relevant_documents = [doc for doc in parallel_validate_contexts(
+            dbs, query, documents) if doc]
+        file_list = [str(Path(doc.metadata["source"]).absolute())
+                     for doc in relevant_documents]
         file_list = list(dict.fromkeys(file_list))  # Remove duplicates
 
         print(f"{len(file_list)} matches using knowledge:")
@@ -554,19 +568,21 @@ def select_files_from_knowledge(ai: AI, dbs: DBs):
             print(f"{i + 1}. {path}")
 
         user_input = input(
-          "Select files by entering the numbers separated by commas/spaces or specify range with a dash.\n"
-          + "Example: 1,2,3-5,7,9,13-15,18,20 or enter 'all' to select everything.\n"
-          + "Select files (default: all): ")
+            "Select files by entering the numbers separated by commas/spaces or specify range with a dash.\n"
+            + "Example: 1,2,3-5,7,9,13-15,18,20 or enter 'all' to select everything.\n"
+            + "Select files (default: all): ")
 
-        selected_files = []
+        selected_files = dbs.project_metadata[FILE_LIST_NAME].split("\n")
         if not user_input or user_input.lower() == 'all':
-            selected_files = file_list
+            selected_files = selected_files + file_list
         elif user_input:
             indices = parse_selection_input(user_input, len(file_list))
-            selected_files = [file_list[i] for i in indices]
+            selected_files = selected_files + [file_list[i] for i in indices]
 
-        dbs.project_metadata[FILE_LIST_NAME] = "\n".join(selected_files)
+        dbs.project_metadata[FILE_LIST_NAME] = "\n".join(
+            list(dict.fromkeys(selected_files)))
     return []
+
 
 def parse_selection_input(user_input, max_index):
     """
@@ -614,6 +630,7 @@ def preview_code_improve(ai: AI, dbs: DBs):
     input(confirm_str)
     return []
 
+
 def assert_files_ready(ai: AI, dbs: DBs):
     """
     Verify the presence of required files for headless 'improve code' execution.
@@ -653,7 +670,8 @@ def assert_files_ready(ai: AI, dbs: DBs):
 
 def compute_files_size(dbs: DBs):
     return reduce(lambda a, b: a + b, [len(code) for code in get_file_info(dbs)], 0) / 1000
-    
+
+
 def get_file_info(dbs: DBs):
     files_info = get_code_strings(
         dbs.workspace, dbs.project_metadata
@@ -701,12 +719,13 @@ def improve_existing_code(ai: AI, dbs: DBs):
 
     for code_input in get_file_info(dbs):
         if code_input:
-          messages.append(HumanMessage(content=f"{code_input}"))
+            messages.append(HumanMessage(content=f"{code_input}"))
 
     messages.append(HumanMessage(content=f"Request: {dbs.input[PROMPT_FILE]}"))
 
     dbs.input.append(
-        HISTORY_PROMPT_FILE, "\n[[AI_PROPMT]]\n%s" % "\n".join([str(msg) for msg in messages])
+        HISTORY_PROMPT_FILE, "\n[[AI_PROPMT]]\n%s" % "\n".join(
+            [str(msg) for msg in messages])
     )
     messages = ai.next(messages, step_name=curr_fn())
 
@@ -795,14 +814,17 @@ def self_heal(ai: AI, dbs: DBs):
             # Using the log from the previous step has all the code and
             # the gen_entrypoint prompt inside.
             if attempts < 1:
-                messages = AI.deserialize_messages(dbs.logs[gen_entrypoint.__name__])
-                messages.append(ai.fuser(get_platform_info()))  # add in OS and Py version
+                messages = AI.deserialize_messages(
+                    dbs.logs[gen_entrypoint.__name__])
+                # add in OS and Py version
+                messages.append(ai.fuser(get_platform_info()))
 
             # append the error message
             messages.append(ai.fuser(dbs.workspace["log.txt"]))
 
             messages = ai.next(
-                messages, dbs.preprompts["file_format_fix"], step_name=curr_fn()
+                messages, dbs.preprompts["file_format_fix"], step_name=curr_fn(
+                )
             )
         else:  # the process did not fail, we are done here.
             return messages
@@ -815,6 +837,7 @@ def self_heal(ai: AI, dbs: DBs):
 
     return messages
 
+
 def process_prompt_and_extract_files(ai: AI, dbs: DBs):
     """
     Process the prompt and extract file aliases following the pattern '@file_name_regex'.
@@ -825,29 +848,34 @@ def process_prompt_and_extract_files(ai: AI, dbs: DBs):
     file_aliases = re.findall(r'@(\w+)', prompt)
     if len(file_aliases):
         for alias in file_aliases:
-            file_path = next((f for f in dbs.workspace.files if f.endswith(alias)), None)
+            file_path = next(
+                (f for f in dbs.workspace.files if f.endswith(alias)), None)
             if file_path:
                 prompt = prompt.replace(f'@{alias}', file_path)
                 dbs.project_metadata[FILE_LIST_NAME].append(file_path)
         dbs.input[PROMPT_FILE] = prompt
-    
+
+
 def create_project_summary(ai: AI, dbs: DBs):
     from gpt_engineer.core.step.documenter import create_project_summary
     return create_project_summary(ai, dbs)
 
+
 def chat(ai: AI, dbs: DBs):
-  from gpt_engineer.core.step.chat import chat_interaction
-  return chat_interaction(ai, dbs)
+    from gpt_engineer.core.step.chat import chat_interaction
+    return chat_interaction(ai, dbs)
+
 
 def get_improve_prompt(ai: AI, dbs: DBs):
-  from gpt_engineer.core.step.clarify import clarify_business_request
-  from gpt_engineer.core.step.prompt import set_prompt
-  logging.debug("get_improve_prompt")
-  prompt, ai_response = clarify_business_request(ai, dbs)
-  logging.debug(f"get_improve_prompt: {prompt} \n {ai_response}")
-  if ai_response:
-    set_prompt(dbs, ai_response)
-  return []
+    from gpt_engineer.core.step.clarify import clarify_business_request
+    from gpt_engineer.core.step.prompt import set_prompt
+    logging.debug("get_improve_prompt")
+    prompt, ai_response = clarify_business_request(ai, dbs)
+    logging.debug(f"get_improve_prompt: {prompt} \n {ai_response}")
+    if ai_response:
+        set_prompt(dbs, ai_response)
+    return []
+
 
 class Config(str, Enum):
     """
@@ -913,10 +941,10 @@ STEPS = {
         execute_entrypoint,
     ],
     Config.USE_FEEDBACK: [
-      use_feedback,
-      gen_entrypoint,
-      execute_entrypoint,
-      human_review
+        use_feedback,
+        gen_entrypoint,
+        execute_entrypoint,
+        human_review
     ],
     Config.EXECUTE_ONLY: [execute_entrypoint],
     Config.EVALUATE: [execute_entrypoint, human_review],
@@ -930,7 +958,7 @@ STEPS = {
     Config.EVAL_NEW_CODE: [simple_gen],
     Config.SELF_HEAL: [self_heal],
     Config.CREATE_PROJECT_SUMMARY: [
-      create_project_summary
+        create_project_summary
     ],
     Config.CHAT: chat
 }

@@ -16,7 +16,9 @@ from gpt_engineer.settings import (
   GPTENG_PATH,
   KNOWLEDGE_MODEL,
   KNOWLEDGE_ENRICH_DOCUMENTS,
-  KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS
+  KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS,
+  KNOWLEDGE_SEARCH_DOCUMENT_COUNT,
+  KNOWLEDGE_SEARCH_TYPE
 )
 
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
@@ -233,8 +235,8 @@ class Knowledge:
 
     def as_retriever(self):
         return self.get_db().as_retriever(
-            search_type="mmr",  # Also test "similarity"
-            search_kwargs={"k": 8},
+            search_type=KNOWLEDGE_SEARCH_TYPE,
+            search_kwargs={"k": KNOWLEDGE_SEARCH_DOCUMENT_COUNT },
         )
 
     def search(self, query):

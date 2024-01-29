@@ -1,18 +1,15 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-
-class Message(BaseModel):
-    user: str
-    message: str
+from gpt_engineer.api.model import ChatMessage, Message 
+from gpt_engineer.api.app_service import clarify_business_request
 
 app = FastAPI()
 
 @app.get("/health")
-def chat_with_knowledge():
+def health_check():
   return "ok"
 
 @app.post("/chat")
-def chat_with_knowledge(message: Message):
+def chat(chat_message: ChatMessage):
     # Perform search on Knowledge using the input
     # Return the search results as response
     
