@@ -29,11 +29,14 @@ def test_knowledge_loader(mock_ai_dbs):
   
   assert "python" in languages
   assert "markdown" in languages
+  assert "js" in languages
+  assert "java" in languages
+  
   assert "code" in loaders
   assert "text" in loaders
   assert "tests/knowledge/settings.json" in sources
   
-def test_knowledge(mock_ai_dbs):
+def test_knowledge_code_indexing(mock_ai_dbs):
     dbs = mock_ai_dbs
     knowledge_prompts = KnowledgePrompts(dbs.preprompts)
     knowledge = Knowledge(
@@ -42,7 +45,9 @@ def test_knowledge(mock_ai_dbs):
     knowledge.reload(full=True)
 
     docs = knowledge.get_all_documents()
-    
 
-    assert docs
+    assert any(doc.page_content == 'class DummyPython:\n    def dummy_method(self):\n        pass\n' for doc in docs)
+    assert any(doc.page_content == 'class DummyTypeScript {\n    dummyMethod() {}\n}\n' for doc in docs)
+    assert any(doc.page_content == 'class DummyJavaScript {\n    dummyMethod() {}\n}\n' for doc in docs)
+    assert any(doc.page_content == 'public class DummyJava {\n    public void dummyMethod() {}\n}\n' for doc in docs)
     
