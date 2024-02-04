@@ -11,13 +11,10 @@ import time
 from datetime import datetime
 
 from langchain.document_loaders.generic import GenericLoader
-from langchain.document_loaders.parsers import LanguageParser
-from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.text_splitter import Language
 
-CURRENT_SPLITTER_LANGUAGES = [lang.lower() for lang in dir(Language)]
-
+from gpt_engineer.knowledge.knowledge_code_splitter import KnowledgeCodeSplitter
 
 logger = logging.getLogger(__name__)
 
@@ -65,38 +62,27 @@ class KnowledgeLoader:
     def load(self, last_update: datetime = None):
         logger.debug('Loading knowledge from filesystem')
         documents = []
+        code_splitter = KnowledgeCodeSplitter()
         for file_path in list(self.find_files(self.suffixes)):
-            # Load the knowledge from the filesystem
-            suffix = file_path.split(".")[-1] if "." in file_path else ""
-            language = LANGUAGE_FROM_EXTENSION.get(suffix)
             new_docs = None
-            loader_type = None
+            # Load the knowledge from the filesystem
             if not self.should_index_doc(file_path, last_update):
                 continue
             try:
-                if language and language in CURRENT_SPLITTER_LANGUAGES:    
-                    try:
-                        parser = LanguageParser(language=language)
-                        loader = GenericLoader.from_filesystem(
-                            file_path,
-                            parser=parser
-                        )
-                        new_docs = loader.load()
-                        loader_type = "code"
-                    except KeyError:
-                        logger.debug(f"Not available language parser for {suffix}")
-
-            except Exception as ex:
-                logger.error(f"Error loading file {file_path} {ex}")
+                new_docs = code_splitter.load(file_path)
+                loader_type = "code"
+            except:
+                logger.debug(f"Not available code splitter for {file_path}")
 
             if not new_docs:
                 new_docs = TextLoader(file_path).load_and_split(
                     text_splitter=self.text_splitter)
+                for doc in new_docs:
+                    doc.metadata["language"] = "txt"
                 loader_type = "text"
 
             if new_docs:
                 for doc in new_docs:
-                    doc.metadata["language"] = language if language else ""
                     doc.metadata["loader_type"] = loader_type
                     documents = documents + new_docs 
 

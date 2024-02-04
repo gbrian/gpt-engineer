@@ -19,18 +19,24 @@ def mock_ai_dbs():
     dbs.preprompts = DB("gpt_engineer/preprompts")
     return dbs
 
+def unique(_key, docs):
+    lst = [doc.metadata.get(_key) for doc in docs]
+    return list(dict.fromkeys(lst))
+
 def test_knowledge_loader(mock_ai_dbs):
   loader = KnowledgeLoader(path)
 
   docs = loader.load()
-  languages = [doc.metadata.get('language') for doc in docs]
-  loaders = [doc.metadata.get('loader_type') for doc in docs]
-  sources = [doc.metadata.get('source') for doc in docs]
+  languages = unique('language', docs)
+  loaders = unique('loader_type', docs)
+  sources = unique('source', docs)
   
   assert "python" in languages
   assert "markdown" in languages
   assert "js" in languages
   assert "java" in languages
+  assert "markdown" in languages
+  assert "json" in languages
   
   assert "code" in loaders
   assert "text" in loaders

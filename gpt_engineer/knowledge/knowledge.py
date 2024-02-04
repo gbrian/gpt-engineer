@@ -7,8 +7,8 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-from langchain.llms import OpenAI
+from langchain_community.vectorstores import Chroma
+from langchain_community.llms import OpenAI
 from langchain.schema.document import Document
 
 from gpt_engineer.core.ai import AI

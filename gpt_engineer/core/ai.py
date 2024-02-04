@@ -38,7 +38,7 @@ from gpt_engineer.core.token_usage import TokenUsageLog
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_community.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -213,7 +213,7 @@ class AI:
         return messages
 
     @backoff.on_exception(
-        backoff.expo, openai.error.RateLimitError, max_tries=7, max_time=45
+        backoff.expo, openai._exceptions.RateLimitError, max_tries=7, max_time=45
     )
     def backoff_inference(self, messages, callbacks):
         """
