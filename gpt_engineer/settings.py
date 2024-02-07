@@ -19,6 +19,7 @@ if not HISTORY_PROMPT_FILE:
 
 # SETTINGS
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_BASE = os.getenv("OPENAI_API_BASE")
 MODEL = os.getenv("MODEL") or "gpt-4"
 KNOWLEDGE_MODEL = os.getenv("KNOWLEDGE_MODEL") or "gpt-3.5-turbo"
 TEMPERATURE = float(os.getenv("TEMPERATURE") or 0.1)
@@ -30,12 +31,8 @@ KNOWLEDGE_SEARCH_TYPE = os.getenv("KNOWLEDGE_SEARCH_TYPE", "similarity")  # Also
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng" if GPT_ENGINEER_METADATA_PATH else ".gpteng"
 
-# Valid files to work and index
-VALID_FILE_EXTENSIONS = [
-    ".py", ".java", ".js", ".c", ".cpp", ".cs", ".go", ".rb", ".php", ".swift", ".kt", ".rs", ".sh", ".r", ".pl", ".scala", ".ts",
-    ".md", ".txt", ".html", ".css", ".xml", ".json", ".yml", ".csv", ".sql", ".bat", ".ps1", ".vbs", ".log", ".ini", ".conf", ".cfg",
-    ".tex", ".rtf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf", ".qa"
-]
+VALID_FILE_EXTENSIONS = {}
+IGNORE_FOLDERS = {}
 
 LANGUAGE_FROM_EXTENSION = {
     "py": "python",
@@ -58,8 +55,15 @@ LANGUAGE_FROM_EXTENSION = {
     "html": "html"
 }
 
-IGNORE_FOLDERS = { "site-packages", "node_modules", "venv", ".vscode", ".gpteng", ".git" }
-IGNORE_FILES = { ".env" }
+KNOWLEDGE_FILE_IGNORE = { 
+    "site-packages/",
+    "node_modules/",
+    "venv/",
+    ".vscode/",
+    ".gpteng/",
+    ".git/",
+    ".env"
+}
 
 KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7
 

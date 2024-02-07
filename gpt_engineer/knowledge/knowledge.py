@@ -18,7 +18,9 @@ from gpt_engineer.settings import (
   KNOWLEDGE_ENRICH_DOCUMENTS,
   KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS,
   KNOWLEDGE_SEARCH_DOCUMENT_COUNT,
-  KNOWLEDGE_SEARCH_TYPE
+  KNOWLEDGE_SEARCH_TYPE,
+  OPENAI_API_BASE,
+  OPENAI_API_KEY
 )
 
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
@@ -53,7 +55,11 @@ class Knowledge:
         self.db_file_list = f"{self.db_path}/file_list"
 
         self.loader = KnowledgeLoader(self.path)
-        self.embedding = OpenAIEmbeddings(disallowed_special=())
+        self.embedding = OpenAIEmbeddings(
+            openai_api_key=OPENAI_API_KEY,
+            openai_base_path=OPENAI_API_BASE,
+            disallowed_special=()
+        )
         self.last_update = None
         
         if os.path.isfile(self.db_file_list):

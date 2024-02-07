@@ -31,3 +31,21 @@ def test_markdown ():
     code_splitter = KnowledgeCodeSplitter()
     docs = code_splitter.load('tests/knowledge/dummy_code.md')
     assert docs[0].metadata['language'] == 'markdown'
+
+def test_text ():
+    code_splitter = KnowledgeCodeSplitter()
+    fails_with_value_error = False
+    try:
+        docs = code_splitter.load('tests/knowledge/dummy_code.text')
+    except ValueError:
+        fails_with_value_error = True
+    assert fails_with_value_error
+
+def test_no_extension ():
+    code_splitter = KnowledgeCodeSplitter()
+    fails_with_value_error = False
+    try:
+        docs = code_splitter.load('tests/knowledge/dummy_code')
+    except ValueError:
+        fails_with_value_error = True
+    assert fails_with_value_error

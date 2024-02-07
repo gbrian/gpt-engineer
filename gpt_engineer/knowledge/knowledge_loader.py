@@ -1,13 +1,12 @@
 from gpt_engineer.settings import (
   GPTENG_PATH,
-  VALID_FILE_EXTENSIONS,
-  LANGUAGE_FROM_EXTENSION,
-  IGNORE_FOLDERS,
-  IGNORE_FILES
+  KNOWLEDGE_FILE_IGNORE,
+  LANGUAGE_FROM_EXTENSION
 )
 import logging
 import os
 import time
+import subprocess
 from datetime import datetime
 
 from langchain.document_loaders.generic import GenericLoader
@@ -22,15 +21,11 @@ logger = logging.getLogger(__name__)
 class KnowledgeLoader:
     def __init__(self, path):
         self.path = path
-        self.glob = "**/*"
-        self.suffixes = VALID_FILE_EXTENSIONS + ['']  # Add no-extension files
-        self.exclude_folders = list(IGNORE_FOLDERS)
-        self.ignore_files = list(IGNORE_FILES)  # Filter out no-extension files
         self.text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
             chunk_size=500, chunk_overlap=0
         )
         logger.debug(
-            f'KnowledgeLoader initialized {(self.path, self.suffixes)}')
+            f'KnowledgeLoader initialized {(self.path)}')
 
     def should_index_doc(self, file_path, last_update):
         if not last_update:
@@ -40,30 +35,11 @@ class KnowledgeLoader:
           return True
         return False
 
-    def find_files(self, suffixes):
-        def valid_file(filename):
-          if filename not in self.ignore_files:
-            if "." in filename:
-              extension = filename.split(".")[-1]
-              if f".{extension}" in suffixes:
-                return True
-          return False
-        logger.debug(f'Traversing filesystem {self.path}')
-        for root, dirs, files in os.walk(self.path):
-            invalid_dirs = [d for d in root.split(
-                os.sep) if d in self.exclude_folders]
-            if len(invalid_dirs):
-              continue
-            for filename in files:
-                is_valid = valid_file(filename)
-                if is_valid:
-                  yield os.path.join(root, filename)
-
     def load(self, last_update: datetime = None):
         logger.debug('Loading knowledge from filesystem')
         documents = []
         code_splitter = KnowledgeCodeSplitter()
-        for file_path in list(self.find_files(self.suffixes)):
+        for file_path in self.list_repository_files():
             new_docs = None
             # Load the knowledge from the filesystem
             if not self.should_index_doc(file_path, last_update):
@@ -88,3 +64,19 @@ class KnowledgeLoader:
 
         logger.debug(f"Loaded {len(documents)} documents")
         return documents
+
+    def _run_git_command(self, command):
+        result = subprocess.run(command, cwd=self.path, stdout=subprocess.PIPE)
+        file_paths = result.stdout.decode('utf-8').split('\n')
+        return file_paths
+
+    def list_repository_files(self):
+        # Versioned files
+        versioned_files = self._run_git_command(['git', 'ls-files'])
+
+        # Unversioned files
+        unversioned_files = self._run_git_command(['git', 'ls-files', '--others', '--exclude-standard'])
+
+        # joining versioned and unversioned file paths
+        full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files if file_path]
+        return full_file_paths

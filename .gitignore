@@ -83,3 +83,4 @@ poetry.lock
 .gpteng
 .vscode/settings.json
 tests/knowledge/db
+tests/knowledge/.venv

@@ -48,6 +48,8 @@ from langchain.schema import (
     messages_to_dict,
 )
 
+from gpt_engineer.settings import OPENAI_API_KEY, OPENAI_API_BASE
+
 # Type hint for a chat message
 Message = Union[AIMessage, HumanMessage, SystemMessage]
 
@@ -310,16 +312,17 @@ class AI:
             The name of the retrieved model, or "gpt-3.5-turbo" if the specified model is not available.
         """
         try:
-            openai.Model.retrieve(model_name)
-        except openai.InvalidRequestError:
+            openai_client = openai.Client(api_key=OPENAI_API_KEY, base_url=OPENAI_API_BASE)
+            models = openai_client.models.list()
+            if model_name in models:
+                return model_name    
+        except openai._exceptions.BadRequestError:
             print(
                 f"Model {model_name} not available for provided API key. Reverting "
                 "to gpt-3.5-turbo. Sign up for the GPT-4 wait list here: "
                 "https://openai.com/waitlist/gpt-4-api\n"
             )
-            return "gpt-3.5-turbo"
-
-        return model_name
+        return "gpt-3.5-turbo"
 
     def _create_chat_model(self) -> BaseChatModel:
         """
@@ -338,6 +341,7 @@ class AI:
             The created chat model.
         """
         if self.azure_endpoint:
+            raise ValueError("NEED TO BE TESTED")
             return AzureChatOpenAI(
                 openai_api_base=self.azure_endpoint,
                 openai_api_version=os.getenv("OPENAI_API_VERSION", "2023-05-15"),
@@ -347,6 +351,8 @@ class AI:
             )
 
         return ChatOpenAI(
+            openai_api_key=OPENAI_API_KEY,
+            openai_base_path=OPENAI_API_BASE,
             model=self.model_name,
             temperature=self.temperature,
             streaming=True,
