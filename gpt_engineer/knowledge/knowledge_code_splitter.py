@@ -46,18 +46,18 @@ class KnowledgeCodeSplitter:
             # include_prev_next_rel: bool = True,
             # id_func: Optional[Callable[[int, Document], str]] = None,
         )
-        metadata = {
-            "source": file_path,
-            "language": language,
-            "parser": "CodeSplitter",
-            "loader_type": "code"
-        }
         def build_document(page_content):
+            metadata = {
+                "source": file_path,
+                "language": language,
+                "parser": "CodeSplitter",
+                "loader_type": "code"
+            }    
             return Document(page_content=page_content, metadata=metadata)
 
         with open(file_path, mode='r', encoding='utf-8') as file:
             blocks = code_parser.split_text(file.read())
-            return list(map(build_document, blocks))
+            return [build_document(block) for block in blocks]
 
     def load_with_language_parser(self, file_path):
         suffix = file_path.split(".")[-1] if "." in file_path else "txt"

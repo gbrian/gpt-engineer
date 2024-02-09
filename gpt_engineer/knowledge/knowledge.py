@@ -57,7 +57,7 @@ class Knowledge:
         self.loader = KnowledgeLoader(self.path)
         self.embedding = OpenAIEmbeddings(
             openai_api_key=OPENAI_API_KEY,
-            openai_base_path=OPENAI_API_BASE,
+            openai_api_base=OPENAI_API_BASE,
             disallowed_special=()
         )
         self.last_update = None

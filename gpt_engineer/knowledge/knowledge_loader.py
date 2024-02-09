@@ -60,7 +60,8 @@ class KnowledgeLoader:
             if new_docs:
                 for doc in new_docs:
                     doc.metadata["loader_type"] = loader_type
-                    documents = documents + new_docs 
+
+                documents = documents + new_docs 
 
         logger.debug(f"Loaded {len(documents)} documents")
         return documents

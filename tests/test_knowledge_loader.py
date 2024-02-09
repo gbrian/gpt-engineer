@@ -51,6 +51,11 @@ def test_knowledge_loader(mock_ai_dbs):
 
     assert sorted(all_paths) == sorted(sources)
 
+    for ix, doc in enumerate(docs):
+        if doc.metadata.get("ix"):
+            raise ValueError(f"Duplocated document {doc.metadata}")
+        doc.metadata["ix"] = ix
+
 def test_list_reposiroty_files():
     all_paths = [file_path for file_path in list_path_files() if ".venv" not in file_path]
 
@@ -59,3 +64,4 @@ def test_list_reposiroty_files():
     
     
     assert sorted(all_files) == sorted(all_paths)
+    
