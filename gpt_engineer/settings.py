@@ -1,6 +1,5 @@
 import os
 import logging
-import openai
 import importlib.util
 
 from dotenv import load_dotenv
@@ -100,7 +99,6 @@ except FileNotFoundError:
     pass
 
 ## INITIALIZE
-openai.api_key = OPENAI_API_KEY
 
 level = logging.DEBUG if os.getenv("DEBUG") in ["1", "true", "True"] else None
 logging.basicConfig(level=level)

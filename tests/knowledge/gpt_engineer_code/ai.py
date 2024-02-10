@@ -9,13 +9,16 @@ from typing import List, Optional, Union
 
 import backoff
 import openai
+from openai import OpenAI
+
+client = OpenAI()
 
 import hashlib
 
 from gpt_engineer.core.token_usage import TokenUsageLog
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain_community.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -97,7 +100,7 @@ class AI:
         return messages
 
     @backoff.on_exception(
-        backoff.expo, openai.error.RateLimitError, max_tries=7, max_time=45
+        backoff.expo, openai.RateLimitError, max_tries=7, max_time=45
     )
     def backoff_inference(self, messages, callbacks):
         
@@ -123,7 +126,7 @@ class AI:
 
     def _check_model_access_and_fallback(self, model_name) -> str:
         try:
-            openai.Model.retrieve(model_name)
+            client.models.retrieve(model_name)
         except openai.InvalidRequestError:
             print(
                 f"Model {model_name} not available for provided API key. Reverting "

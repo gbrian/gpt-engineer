@@ -38,7 +38,7 @@ from gpt_engineer.core.token_usage import TokenUsageLog
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-from langchain_community.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -251,7 +251,7 @@ class AI:
         >>> callbacks = [some_logging_callback]
         >>> response = backoff_inference(messages, callbacks)
         """
-        return self.llm(messages, callbacks=callbacks)  # type: ignore
+        return self.llm(messages=messages, config={ "callbacks": callbacks })  # type: ignore
 
     @staticmethod
     def serialize_messages(messages: List[Message]) -> str:
@@ -342,17 +342,10 @@ class AI:
         """
         if self.azure_endpoint:
             raise ValueError("NEED TO BE TESTED")
-            return AzureChatOpenAI(
-                openai_api_base=self.azure_endpoint,
-                openai_api_version=os.getenv("OPENAI_API_VERSION", "2023-05-15"),
-                deployment_name=self.model_name,
-                openai_api_type="azure",
-                streaming=True,
-            )
 
         return ChatOpenAI(
             openai_api_key=OPENAI_API_KEY,
-            openai_base_path=OPENAI_API_BASE,
+            openai_api_base=OPENAI_API_BASE,
             model=self.model_name,
             temperature=self.temperature,
             streaming=True,
