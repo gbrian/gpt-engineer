@@ -26,3 +26,4 @@ class Settings:
     prompt: str
     file_selector: bool
     build_knowledge: bool
+    find_files: bool

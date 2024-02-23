@@ -4,7 +4,7 @@ from datetime import datetime
 from gpt_engineer.core.utils import curr_fn, document_to_context
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.dbs import DBs
-from gpt_engineer.core.context import parallel_validate_contexts
+from gpt_engineer.core.context import find_relevant_documents
 
 
 from gpt_engineer.settings import (
@@ -18,8 +18,7 @@ def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None, role
   else:
     logging.debug(f"[ai_chat] using custom system")
   # Fetch relevant documents using Knowledge
-  documents = dbs.knowledge.search(user_input)
-  documents = [doc for doc in parallel_validate_contexts(dbs, user_input, documents) if doc]
+  documents, file_list = find_relevant_documents(ai, dbs, query=user_input)
 
   knwoledge_context = "\n".join([document_to_context(doc) for doc in documents])
   prompt = dbs.preprompts["chat"].format(messages="\n".join(messages), context=knwoledge_context, prompt=user_input)

@@ -1,10 +1,12 @@
 import logging
 import re
 from termcolor import colored
+from pathlib import Path
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from gpt_engineer.core.ai import AI
+from gpt_engineer.core.dbs import DBs
 
 from gpt_engineer.settings import (
   PROMPT_FILE,
@@ -96,3 +98,15 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
       ])
     )
     return doc
+
+def find_relevant_documents (ai:AI, dbs: DBs, query: str):
+  documents = dbs.knowledge.search(query)
+  if documents:
+      # Filter out irrelevant documents based on a relevance score
+      relevant_documents = [doc for doc in parallel_validate_contexts(
+          dbs, query, documents) if doc]
+      file_list = [str(Path(doc.metadata["source"]).absolute())
+                  for doc in relevant_documents]
+      file_list = list(dict.fromkeys(file_list))  # Remove duplicates
+      return relevant_documents, file_list
+  return None, None

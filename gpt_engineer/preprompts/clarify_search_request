@@ -1,0 +1,4 @@
+Help user creating an accurate search term to find relevant content.
+Search term will be used by a vector store with embeddings to retrieve the most relevants parts.
+Here is the user's search:
+{{ prompt }} 

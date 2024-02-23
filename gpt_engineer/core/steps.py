@@ -548,9 +548,24 @@ def set_improve_filelist(ai: AI, dbs: DBs):
         )
     return []
 
+def find_relevant_documents(ai: AI, dbs=DBs, prompt: str = None):
+  from gpt_engineer.core.context import find_relevant_documents
+  query = prompt if prompt else dbs.input[PROMPT_FILE]
 
-def select_files_from_knowledge(ai: AI, dbs: DBs, prompt: str):
-    query = prompt if len(prompt) else dbs.input[PROMPT_FILE]
+  documents, file_list = find_relevant_documents(ai, dbs, query)
+
+  print(f"{len(file_list)} matches using knowledge:")
+  for i, path in enumerate(file_list):
+      print(f"{i + 1}. {path}")
+      for doc in [d for d in documents if d.metadata["source"] == path]:
+        print(colored(doc.page_content, "green")) 
+      print()
+
+  return []
+
+
+def select_files_from_knowledge(ai: AI, dbs: DBs, prompt: str = None):
+    query = prompt if prompt else dbs.input[PROMPT_FILE]
     documents = dbs.knowledge.search(query)
     dbs.input.append(
         HISTORY_PROMPT_FILE, f"\n[[KNOWLEDGE]]\n{documents}"
@@ -876,6 +891,16 @@ def get_improve_prompt(ai: AI, dbs: DBs):
         set_prompt(dbs, ai_response)
     return []
 
+def improve_search_prompt(ai: AI, dbs: DBs):
+    from gpt_engineer.core.step.clarify import clarify_search_request
+    from gpt_engineer.core.step.prompt import get_prompt, set_prompt
+    logging.debug("improve_search_prompt")
+    user_search = get_prompt(ai, dbs)
+    new_search = clarify_search_request(ai=ai, dbs=dbs, prompt=user_search)
+    logging.debug(f"improve_search_prompt: {user_search} \n {new_search}")
+    if new_search:
+        set_prompt(dbs, new_search)
+    return []
 
 class Config(str, Enum):
     """
@@ -912,6 +937,7 @@ class Config(str, Enum):
     SELF_HEAL = "self_heal"
     CREATE_PROJECT_SUMMARY = "create_project_summary"
     CHAT = "chat"
+    FIND_FILES = "find_files"
 
 
 STEPS = {
@@ -960,7 +986,13 @@ STEPS = {
     Config.CREATE_PROJECT_SUMMARY: [
         create_project_summary
     ],
-    Config.CHAT: chat
+    Config.CHAT: [
+      chat,
+    ],
+    Config.FIND_FILES: [
+        improve_search_prompt,
+        find_relevant_documents,
+    ]
 }
 """
 A dictionary mapping Config modes to a list of associated processing steps.

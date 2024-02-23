@@ -1,0 +1,1 @@
+docker build -t gpt-engineer -f docker/Dockerfile .

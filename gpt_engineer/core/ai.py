@@ -38,7 +38,7 @@ from gpt_engineer.core.token_usage import TokenUsageLog
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-from langchain_openai import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -49,6 +49,7 @@ from langchain.schema import (
 )
 
 from gpt_engineer.settings import OPENAI_API_KEY, OPENAI_API_BASE
+from gpt_engineer.core.openai_ai import OpenAI_AI
 
 # Type hint for a chat message
 Message = Union[AIMessage, HumanMessage, SystemMessage]
@@ -343,6 +344,8 @@ class AI:
         if self.azure_endpoint:
             raise ValueError("NEED TO BE TESTED")
 
+        return OpenAI_AI().chat_completions
+        """
         return ChatOpenAI(
             openai_api_key=OPENAI_API_KEY,
             openai_api_base=OPENAI_API_BASE,
@@ -351,6 +354,7 @@ class AI:
             streaming=True,
             client=openai.ChatCompletion,
         )
+        """
 
 
 def serialize_messages(messages: List[Message]) -> str:

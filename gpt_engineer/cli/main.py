@@ -128,6 +128,12 @@ def main(
         "-S",
         help="Build knowledge summary.",
     ),
+    find_files: bool =  typer.Option(
+        False,
+        "--find-files",
+        "-f",
+        help="Find files affected by the prompt",
+    ),
 ):
     if api:
         logging.info(f"API MODE")
@@ -152,7 +158,8 @@ def main(
             prompt=prompt,
             file_selector=file_selector,
             build_knowledge=build_knowledge,
-            update_summary=update_summary
+            update_summary=update_summary,
+            find_files=find_files
         )
 
         if test:

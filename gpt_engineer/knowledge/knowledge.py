@@ -76,20 +76,23 @@ class Knowledge:
     def reload(self, full: bool = False):
         if full:
           self.reset()
+        try:
+            logger.debug('Reloading knowledge')
+            # Load the knowledge from the filesystem
+            documents = self.loader.load(last_update=self.last_update)
+            if documents:
+                self.index_documents(documents)
 
-        logger.debug('Reloading knowledge')
-        # Load the knowledge from the filesystem
-        documents = self.loader.load(last_update=self.last_update)
-        if documents:
-          self.index_documents(documents)
-          self.last_changed_file_paths = list(dict.fromkeys([d.metadata["source"] for d in documents]))
-          self.build_summary()
-          logger.debug('Knowledge reloaded')
-        changes = self.clean_deleted_documents()
-        if changes or documents: 
-          self.build_summary()
-        return True if len(documents) else False
-
+            self.last_changed_file_paths = list(dict.fromkeys([d.metadata["source"] for d in documents]))
+            self.build_summary()
+            logger.debug('Knowledge reloaded')
+            changes = self.clean_deleted_documents()
+            if changes or documents: 
+                self.build_summary()
+            return True if len(documents) else False
+        except Exception as ex:
+            logger.error(f"Error loading knowledge {ex}")
+            pass
     def get_all_documents (self, include=[]):
         logger.debug('Get all documents')
         collection = self.get_db()._collection

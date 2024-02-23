@@ -90,7 +90,8 @@ def gtp_engineer(
     prompt: str,
     file_selector: bool,
     build_knowledge: bool,
-    update_summary: bool
+    update_summary: bool,
+    find_files: bool
 ):
     settings = Settings(
         project_path=project_path,
@@ -107,7 +108,8 @@ def gtp_engineer(
         verbose=verbose,
         prompt=prompt,
         file_selector=file_selector,
-        build_knowledge=build_knowledge
+        build_knowledge=build_knowledge,
+        find_files=find_files
     )
     logging.debug(f"gpt_engineer {settings}")
 
@@ -118,6 +120,9 @@ def gtp_engineer(
     
     if chat_mode:
         steps_config = StepsConfig.CHAT
+
+    if find_files:
+        steps_config = StepsConfig.FIND_FILES
 
     if improve_mode:
         assert (

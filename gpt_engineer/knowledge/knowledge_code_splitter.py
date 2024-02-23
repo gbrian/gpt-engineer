@@ -5,7 +5,7 @@ from langchain.text_splitter import Language
 from langchain.document_loaders.parsers import LanguageParser
 from langchain_community.document_loaders.blob_loaders import Blob
 
-from llama_index.node_parser import CodeSplitter
+from llama_index.core.node_parser import CodeSplitter
 from gpt_engineer.settings import (
     LANGUAGE_FROM_EXTENSION
 )
@@ -23,12 +23,12 @@ class KnowledgeCodeSplitter:
         try:
             return self.load_with_code_plitter(file_path=file_path)
         except Exception as ex:
-            logging.debug(f"[KnowledgeCodeSplitter] load_with_code_plitter load error: {ex}")
+            logging.debug(f"[KnowledgeCodeSplitter] load_with_code_plitter load error: {ex} - {file_path}")
 
         try:
             return self.load_with_language_parser(file_path=file_path)
         except Exception as ex:
-            logging.debug(f"[KnowledgeCodeSplitter] load_with_language_parser load error: {ex}")
+            logging.debug(f"[KnowledgeCodeSplitter] load_with_language_parser load error: {ex} - {file_path}")
             
         raise ValueError(f"[KnowledgeCodeSplitter] Error loading {file_path} No valid code splitter found")
 
