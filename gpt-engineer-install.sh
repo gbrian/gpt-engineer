@@ -5,6 +5,6 @@ VENV_PATH=$SCRIPT_DIRECTORY/.venv
 cd $SCRIPT_DIRECTORY
 
 codx python_311
-python3.11-venv -m venv $VENV_PATH
+python3 -m venv $VENV_PATH
 source $VENV_PATH/bin/activate
 pip install -e .
