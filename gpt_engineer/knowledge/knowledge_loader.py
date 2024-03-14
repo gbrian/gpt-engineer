@@ -1,7 +1,7 @@
 from gpt_engineer.settings import (
   GPTENG_PATH,
   KNOWLEDGE_FILE_IGNORE,
-  LANGUAGE_FROM_EXTENSION
+  LANGUAGE_FROM_EXTENSION,
 )
 import logging
 import os
@@ -80,4 +80,10 @@ class KnowledgeLoader:
 
         # joining versioned and unversioned file paths
         full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files if file_path]
+        def isValidFile(file):
+            if [err for err in KNOWLEDGE_FILE_IGNORE if err in file]:
+              return False
+            return True
+
+        full_file_paths = [file for file in full_file_paths if isValidFile(file) ]
         return full_file_paths
