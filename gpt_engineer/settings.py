@@ -51,7 +51,10 @@ LANGUAGE_FROM_EXTENSION = {
     "ts": "ts",
     "md": "markdown",
     "txt": "text",
-    "html": "html"
+    "html": "html",
+    "cs": "java",
+    "cshtml": "html",
+    "json": "js",
 }
 
 KNOWLEDGE_FILE_IGNORE = { 
@@ -105,23 +108,23 @@ logging.basicConfig(level=level)
 
 # LOGGING
 logger = logging.getLogger(__name__)
-logger.info(f'Logging level: {level}: {os.getenv("DEBUG")}')
+logger.info(f'DEBUG: Logging level {level}: {os.getenv("DEBUG")}')
 logger.info(f'Working directory: {os.getcwd()}')
-logger.info(f'OpenAI API Key: {OPENAI_API_KEY}')
-logger.info(f'Model: {MODEL}')
+logger.info(f'OPENAI_API_KEY: {OPENAI_API_KEY}')
+logger.info(f'MODEL: {MODEL}')
 logger.info(f'KNOWLEDGE_MODEL: {KNOWLEDGE_MODEL}')
-logger.info(f'Temperature: {TEMPERATURE}')
-logger.info(f'GPT Engineer Metadata Path: {GPTENG_PATH}')
+logger.info(f'TEMPERATURE: {TEMPERATURE}')
+logger.info(f'GPTENG_PATH: GPT Engineer Metadata Path {GPTENG_PATH}')
 logger.info(f'Knowledge Path: {GPTENG_PATH}/knowled_path_list')
-logger.info(f'Knowledge enrich documents: {KNOWLEDGE_ENRICH_DOCUMENTS}')
-logger.info(f'Knowledge enrich documents with tags: {KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS}')
-logger.info(f'Knowledge search document count: {KNOWLEDGE_SEARCH_DOCUMENT_COUNT}')
-logger.info(f'Knowledge search type: {KNOWLEDGE_SEARCH_TYPE}')
+logger.info(f'KNOWLEDGE_ENRICH_DOCUMENTS: Knowledge enrich documents {KNOWLEDGE_ENRICH_DOCUMENTS}')
+logger.info(f'KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS: Knowledge enrich documents with tags {KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS}')
+logger.info(f'KNOWLEDGE_SEARCH_DOCUMENT_COUNT: Knowledge search document count {KNOWLEDGE_SEARCH_DOCUMENT_COUNT}')
+logger.info(f'KNOWLEDGE_SEARCH_TYPE: Knowledge search type {KNOWLEDGE_SEARCH_TYPE}')
 
 
-logger.info(f'Prompt file: {PROMPT_FILE}')
-logger.info(f'History prompt file: {PROMPT_FILE}')
-logger.info(f'Knowledge Path: {HISTORY_PROMPT_FILE}')
+logger.info(f'PROMPT_FILE: Prompt file {PROMPT_FILE}')
+logger.info(f'PROMPT_FILE: History prompt file {PROMPT_FILE}')
+logger.info(f'HISTORY_PROMPT_FILE: Knowledge Path {HISTORY_PROMPT_FILE}')
 
 
 logger.info(f"Settings overrided: {settings_overrided}")
