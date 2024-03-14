@@ -1,9 +1,8 @@
 #!/bin/bash
 VOLUME_PATH=$PWD
 echo "Running gpt-engineer docker at VOLUME: $VOLUME_PATH"
-CURRENT_USER="$(id -u):$(id -g)"
 docker run --rm -it \
-  -u $CURRENT_USER \
+  -u "$(id -u):$(id -g)" \
   -e OPENAI_API_KEY=$OPENAI_API_KEY \
   -e OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1} \
   -e DEBUG=${DEBUG:-1} \

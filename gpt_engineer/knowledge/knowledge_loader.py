@@ -46,6 +46,9 @@ class KnowledgeLoader:
                 continue
             try:
                 new_docs = code_splitter.load(file_path)
+                if not new_docs:
+                  logger.error(f"**** ERROR LOADING FILE: {file_path}")
+                  continue
                 loader_type = "code"
             except:
                 logger.debug(f"Not available code splitter for {file_path}")
