@@ -39,32 +39,11 @@ class KnowledgeLoader:
         logger.debug('Loading knowledge from filesystem')
         documents = []
         code_splitter = KnowledgeCodeSplitter()
-        for file_path in self.list_repository_files():
-            new_docs = None
-            # Load the knowledge from the filesystem
-            if not self.should_index_doc(file_path, last_update):
-                continue
-            try:
-                new_docs = code_splitter.load(file_path)
-                if not new_docs:
-                  logger.error(f"**** ERROR LOADING FILE: {file_path}")
-                  continue
-                loader_type = "code"
-            except:
-                logger.debug(f"Not available code splitter for {file_path}")
-
+        for file_path in self.list_repository_files(last_update):
+            new_docs = code_splitter.load(file_path)
             if not new_docs:
-                new_docs = TextLoader(file_path).load_and_split(
-                    text_splitter=self.text_splitter)
-                for doc in new_docs:
-                    doc.metadata["language"] = "txt"
-                loader_type = "text"
-
-            if new_docs:
-                for doc in new_docs:
-                    doc.metadata["loader_type"] = loader_type
-
-                documents = documents + new_docs 
+                continue
+            documents = documents + new_docs 
 
         logger.debug(f"Loaded {len(documents)} documents")
         return documents
@@ -74,7 +53,7 @@ class KnowledgeLoader:
         file_paths = result.stdout.decode('utf-8').split('\n')
         return file_paths
 
-    def list_repository_files(self):
+    def list_repository_files(self, last_update):
         # Versioned files
         versioned_files = self._run_git_command(['git', 'ls-files'])
 
@@ -84,6 +63,8 @@ class KnowledgeLoader:
         # joining versioned and unversioned file paths
         full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files if file_path]
         def isValidFile(file):
+            if not self.should_index_doc(file, last_update):
+              return False
             if [err for err in KNOWLEDGE_FILE_IGNORE if err in file]:
               return False
             return True

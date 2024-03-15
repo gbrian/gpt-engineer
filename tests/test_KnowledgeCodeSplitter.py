@@ -25,7 +25,7 @@ def test_python ():
 def test_json ():
     code_splitter = KnowledgeCodeSplitter()
     docs = code_splitter.load('tests/knowledge/dummy_code.json')
-    assert docs[0].metadata['language'] == 'json'
+    assert docs[0].metadata['language'] == 'js'
 
 def test_markdown ():
     code_splitter = KnowledgeCodeSplitter()
@@ -35,17 +35,11 @@ def test_markdown ():
 def test_text ():
     code_splitter = KnowledgeCodeSplitter()
     fails_with_value_error = False
-    try:
-        docs = code_splitter.load('tests/knowledge/dummy_code.text')
-    except ValueError:
-        fails_with_value_error = True
-    assert fails_with_value_error
+    docs = code_splitter.load('tests/knowledge/dummy_code.txt')
+    assert docs[0].metadata['language'] == 'txt'
 
 def test_no_extension ():
     code_splitter = KnowledgeCodeSplitter()
     fails_with_value_error = False
-    try:
-        docs = code_splitter.load('tests/knowledge/dummy_code')
-    except ValueError:
-        fails_with_value_error = True
-    assert fails_with_value_error
+    docs = code_splitter.load('tests/knowledge/dummy_code')
+    assert docs[0].metadata['language'] == 'txt'

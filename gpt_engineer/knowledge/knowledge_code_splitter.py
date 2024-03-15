@@ -5,6 +5,9 @@ from langchain.text_splitter import Language
 from langchain.document_loaders.parsers import LanguageParser
 from langchain_community.document_loaders.blob_loaders import Blob
 
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain.text_splitter import CharacterTextSplitter
+
 from llama_index.core.node_parser import CodeSplitter
 from gpt_engineer.settings import (
     LANGUAGE_FROM_EXTENSION
@@ -17,7 +20,9 @@ LANGUAGE_PARSER_MAPPING = {
 
 class KnowledgeCodeSplitter:
     def __init__(self):
-        pass
+        self.text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=500, chunk_overlap=0
+        )
 
     def load(self, file_path):
         try:
@@ -30,6 +35,11 @@ class KnowledgeCodeSplitter:
         except Exception as ex:
             logging.debug(f"[KnowledgeCodeSplitter] load_with_language_parser load error: {ex} - {file_path}")
             
+        try:
+            return self.load_as_text(file_path=file_path)
+        except Exception as ex:
+            logging.debug(f"[KnowledgeCodeSplitter] load_as_text load error: {ex} - {file_path}")
+
         return None
 
     def load_with_code_plitter(self, file_path):
@@ -76,3 +86,12 @@ class KnowledgeCodeSplitter:
                 doc.metadata["language"] = doc.metadata.get("language") or language or suffix
                 doc.metadata["loader_type"] = "code"
             return docs
+
+    def load_as_text(self, file_path):
+      docs = TextLoader(file_path).load_and_split(
+                    text_splitter=self.text_splitter)
+      for doc in docs:
+          doc.metadata["language"] = "txt"
+          doc.metadata["loader_type"] = "text"
+      return docs
+      

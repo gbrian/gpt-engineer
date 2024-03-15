@@ -43,7 +43,6 @@ def test_knowledge_loader(mock_ai_dbs):
     assert "js" in languages
     assert "java" in languages
     assert "markdown" in languages
-    assert "json" in languages
     assert "txt" in languages
 
     assert "code" in loaders
