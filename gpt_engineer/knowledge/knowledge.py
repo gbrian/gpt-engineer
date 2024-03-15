@@ -194,11 +194,17 @@ class Knowledge:
         metadata = {
           "index_date": f"{index_date}"
         }
-        documents = self.parallel_enrich(documents, metadata=metadata)
-        self.db = Chroma.from_documents(documents,
-          self.embedding,
-          persist_directory=self.db_path,
-        )
+        CHUNK_SIZE = 10
+        for doc_chunk in [documents[i:i+CHUNK_SIZE] for i in range(len(documents))[::CHUNK_SIZE]]:
+          enriched_docs = self.parallel_enrich(doc_chunk, metadata=metadata)
+          for enriched_doc in enriched_docs:
+            try:
+                self.db = Chroma.from_documents([enriched_doc],
+                  self.embedding,
+                  persist_directory=self.db_path,
+                )
+            except Exception as ex:
+                logger.error(f"Error indexing document {enriched_doc.metadata['source']}: {ex}")
 
     def get_last_changed_file_paths (self):
       return self.last_changed_file_paths
