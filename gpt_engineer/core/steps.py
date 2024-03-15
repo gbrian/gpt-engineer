@@ -587,7 +587,7 @@ def select_files_from_knowledge(ai: AI, dbs: DBs, prompt: str = None):
             + "Example: 1,2,3-5,7,9,13-15,18,20 or enter 'all' to select everything.\n"
             + "Select files (default: all): ")
 
-        selected_files = dbs.project_metadata[FILE_LIST_NAME].split("\n")
+        selected_files = dbs.project_metadata.get(FILE_LIST_NAME, "").split("\n")
         if not user_input or user_input.lower() == 'all':
             selected_files = selected_files + file_list
         elif user_input:

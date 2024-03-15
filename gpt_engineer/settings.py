@@ -120,6 +120,7 @@ logger.info(f'KNOWLEDGE_ENRICH_DOCUMENTS: Knowledge enrich documents {KNOWLEDGE_
 logger.info(f'KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS: Knowledge enrich documents with tags {KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS}')
 logger.info(f'KNOWLEDGE_SEARCH_DOCUMENT_COUNT: Knowledge search document count {KNOWLEDGE_SEARCH_DOCUMENT_COUNT}')
 logger.info(f'KNOWLEDGE_SEARCH_TYPE: Knowledge search type {KNOWLEDGE_SEARCH_TYPE}')
+logger.info(f'KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE: Knowledge search score {KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE}')
 
 
 logger.info(f'PROMPT_FILE: Prompt file {PROMPT_FILE}')
