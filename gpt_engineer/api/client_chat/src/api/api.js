@@ -1,6 +1,9 @@
 import axios from 'axios'
 
+import chatManager from './chatManager';
+
 export default {
+  chatManager,
   knowledge: {
     status () {
       return axios.get('/api/knowledge/status')

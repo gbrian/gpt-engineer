@@ -2,20 +2,40 @@
 </script>
 <template>
   <div class="px-4 py-2 flex flex-col h-full justify-between">
-    <div class="text-xl flex gap-2 items-center justify-between">
-      CODX GPT-ENGINEER
+    <div class="text-xl flex gap-2 items-center">
+      CODX GPT-ENGINEER - 
+      <input type="text" class="input input-xs input-bordered" v-model="chat.name" />
+      <button class="btn btn-sm" @click="saveChat">
+        <i class="fa-solid fa-floppy-disk"></i>
+      </button>
+      <button class="btn btn-sm btn-error" @click="deleteChat">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+      <div class="grow"></div>
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button btn-sm" class="btn m-1">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+          <li v-for="openChat in chats" :key="openChat.id" @click="chat = openChat" >
+            <a>{{ openChat.name }}</a>
+          </li>
+        </ul>
+      </div>
     </div>
     <div class="flex flex-col grow" v-if="chat">
       <div class="grow overflow-auto relative">
         <div class="absolute top-0 left-0 w-full h-full scroller">
           <div v-for="message, ix in chat.messages" :key="message.id">
-            <div :class="['chat relative',
+            <div :class="['mb-4 relative w-full relative',
               message.role === 'user' ? 'chat-start': 'chat-end'
             ]" >
-              <div :class="['chat-bubble prose relative group',
+              <div :class="['border border-slate-300/20 p-2 rounded-md prose max-w-full group w-full',
                 message.role === 'user' ? '': '',
-                message.collapse ? '': 'h-40 overflow-y-auto'
-              ]">
+                message.collapse ? 'h-40 overflow-hidden': 'h-fit'
+              ]"
+                @dblclick="message.collapse = !message.collapse"
+              >
                 <div>
                   <div class="absolute right-2 top-2 group-hover:flex gap-2 z-10 hidden">
                     <button class="btn btn-xs" @click="onEditMessage(ix)">
@@ -32,6 +52,10 @@
                     <button class="btn btn-error btn-xs" @click="removeMessage(ix)">
                       <i class="fa-solid fa-trash"></i>
                     </button>
+                  </div>
+                  <div class="badge bagde-outline badge-xs font-bold">
+                    <div v-if="message.role ==='user'">You</div>
+                    <div v-else>gpt-engineer</div>
                   </div>
                   <div class="text-md" v-html="renderMessage(message)"></div>
                 </div>
@@ -75,7 +99,7 @@
   </div>
 </template>
 <script>
-import api from '../api'
+import api from '../api/api'
 const defFormater = d => JSON.stringify(d, null, 2)
 import { full as emoji } from 'markdown-it-emoji'
 import MarkdownIt from 'markdown-it'
@@ -88,26 +112,28 @@ md.use(emoji)
 export default {
   data() {
     return {
-      chat: {},
+      chat: api.chatManager.newChat(),
       waiting: false,
       editMessage: null,
-      editMessageId: null
+      editMessageId: null,
+      chats: api.chatManager.getChats()
     }
   },
   computed: {
     editor () {
       return this.$refs.editor
-    }
+    },
   },
   methods: {
     newChat () {
-      this.chat = {}
+      this.chat = api.chatManager.newChat()
     },
     addMessage (msg) {
       this.chat.messages = [
         ...this.chat.messages||[],
         msg
       ]
+      this.saveChat()
     },
     async sendMessage () {
       if (this.editMessageId !== null) {
@@ -155,7 +181,7 @@ export default {
                       + JSON.stringify(edit, 2, null) + 
                     "\n```"),
                   "### Error",
-                  data.error
+                  JSON.stringify(data.error, 2, null)
                 ].join("\n")
       )
     },
@@ -199,6 +225,15 @@ export default {
         this.editor.innerText = ""
         this.editMessageId = null
       }
+    },
+    saveChat () {
+      api.chatManager.saveChat(this.chat)
+      this.chats = api.chatManager.getChats()
+    },
+    deleteChat () {
+      api.chatManager.deleteChat(this.chat)
+      this.chats = api.chatManager.getChats()
+      this.newChat()
     }
   }
 }
