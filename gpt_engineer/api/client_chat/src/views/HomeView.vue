@@ -3,7 +3,7 @@ import ChatView from './ChatView.vue'
 </script>
 
 <template>
-  <main>
+  <main class="w-full h-full">
     <ChatView />
   </main>
 </template>

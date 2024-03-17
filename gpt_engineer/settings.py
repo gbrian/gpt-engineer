@@ -64,7 +64,11 @@ KNOWLEDGE_FILE_IGNORE = {
     ".vscode/",
     ".gpteng/",
     ".git/",
-    ".env"
+    ".env",
+    "assets/",
+    ".dockerignore",
+    ".git",
+    ".github"
 }
 
 KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7

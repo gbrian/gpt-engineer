@@ -1,26 +1,116 @@
 <script setup>
 </script>
 <template>
-  <div class="p-8 flex flex-col">
-    <div class="text-xl">CODX GPT-ENGINEER</div>
-    <div v-if="chat">
-      
+  <div class="px-4 py-2 flex flex-col h-full justify-between">
+    <div class="text-xl flex gap-2 items-center justify-between">
+      CODX GPT-ENGINEER
     </div>
-    <button class="btn btn-wide" @click="newChat">
-      New chat
-    </button>
+    <div class="flex flex-col grow" v-if="chat">
+      <div class="grow overflow-auto relative">
+        <div class="absolute top-0 left-0 w-full h-full scroller">
+          <div :class="['chat',
+            message.role === 'user' ? 'chat-start': 'chat-end'
+          ]" v-for="message in chat.messages" :key="message.id" >
+            <div :class="['chat-bubble prose',
+            message.role === 'user' ? 'chat-bubble-info': '']">
+              {{ message.content }}
+            </div>
+          </div>
+          <div class="anchor"></div>
+        </div>
+      </div>
+      <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
+  
+      <div class="flex gap-2 justify-between my-2">
+        <div class="flex gap-2">
+          <button class="btn btn-primary btn-sm" @click="newChat">
+            <i class="fa-solid fa-plus"></i> New chat
+          </button>
+          <button class="btn btn-primary btn-sm" @click="readKnowledgeStatus">
+            <i class="fa-solid fa-circle-info"></i> Knowledge status
+          </button>
+          <button class="btn btn-primary btn-sm" @click="refreshKnowledge">
+            <i class="fa-solid fa-book"></i> Refresh knowledge
+          </button>
+        </div>
+      </div>
+      <div class="flex gap-2 items-end">
+        <div class="border rounded-md grow px-2 py-1" contenteditable="true"
+          ref="editor" @input="onMessageChange"
+        >
+        </div>
+        <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage" :disabled="!editMessage">
+          <i class="fa-solid fa-comment"></i>
+        </button>
+        <button class="btn btn-warning btn-sm mb-1" @click="refreshKnowledge">
+          <i class="fa-solid fa-code"></i> Code
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 <script>
+import api from '../api'
+const defFormater = d => JSON.stringify(d, null, 2)
 export default {
   data() {
     return {
-      chat: null
+      chat: {},
+      waiting: false,
+      editMessage: null
+    }
+  },
+  computed: {
+    editor () {
+      return this.$refs.editor
     }
   },
   methods: {
     newChat () {
       this.chat = {}
+    },
+    addMessage (msg) {
+      this.chat.messages = [
+        ...this.chat.messages||[],
+        msg
+      ]
+    },
+    async sendMessage () {
+      this.addMessage({
+        role: 'user',
+        content: this.editMessage
+      })
+      this.editMessage = null
+      this.editor.innerText = ""
+      this.sendApiRequest(
+        () => api.chat.message(this.chat.messages),
+        (data) => data.message
+      )
+    },
+    onMessageChange (ev) {
+      this.editMessage = ev.target.innerText
+    },
+    refreshKnowledge () {
+      this.sendApiRequest(() => api.knowledge.reload())
+    },
+    readKnowledgeStatus () {
+      this.sendApiRequest(() => api.knowledge.status())
+    },
+    async sendApiRequest (apiCall, formater = defFormater) {
+      try {
+        this.waiting = true
+        const { data } = await apiCall()
+        this.addMessage({
+          role: 'assistent',
+          content: formater(data)
+        })
+      } catch (ex) {
+        this.addMessage({
+          role: 'assistant',
+          content: ex.message
+        }) 
+      }
+      this.waiting = false
     }
   }
 }

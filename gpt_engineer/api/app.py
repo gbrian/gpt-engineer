@@ -25,7 +25,7 @@ class GPTEngineerAPI:
     def start(self):
         app = FastAPI()
 
-        app.mount("/", StaticFiles(directory="gpt_engineer/api/client_chat", html=True), name="client_chat")
+        app.mount("/static", StaticFiles(directory="gpt_engineer/api/client_chat", html=True), name="client_chat")
 
         @app.middleware("http")
         async def add_process_time_header(request: Request, call_next):
@@ -35,20 +35,20 @@ class GPTEngineerAPI:
             response.headers["X-Process-Time"] = str(process_time)
             return response
 
-        @app.get("/health")
+        @app.get("/api/health")
         def health_check():
             return "ok"
 
-        @app.get("/knowledge/reload")
+        @app.get("/api/knowledge/reload")
         def knowledge_reload():
             self.dbs.knowledge.reload()
             return knowledge_status()
 
-        @app.get("/knowledge/status")
+        @app.get("/api/knowledge/status")
         def knowledge_status():
             return check_knowledge_status(dbs=self.dbs)
 
-        @app.post("/chat")
+        @app.post("/api/chat")
         def chat(chat_message: ChatMessage):
             # Perform search on Knowledge using the input
             # Return the search results as response
@@ -60,7 +60,7 @@ class GPTEngineerAPI:
               "search_results": documents
             }
 
-        @app.post("/improve")
+        @app.post("/api/improve")
         def chat(chat_message: ChatMessage):
             # Perform search on Knowledge using the input
             # Return the search results as response

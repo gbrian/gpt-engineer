@@ -30,9 +30,9 @@ def validate_context(ai, dbs, prompt, doc):
 
 def parallel_validate_contexts(dbs, prompt, documents):
     ai = AI(model_name=KNOWLEDGE_MODEL)
-    dbs.input.append(
-      HISTORY_PROMPT_FILE, f"\n[[VALIDATE_CONTEXT]]\n{prompt}\nNum docs: {len(documents)}"
-    )
+    #dbs.input.append(
+    #  HISTORY_PROMPT_FILE, f"\n[[VALIDATE_CONTEXT]]\n{prompt}\nNum docs: {len(documents)}"
+    #)
     # This function uses ThreadPoolExecutor to parallelize validation of contexts.
     with ThreadPoolExecutor() as executor:
         futures = {executor.submit(ai_validate_context, ai=ai, dbs=dbs, prompt=prompt, doc=doc): doc for doc in documents}
@@ -89,14 +89,14 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     doc.metadata["relevance_score"] = score
     logging.debug(f"[validate_context] {doc.metadata.get('source')}: {score}")
     
-    dbs.input.append(
-      HISTORY_PROMPT_FILE, "\n".join([
-        str(doc.metadata),
-        response,
-        str(score),
-        ""   
-      ])
-    )
+    #dbs.input.append(
+    #  HISTORY_PROMPT_FILE, "\n".join([
+    #    str(doc.metadata),
+    #    response,
+    #    str(score),
+    #    ""   
+    #  ])
+    #)
     return doc
 
 def find_relevant_documents (ai:AI, dbs: DBs, query: str):

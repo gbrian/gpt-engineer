@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <RouterView />
+  <div class="w-full h-screen max-w-screen">
+    <RouterView />
+  </div>
 </template>
 
 <style scoped>

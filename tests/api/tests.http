@@ -1,14 +1,14 @@
 ###
-GET http://localhost:8000/health
+GET http://localhost:8000/api/health
 
 ### Knowledge
-GET http://localhost:8000/knowledge/status
+GET http://localhost:8000/knowledge/api/status
 
 ### Knowledge
-GET http://localhost:8000/knowledge/reload
+GET http://localhost:8000/knowledge/api/reload
 
 ###
-POST http://localhost:8000/chat
+POST http://localhost:8000/api/chat
 
 {
     "messages": [
@@ -21,7 +21,7 @@ POST http://localhost:8000/chat
 }
 
 ### With history
-POST http://localhost:8000/chat
+POST http://localhost:8000/api/chat
 
 {
     "messages": [
@@ -38,7 +38,7 @@ POST http://localhost:8000/chat
 }
 
 ### Improve
-POST http://localhost:8000/improve
+POST http://localhost:8000/api/improve
 
 {
     "messages": [
