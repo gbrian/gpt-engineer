@@ -146,9 +146,8 @@ def parse_args(
 
 def run_api(args: GPTEngineerSettings):
     envs = args.to_env()
-    logging.info(f"API MODE: {envs}")
-    
-    command = f"{' '.join(envs)} uvicorn main:app --reload"
+    command = f"{' '.join(envs)} uvicorn main:app --host 0.0.0.0 --port {args.port} --reload --reload-dir {args.project_path}"
+    logging.info(f"API MODE: {command}")
     os.system(command)
     return
 

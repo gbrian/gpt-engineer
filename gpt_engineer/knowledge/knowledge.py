@@ -93,6 +93,7 @@ class Knowledge:
         except Exception as ex:
             logger.error(f"Error loading knowledge {ex}")
             pass
+
     def get_all_documents (self, include=[]):
         logger.debug('Get all documents')
         collection = self.get_db()._collection

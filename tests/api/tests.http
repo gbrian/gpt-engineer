@@ -1,4 +1,13 @@
 ###
+GET http://localhost:8000/health
+
+### Knowledge
+GET http://localhost:8000/knowledge/status
+
+### Knowledge
+GET http://localhost:8000/knowledge/reload
+
+###
 POST http://localhost:8000/chat
 
 {

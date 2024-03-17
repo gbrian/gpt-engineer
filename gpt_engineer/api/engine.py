@@ -58,3 +58,12 @@ def improve_existing_code(ai: AI, dbs: DBs, chat_message: ChatMessage):
     except Exception as ex:
       error = ex
     return (messages, edits, error)
+
+def check_knowledge_status(dbs: DBs):
+    loader = dbs.knowledge.loader
+    last_update = dbs.knowledge.last_update
+    pending_files = loader.list_repository_files(last_update)
+    return {
+      "last_update": str(last_update),
+      "pending_files": pending_files
+    }

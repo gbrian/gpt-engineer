@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
+import ChatView from './ChatView.vue'
 </script>
 
 <template>
   <main>
-    <TheWelcome />
+    <ChatView />
   </main>
 </template>
