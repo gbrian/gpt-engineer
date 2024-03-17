@@ -33,12 +33,14 @@ from pathlib import Path
 import traceback
 
 import typer
+import sys
 
 from gpt_engineer.core import gtp_engineer
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DB, DBPrompt
 from gpt_engineer.core.dbs import DBs, archive
 from gpt_engineer.core.steps import STEPS, Config as StepsConfig
+from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 
@@ -48,7 +50,7 @@ app = typer.Typer()  # creates a CLI app
 
 
 @app.command()
-def main(
+def parse_args(
     project_path: str = typer.Argument(".", help="path"),
     model: str = typer.Option(MODEL, "--model", "-m", help="model id string"),
     temperature: float = TEMPERATURE,
@@ -133,34 +135,26 @@ def main(
         "--find-files",
         "-f",
         help="Find files affected by the prompt",
-    ),
+    )
 ):
-    if api:
-        logging.info(f"API MODE")
-        import os
-        os.system(f"uvicorn main:app --host 0.0.0.0 --port {port} --reload")
-        return
+  args = GPTEngineerSettings(**locals())
+  logging.info(f"ARGS {args.__dict__}")
+  if args.api:
+    run_api(args=args)
+  else:
+    run_main(args=args)
 
+def run_api(args: GPTEngineerSettings):
+    envs = args.to_env()
+    logging.info(f"API MODE: {envs}")
+    
+    command = f"{' '.join(envs)} uvicorn main:app --reload"
+    os.system(command)
+    return
+
+def run_main(args: GPTEngineerSettings):
     while True:
-        gtp_engineer(
-            project_path=project_path,
-            model=model,
-            temperature=temperature,
-            steps_config=steps_config,
-            improve_mode=improve_mode,
-            lite_mode=lite_mode,
-            azure_endpoint=azure_endpoint,
-            chat_mode=chat_mode,
-            use_git=use_git,
-            role=role,
-            prompt_file=prompt_file,
-            verbose=verbose,
-            prompt=prompt,
-            file_selector=file_selector,
-            build_knowledge=build_knowledge,
-            update_summary=update_summary,
-            find_files=find_files
-        )
+        gtp_engineer(args)
 
         if test:
             print("Starting test execution...")

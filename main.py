@@ -1,4 +1,11 @@
-from gpt_engineer.api.app import app
+import sys
+import re
+import logging
 
-def main():
-    return app
+from gpt_engineer.core.settings import GPTEngineerSettings
+from gpt_engineer.api.app import GPTEngineerAPI
+
+gptEngineerArgs = GPTEngineerSettings.from_env()
+logging.info(f"API main, settings {gptEngineerArgs.__dict__}")
+
+app = GPTEngineerAPI(gptEngineerArgs).start()

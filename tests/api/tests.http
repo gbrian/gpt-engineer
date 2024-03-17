@@ -1,0 +1,29 @@
+###
+POST http://localhost:8000/chat
+
+{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me brieftly about the gpt-engineer API"
+      }
+    ]
+  
+}
+
+### With history
+POST http://localhost:8000/chat
+
+{
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "You can use API chat method to chat with the API"
+      },
+      {
+        "role": "user",
+        "content": "How van chat with the project?"
+      }
+    ]
+  
+}

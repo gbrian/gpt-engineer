@@ -21,12 +21,12 @@ import shutil
 from pathlib import Path
 import openai
 
-from gpt_engineer.core.settings import Settings
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DB, DBPrompt
 from gpt_engineer.core.dbs import DBs, archive
 from gpt_engineer.core.steps import run_steps, STEPS, Config as StepsConfig
 from gpt_engineer.core.summary import Summary
+from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.cli.file_selector import clear_selected_files_list
@@ -74,64 +74,94 @@ def roles_path() -> Path:
     return custom_roles_path
 
 
-def gtp_engineer(
-    project_path: str,
-    model: str,
-    temperature: float,
-    steps_config: StepsConfig,
-    improve_mode: bool,
-    lite_mode: bool,
-    azure_endpoint: str,
-    chat_mode: bool,
-    use_git: bool,
-    role: str,
-    prompt_file: str,
-    verbose: bool,
-    prompt: str,
-    file_selector: bool,
-    build_knowledge: bool,
-    update_summary: bool,
-    find_files: bool
-):
-    settings = Settings(
-        project_path=project_path,
-        model=model,
-        temperature=temperature,
-        steps_config=steps_config,
-        improve_mode=improve_mode,
-        lite_mode=lite_mode,
-        azure_endpoint=azure_endpoint,
-        chat_mode=chat_mode,
-        use_git=use_git,
-        role=role,
-        prompt_file=prompt_file,
-        verbose=verbose,
-        prompt=prompt,
-        file_selector=file_selector,
-        build_knowledge=build_knowledge,
-        find_files=find_files
-    )
-    logging.debug(f"gpt_engineer {settings}")
-
+def gtp_engineer(settings: GPTEngineerSettings):
+    lite_mode = settings.lite_mode
+    steps_config = settings.steps_config
     if lite_mode:
-        assert not improve_mode, "Lite mode cannot improve code"
+        assert not settings.improve_mode, "Lite mode cannot improve code"
         if steps_config == StepsConfig.DEFAULT:
             steps_config = StepsConfig.LITE
     
-    if chat_mode:
+    if settings.chat_mode:
         steps_config = StepsConfig.CHAT
 
-    if find_files:
+    if settings.find_files:
         steps_config = StepsConfig.FIND_FILES
 
-    if improve_mode:
+    if settings.improve_mode:
         assert (
             steps_config == StepsConfig.DEFAULT
         ), "Improve mode not compatible with other step configs"
         steps_config = StepsConfig.IMPROVE_CODE
 
+    dbs = build_dbs(settings)
+
+    if settings.build_knowledge:
+        # Force full re-build
+        dbs.knowledge.reset()
+    # Always refresh index to catch user changes
+    index_changed = dbs.knowledge.reload()
+
+    if os.path.isfile(settings.prompt_file):
+        logging.info("Copying custom prompt %s" % settings.prompt_file)
+        shutil.copyfile(settings.prompt_file, "%s/prompt" % settings.prompt_path)
+    elif prompt:
+        logging.info("Reading prompt from command line")
+        user_prompt = input("Override prompt (Optional): ")
+        if len(user_prompt) != 0:
+          logging.info("Saving custom prompt text")
+          with open("%s/prompt" % settings.prompt_path, "a") as f:
+              f.write("\n[[PROMPT]]\n" + user_prompt)
+
+    if settings.file_selector:
+        clear_selected_files_list(dbs.project_metadata)
+
+    ai = build_ai(settings)
+
+    if steps_config not in [
+        StepsConfig.EXECUTE_ONLY,
+        StepsConfig.USE_FEEDBACK,
+        StepsConfig.EVALUATE,
+        StepsConfig.IMPROVE_CODE,
+        StepsConfig.SELF_HEAL,
+        StepsConfig.CHAT,
+        StepsConfig.CREATE_PROJECT_SUMMARY,
+    ]:
+        # archive(dbs)
+        # load_prompt(dbs)
+        pass
+
+    if settings.update_summary:
+      steps = STEPS[StepsConfig.CREATE_PROJECT_SUMMARY]
+      run_steps(steps, ai, dbs)
+      return
+
+    steps = STEPS[steps_config]
+    run_steps(steps, ai, dbs)
+
+    print("Total api cost: $ ", ai.token_usage_log.usage_cost())
+
+    # if check_collection_consent():
+    #    collect_learnings(model, temperature, steps, dbs)
+
+    dbs.logs["token_usage"] = ai.token_usage_log.format_log()
+
+    if settings.use_git:
+        commit_message = ai.token_usage_log.format_log()
+        os.system(f'cd {path} && git add . && git commit -m "{commit_message}"')
+
+def build_ai(settings: GPTEngineerSettings) -> AI:
+    return AI(
+        model_name=settings.model,
+        temperature=settings.temperature,
+        azure_endpoint=None,
+        cache=None,
+    )
+
+
+def build_dbs(settings: GPTEngineerSettings) -> DBs:
     project_path = os.path.abspath(
-        project_path
+        settings.project_path
     )  # resolve the string to a valid path (eg "a/b/../c" to "a/c")
     path = Path(project_path).absolute()
     print("Running gpt-engineer in", path, "\n")
@@ -149,7 +179,7 @@ def gtp_engineer(
 
     preprompts_db = DB(preprompts_path())
     knowledge_prompts = KnowledgePrompts(preprompts_db)
-    dbs = DBs(
+    return DBs(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
         input=DBPrompt(prompt_path),
@@ -162,66 +192,6 @@ def gtp_engineer(
           knowledge_prompts=knowledge_prompts),
         settings=settings
     )
-
-    if build_knowledge:
-        # Force full re-build
-        dbs.knowledge.reset()
-    # Always refresh index to catch user changes
-    index_changed = dbs.knowledge.reload()
-
-    if os.path.isfile(prompt_file):
-        logging.info("Copying custom prompt %s" % prompt_file)
-        shutil.copyfile(prompt_file, "%s/prompt" % prompt_path)
-    elif prompt:
-        logging.info("Reading prompt from command line")
-        user_prompt = input("Override prompt (Optional): ")
-        if len(user_prompt) != 0:
-          logging.info("Saving custom prompt text")
-          with open("%s/prompt" % prompt_path, "a") as f:
-              f.write("\n[[PROMPT]]\n" + user_prompt)
-
-    if file_selector:
-        clear_selected_files_list(dbs.project_metadata)
-
-    ai = AI(
-        model_name=model,
-        temperature=temperature,
-        azure_endpoint=azure_endpoint,
-        cache=DB(memory_path / "cache") if USE_AI_CACHE else None,
-    )
-
-    if steps_config not in [
-        StepsConfig.EXECUTE_ONLY,
-        StepsConfig.USE_FEEDBACK,
-        StepsConfig.EVALUATE,
-        StepsConfig.IMPROVE_CODE,
-        StepsConfig.SELF_HEAL,
-        StepsConfig.CHAT,
-        StepsConfig.CREATE_PROJECT_SUMMARY,
-    ]:
-        # archive(dbs)
-        # load_prompt(dbs)
-        pass
-
-    if update_summary:
-      steps = STEPS[StepsConfig.CREATE_PROJECT_SUMMARY]
-      run_steps(steps, ai, dbs)
-      return
-
-    steps = STEPS[steps_config]
-    run_steps(steps, ai, dbs)
-
-    print("Total api cost: $ ", ai.token_usage_log.usage_cost())
-
-    # if check_collection_consent():
-    #    collect_learnings(model, temperature, steps, dbs)
-
-    dbs.logs["token_usage"] = ai.token_usage_log.format_log()
-
-    if use_git:
-        commit_message = ai.token_usage_log.format_log()
-        os.system(f'cd {path} && git add . && git commit -m "{commit_message}"')
-
 
 # Add new function index_content
 def index_content(
