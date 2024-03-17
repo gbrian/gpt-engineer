@@ -13,5 +13,8 @@ export default {
     message (messages) {
       return axios.post('/api/chat', { messages })
     }
+  },
+  improve (messages) {
+    return axios.post('/api/improve', { messages })
   }
 }

@@ -190,7 +190,7 @@ def parse_edits(llm_response):
     return parse_all_edits(llm_response)
 
 
-def apply_edits(edits: List[Edit], workspace: DB):
+def apply_edits(edits: List[Edit], workspace: DB, no_wait=False):
     for edit in edits:
         filename = edit.filename
         logger.info(f"apply_edits NEW FILE {edit}")
@@ -215,7 +215,8 @@ def apply_edits(edits: List[Edit], workspace: DB):
                 {edit.full_text}
                 {colored(f"Apply manually and press Enter to continue", "green")}
                 """
-                input(error)
+                if not no_wait:
+                    input(error)
 
 
 def _get_all_files_in_dir(directory):

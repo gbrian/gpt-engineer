@@ -61,9 +61,7 @@ class Knowledge:
             disallowed_special=()
         )
         self.last_update = None
-        
-        if os.path.isfile(self.db_file_list):
-          self.last_update = os.path.getmtime(self.db_file_list)
+        self.refresh_last_update()        
         self.last_changed_file_paths = []
         logger.debug('Knowledge initialized')
     
@@ -73,7 +71,12 @@ class Knowledge:
                   embedding_function=self.embedding)
       return self.db
 
+    def refresh_last_update(self):
+      if os.path.isfile(self.db_file_list):
+          self.last_update = os.path.getmtime(self.db_file_list)
+
     def reload(self, full: bool = False):
+        self.refresh_last_update()
         if full:
           self.reset()
         try:
@@ -93,6 +96,7 @@ class Knowledge:
         except Exception as ex:
             logger.error(f"Error loading knowledge {ex}")
             pass
+        self.refresh_last_update()
 
     def get_all_documents (self, include=[]):
         logger.debug('Get all documents')

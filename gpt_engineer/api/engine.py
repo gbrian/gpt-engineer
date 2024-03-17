@@ -10,7 +10,7 @@ from gpt_engineer.core.utils import curr_fn, document_to_context
 from gpt_engineer.api.model import ChatMessage
 from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
-from gpt_engineer.core.chat_to_files import parse_edits, overwrite_files_with_edits
+from gpt_engineer.core.chat_to_files import parse_edits, apply_edits
 
 def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str):
     documents = dbs.knowledge.search(query)
@@ -54,7 +54,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat_message: ChatMessage):
 
     error = None
     try:
-      overwrite_files_with_edits(chat=response, dbs=dbs)
+      apply_edits(chat=response, dbs=dbs, no_wait=True)
     except Exception as ex:
       error = ex
     return (messages, edits, error)
