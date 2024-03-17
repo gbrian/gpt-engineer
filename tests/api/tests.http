@@ -5,7 +5,7 @@ POST http://localhost:8000/chat
     "messages": [
       {
         "role": "user",
-        "content": "Tell me brieftly about the gpt-engineer API"
+        "content": "Tell me the models defined for the API"
       }
     ]
   
@@ -23,6 +23,19 @@ POST http://localhost:8000/chat
       {
         "role": "user",
         "content": "How van chat with the project?"
+      }
+    ]
+  
+}
+
+### Improve
+POST http://localhost:8000/improve
+
+{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a models folder for the API module and split models.py into multiples files, update imports"
       }
     ]
   
