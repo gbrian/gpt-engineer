@@ -13,7 +13,7 @@
           ]" v-for="message in chat.messages" :key="message.id" >
             <div :class="['chat-bubble prose',
             message.role === 'user' ? 'chat-bubble-info': '']">
-              {{ message.content }}
+              <div v-html="renderMessage(message)"></div>
             </div>
           </div>
           <div class="anchor"></div>
@@ -52,6 +52,14 @@
 <script>
 import api from '../api'
 const defFormater = d => JSON.stringify(d, null, 2)
+import { full as emoji } from 'markdown-it-emoji'
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({
+  html: true
+})
+md.use(emoji)
+
 export default {
   data() {
     return {
@@ -84,7 +92,11 @@ export default {
       this.editor.innerText = ""
       this.sendApiRequest(
         () => api.chat.message(this.chat.messages),
-        (data) => data.message
+        ({ message, search_results }) => {
+          return `${message}
+            ${search_results.map(r => JSON.stringify(r))}
+          `
+        }
       )
     },
     onMessageChange (ev) {
@@ -94,7 +106,14 @@ export default {
       this.sendApiRequest(() => api.knowledge.reload())
     },
     readKnowledgeStatus () {
-      this.sendApiRequest(() => api.knowledge.status())
+      this.sendApiRequest(
+        () => api.knowledge.status(),
+        data => ['### last update',
+                  data.last_update,
+                  '### Files',
+                  data.pending_files.map(file => ` * ${file}`).join("\n"),
+                ].join("\n")
+      )
     },
     async sendApiRequest (apiCall, formater = defFormater) {
       try {
@@ -102,7 +121,8 @@ export default {
         const { data } = await apiCall()
         this.addMessage({
           role: 'assistent',
-          content: formater(data)
+          content: formater(data),
+          data
         })
       } catch (ex) {
         this.addMessage({
@@ -111,6 +131,9 @@ export default {
         }) 
       }
       this.waiting = false
+    },
+    renderMessage(msg) {
+      return md.render(msg.content)
     }
   }
 }
