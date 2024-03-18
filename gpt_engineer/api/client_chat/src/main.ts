@@ -12,14 +12,3 @@ app.use(createPinia())
 app.use(router)
 
 app.mount('#app')
-
-import API from './api/api'
-const api = API(window.location.search.slice(1))
-
-app.mixin({
-  computed: {
-    api () {
-      return api
-    }
-  }
-})

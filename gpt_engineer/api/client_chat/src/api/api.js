@@ -2,12 +2,15 @@ import axios from 'axios'
 
 import chatManager from './chatManager';
 
-export default (query) => {
-  return {
+const query = window.location.search.slice(1)
+export const API = {
+    lastSettings: null,
     chatManager,
     settings: {
-      read () {
-        return axios.get('/api/settings?' + query)
+      async read () {
+        const res = axios.get('/api/settings?' + query)
+        API.lasSettings = res.data
+        return res
       },
       write (settings) {
         return axios.put('/api/settings?' + query, settings)
@@ -35,4 +38,3 @@ export default (query) => {
       }
     }
   }
-}

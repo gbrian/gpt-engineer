@@ -15,6 +15,7 @@
 </template>
 
 <script>
+import { API } from '../api/api'
 export default {
   data() {
     return {
@@ -52,11 +53,11 @@ export default {
   },
   methods: {
     async reloadSettings() {
-      const { data: settings } = await this.api.settings.read()
+      const { data: settings } = await API.settings.read()
       this.settings = settings
     },
     async saveSettings() {
-      await this.api.settings.write(this.settings)
+      await API.settings.write(this.settings)
       this.reloadSettings()
     },
   },

@@ -15,7 +15,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
       <div class="grow"></div>
       <div class="dropdown dropdown-end">
         <div tabindex="0" role="button btn-sm" class="btn m-1">
-          <i class="fa-solid fa-folder-open"></i>
+          <i class="fa-solid fa-folder-tree"></i>
         </div>
         <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
           <li v-for="openChat in chats" :key="openChat.id" @click="loadChat(openChat)" >
@@ -50,9 +50,6 @@ import ChatEntry from '@/components/ChatEntry.vue'
           <button class="btn btn-primary btn-sm" @click="refreshKnowledge">
             <i class="fa-solid fa-book"></i> Refresh knowledge
           </button>
-          <button class="btn btn-primary btn-sm" @click="readSettings">
-            <i class="fa-solid fa-gear"></i> Settings info
-          </button>
         </div>
       </div>
       <div class="flex gap-2 items-end">
@@ -75,20 +72,22 @@ import ChatEntry from '@/components/ChatEntry.vue'
   </div>
 </template>
 <script>
-import API from '../api/api'
-const api = API(window.location.search.slice(1))
+import { API } from '../api/api'
 const defFormater = d => JSON.stringify(d, null, 2)
-
 
 export default {
   data() {
     return {
-      chat: api.chatManager.newChat(),
+      chat: null,
       waiting: false,
       editMessage: null,
       editMessageId: null,
-      chats: api.chatManager.getChats()
+      chats: []
     }
+  },
+  async created () {
+    this.chat = API.chatManager.newChat()
+    this.chats = API.chatManager.getChats()
   },
   computed: {
     editor () {
@@ -97,7 +96,7 @@ export default {
   },
   methods: {
     newChat () {
-      this.chat = api.chatManager.newChat()
+      this.chat = API.chatManager.newChat()
     },
     addMessage (msg) {
       this.chat.messages = [
@@ -123,7 +122,7 @@ export default {
       }
       this.postMyMessage()
       this.sendApiRequest(
-        () => api.chat.message(this.chat.messages),
+        () => API.chat.message(this.chat.messages),
         ({ message, search_results }) => {
           return `${message}
             ${search_results.map(r => JSON.stringify(r))}
@@ -135,14 +134,11 @@ export default {
       this.editMessage = ev.target.innerText
     },
     refreshKnowledge () {
-      this.sendApiRequest(() => api.knowledge.reload())
-    },
-    readSettings () {
-      this.sendApiRequest(() => api.settings())
+      this.sendApiRequest(() => API.knowledge.reload())
     },
     readKnowledgeStatus () {
       this.sendApiRequest(
-        () => api.knowledge.status(),
+        () => API.knowledge.status(),
         data => ['### last update',
                   data.last_update,
                   '### Files',
@@ -153,7 +149,7 @@ export default {
     improveCode () {
       this.postMyMessage()
       this.sendApiRequest(
-        () => api.run.improve(this.chat.messages),
+        () => API.run.improve(this.chat.messages),
         data => ['### Changes done',
                   data.messages.reverse()[0].content,
                   '### Edits done',
@@ -167,7 +163,7 @@ export default {
     },
     runEdit (codeSnipped) {
       this.sendApiRequest(
-        () => api.run.edit([{ role: 'user', content: codeSnipped }]),
+        () => API.run.edit([{ role: 'user', content: codeSnipped }]),
         data => [
                   data.messages.reverse()[0].content,
                   "\n\n",
@@ -214,12 +210,12 @@ export default {
       }
     },
     saveChat () {
-      api.chatManager.saveChat(this.chat)
-      this.chats = api.chatManager.getChats()
+      API.chatManager.saveChat(this.chat)
+      this.chats = API.chatManager.getChats()
     },
     deleteChat () {
-      api.chatManager.deleteChat(this.chat)
-      this.chats = api.chatManager.getChats()
+      API.chatManager.deleteChat(this.chat)
+      this.chats = API.chatManager.getChats()
       this.newChat()
     },
     onContentPaste (ev) {

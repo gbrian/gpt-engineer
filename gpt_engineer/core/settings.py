@@ -57,9 +57,12 @@ class GPTEngineerSettings:
     @classmethod
     def from_project(cls, project_path: str):
         base = GPTEngineerSettings.from_env()
-        with open(f"{project_path}/.gpteng/project.json", 'r') as f:
-          settings = json.loads(f.read())
-          return GPTEngineerSettings(**{ **base.__dict__, **settings })
+        try:
+          with open(f"{project_path}/.gpteng/project.json", 'r') as f:
+            settings = json.loads(f.read())
+            return GPTEngineerSettings(**{ **base.__dict__, **settings })
+        except:
+          return base
     
     @classmethod
     def from_json(cls, settings: dict):
