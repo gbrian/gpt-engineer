@@ -2,27 +2,37 @@ import axios from 'axios'
 
 import chatManager from './chatManager';
 
-export default {
-  chatManager,
-  knowledge: {
-    status () {
-      return axios.get('/api/knowledge/status')
+export default (query) => {
+  return {
+    chatManager,
+    settings: {
+      read () {
+        return axios.get('/api/settings?' + query)
+      },
+      write (settings) {
+        return axios.put('/api/settings?' + query, settings)
+      }
     },
-    reload () {
-      return axios.get('/api/knowledge/reload')
-    }
-  },
-  chat: {
-    message (messages) {
-      return axios.post('/api/chat', { messages })
-    }
-  },
-  run: {
-    improve (messages) {
-      return axios.post('/api/run/improve', { messages })
+    knowledge: {
+      status () {
+        return axios.get('/api/knowledge/status?' + query)
+      },
+      reload () {
+        return axios.get('/api/knowledge/reload?' + query)
+      }
     },
-    edit (messages) {
-      return axios.post('/api/run/edit', { messages })
+    chat: {
+      message (messages) {
+        return axios.post('/api/chat?' + query, { messages })
+      }
+    },
+    run: {
+      improve (messages) {
+        return axios.post('/api/run/improve?' + query, { messages })
+      },
+      edit (messages) {
+        return axios.post('/api/run/edit?' + query, { messages })
+      }
     }
   }
 }

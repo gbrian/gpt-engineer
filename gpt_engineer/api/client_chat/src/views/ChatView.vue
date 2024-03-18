@@ -50,6 +50,9 @@ import ChatEntry from '@/components/ChatEntry.vue'
           <button class="btn btn-primary btn-sm" @click="refreshKnowledge">
             <i class="fa-solid fa-book"></i> Refresh knowledge
           </button>
+          <button class="btn btn-primary btn-sm" @click="readSettings">
+            <i class="fa-solid fa-gear"></i> Settings info
+          </button>
         </div>
       </div>
       <div class="flex gap-2 items-end">
@@ -72,7 +75,8 @@ import ChatEntry from '@/components/ChatEntry.vue'
   </div>
 </template>
 <script>
-import api from '../api/api'
+import API from '../api/api'
+const api = API(window.location.search.slice(1))
 const defFormater = d => JSON.stringify(d, null, 2)
 
 
@@ -132,6 +136,9 @@ export default {
     },
     refreshKnowledge () {
       this.sendApiRequest(() => api.knowledge.reload())
+    },
+    readSettings () {
+      this.sendApiRequest(() => api.settings())
     },
     readKnowledgeStatus () {
       this.sendApiRequest(

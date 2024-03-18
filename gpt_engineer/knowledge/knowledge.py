@@ -12,17 +12,7 @@ from langchain_community.llms import OpenAI
 from langchain.schema.document import Document
 
 from gpt_engineer.core.ai import AI
-from gpt_engineer.settings import (
-  GPTENG_PATH,
-  KNOWLEDGE_MODEL,
-  KNOWLEDGE_ENRICH_DOCUMENTS,
-  KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS,
-  KNOWLEDGE_SEARCH_DOCUMENT_COUNT,
-  KNOWLEDGE_SEARCH_TYPE,
-  OPENAI_API_BASE,
-  OPENAI_API_KEY
-)
-
+from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
 from gpt_engineer.knowledge.knowledge_prompts import KnowledgePrompts
 
@@ -43,21 +33,21 @@ class Knowledge:
     index_name: str
     db: Chroma = None
 
-    def __init__(self, path: str, knowledge_prompts: KnowledgePrompts):
+    def __init__(self, path: str, ai: AI, knowledge_prompts: KnowledgePrompts, settings: GPTEngineerSettings):
         logger.debug(f'Initializing Knowledge {path}')
-        
-        self.ai = AI(model_name=KNOWLEDGE_MODEL)
+        self.settings = settings
+        self.ai = ai
 
         self.path = path
         self.knowledge_prompts = knowledge_prompts
         self.index_name = slugify(str(path))
-        self.db_path = f"{GPTENG_PATH}/db/{self.index_name}"
+        self.db_path = f"{settings.project_path}/db/{self.index_name}"
         self.db_file_list = f"{self.db_path}/file_list"
 
         self.loader = KnowledgeLoader(self.path)
         self.embedding = OpenAIEmbeddings(
-            openai_api_key=OPENAI_API_KEY,
-            openai_api_base=OPENAI_API_BASE,
+            openai_api_key=settings.openai_api_key,
+            openai_api_base=settings.openai_api_base,
             disallowed_special=()
         )
         self.last_update = None
@@ -255,12 +245,12 @@ class Knowledge:
 
     def as_retriever(self):
         return self.get_db().as_retriever(
-            search_type=KNOWLEDGE_SEARCH_TYPE,
-            search_kwargs={"k": KNOWLEDGE_SEARCH_DOCUMENT_COUNT },
+            search_type=self.settings.knowledge_search_type,
+            search_kwargs={"k": self.settings.knowledge_search_document_count },
         )
 
     def search(self, query):
-      if KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS:
+      if self.settings.knowledge_extract_document_tags:
         keywords = self.extract_query_keywords(query)
         query = f"{query}\n{[make_tag(k) for k in keywords]}"
 

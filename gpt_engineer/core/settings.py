@@ -1,4 +1,7 @@
 import os
+import json
+import logging
+from gpt_engineer import settings
 
 class GPTEngineerSettings:
     project_path: str
@@ -21,8 +24,22 @@ class GPTEngineerSettings:
     build_knowledge: bool
     update_summary: bool
     find_files: bool
+    gpteng_path: str
+    openai_api_key: str
+    openai_api_base: str
+    knowledge_extract_document_tags: bool
+    knowledge_search_type: str
+    knowledge_search_document_count: int
 
     def __init__(self, **kwrgs):
+        self.openai_api_key = settings.OPENAI_API_KEY
+        self.openai_api_base = settings.OPENAI_API_BASE
+        self.knowledge_extract_document_tags = False
+        self.knowledge_search_type = settings.KNOWLEDGE_SEARCH_TYPE
+        self.knowledge_search_document_count = settings.KNOWLEDGE_SEARCH_DOCUMENT_COUNT
+        self.temperature = settings.TEMPERATURE
+        self.model = settings.MODEL
+  
         if kwrgs:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():
@@ -30,12 +47,33 @@ class GPTEngineerSettings:
 
     @classmethod
     def from_env(cls):
-      keys = GPTEngineerSettings().__dict__.keys()
+      base = GPTEngineerSettings()
       gpt_envs = [env for env in os.environ if env.startswith("GPTARG_")]
       envs = [(env.replace("GPTARG_", ""), os.environ[env]) for env in gpt_envs]
-      return GPTEngineerSettings(**dict(envs))
+      for k, v in envs:
+        base.__dict__[k] = v
+      return base
+
+    @classmethod
+    def from_project(cls, project_path: str):
+        base = GPTEngineerSettings.from_env()
+        with open(f"{project_path}/.gpteng/project.json", 'r') as f:
+          settings = json.loads(f.read())
+          return GPTEngineerSettings(**{ **base.__dict__, **settings })
+    
+    @classmethod
+    def from_json(cls, settings: dict):
+      base = GPTEngineerSettings.from_env()
+      return GPTEngineerSettings(**{ **base.__dict__, **settings })
 
     def to_env(self) -> [str]:
       keys = self.__dict__.keys()
       gpt_envs = [f"GPTARG_{key}=\"{self.__dict__[key]}\"" for key in keys]
       return gpt_envs
+
+    def save_project(self):
+      settings = self.__dict__
+      path = f"{self.project_path}/.gpteng/project.json"
+      logging.info(f"Saving project {path} {settings}")
+      with open(path, 'w') as f:
+        f.write(json.dumps(settings, indent=2))

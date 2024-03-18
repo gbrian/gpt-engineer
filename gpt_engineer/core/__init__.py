@@ -94,7 +94,8 @@ def gtp_engineer(settings: GPTEngineerSettings):
         ), "Improve mode not compatible with other step configs"
         steps_config = StepsConfig.IMPROVE_CODE
 
-    dbs = build_dbs(settings)
+    ai = build_ai(settings=settings)
+    dbs = build_dbs(settings=settings, ai=ai)
 
     if settings.build_knowledge:
         # Force full re-build
@@ -115,8 +116,6 @@ def gtp_engineer(settings: GPTEngineerSettings):
 
     if settings.file_selector:
         clear_selected_files_list(dbs.project_metadata)
-
-    ai = build_ai(settings)
 
     if steps_config not in [
         StepsConfig.EXECUTE_ONLY,
@@ -159,7 +158,7 @@ def build_ai(settings: GPTEngineerSettings) -> AI:
     )
 
 
-def build_dbs(settings: GPTEngineerSettings) -> DBs:
+def build_dbs(settings: GPTEngineerSettings, ai: AI) -> DBs:
     project_path = os.path.abspath(
         settings.project_path
     )  # resolve the string to a valid path (eg "a/b/../c" to "a/c")
@@ -188,8 +187,11 @@ def build_dbs(settings: GPTEngineerSettings) -> DBs:
         roles=DB(roles_path()),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
-        knowledge=Knowledge(workspace_path,
-          knowledge_prompts=knowledge_prompts),
+        knowledge=Knowledge(
+            path=workspace_path,
+            ai=ai,
+            knowledge_prompts=knowledge_prompts,
+            settings=settings),
         settings=settings
     )
 
