@@ -190,34 +190,36 @@ def parse_edits(llm_response):
     return parse_all_edits(llm_response)
 
 
-def apply_edits(edits: List[Edit], workspace: DB, no_wait=False):
+def apply_edits(edits: List[Edit], workspace: DB):
     for edit in edits:
-        filename = edit.filename
-        logger.info(f"apply_edits NEW FILE {edit}")
-        if edit.before == "":
-            if workspace.get(filename) is not None:
-                logger.warn(
-                    f"The edit to be applied wants to create a new file `{filename}`, but that already exists. The file will be overwritten. See `.gpteng/memory` for previous version."
-                )
-            workspace[filename] = edit.after  # new file
-        else:
-            if workspace[filename].count(edit.before) > 1:
-                logger.warn(
-                    f"While applying an edit to `{filename}`, the code block to be replaced was found multiple times. All instances will be replaced."
-                )
-            curr_file = workspace[filename]
-            workspace[filename] = curr_file.replace(
-                edit.before, edit.after
-            )  # existing file
-            if curr_file == workspace[filename]:
-                error = f"""
-                {colored(f"change not applied to file {filename}", "red")}
-                {edit.full_text}
-                {colored(f"Apply manually and press Enter to continue", "green")}
-                """
-                if not no_wait:
-                    input(error)
+        success, error_message = apply_edit(edit=edit, workspace=workspace)
+        if not success:
+            input(error_message)
 
+def apply_edit(edit: Edit, workspace: DB)
+    filename = edit.filename
+    logger.info(f"apply_edits NEW FILE {edit}")
+    if edit.before == "":
+        if workspace.get(filename) is not None:
+            return False, f"The edit to be applied wants to create a new file `{filename}`, but that already exists."
+        workspace[filename] = edit.after  # new file
+    else:
+        if workspace[filename].count(edit.before) > 1:
+            logger.warn(
+                f"While applying an edit to `{filename}`, the code block to be replaced was found multiple times. All instances will be replaced."
+            )
+        curr_file = workspace[filename]
+        workspace[filename] = curr_file.replace(
+            edit.before, edit.after
+        )  # existing file
+        if curr_file == workspace[filename]:
+            error = f"""
+            {colored(f"change not applied to file {filename}", "red")}
+            {edit.full_text}
+            {colored(f"Apply manually and press Enter to continue", "green")}
+            """
+            return True, error
+    return True, None
 
 def _get_all_files_in_dir(directory):
     for root, dirs, files in os.walk(directory):

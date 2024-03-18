@@ -14,7 +14,8 @@ from gpt_engineer.core.step.chat import ai_chat
 from gpt_engineer.api.engine import (
     select_afefcted_files_from_knowledge, 
     improve_existing_code,
-    check_knowledge_status
+    check_knowledge_status,
+    run_edits
 )
 
 class GPTEngineerAPI:
@@ -23,7 +24,14 @@ class GPTEngineerAPI:
         self.ai = build_ai(args)
 
     def start(self):
-        app = FastAPI()
+        app = FastAPI(
+            title="GPTEngineerAPI",
+            description="API for GPTEngineer",
+            version="1.0",
+            openapi_url="/api/openapi.json",
+            docs_url="/api/docs",
+            redoc_url="/api/redoc",
+        )
 
         app.mount("/static", StaticFiles(directory="gpt_engineer/api/client_chat", html=True), name="client_chat")
 
@@ -60,14 +68,25 @@ class GPTEngineerAPI:
               "search_results": documents
             }
 
-        @app.post("/api/improve")
-        def chat(chat_message: ChatMessage):
+        @app.post("/api/run/improve")
+        def run_improve(chat_message: ChatMessage):
             # Perform search on Knowledge using the input
             # Return the search results as response
-            messages, edits, error = improve_existing_code(ai=self.ai, dbs=self.dbs, chat_message=chat_message)
+            messages, edits, errors = improve_existing_code(ai=self.ai, dbs=self.dbs, chat_message=chat_message)
             return {
               "messages": messages,
               "edits": edits,
-              "error": error
+              "error": errors
             }
+
+        @app.post("/api/run/edit")
+        def run_edit(chat_message: ChatMessage):
+            # Perform search on Knowledge using the input
+            # Return the search results as response
+            message, errors = run_edits(ai=self.ai, dbs=self.dbs, chat_message=chat_message)
+            return {
+              "messages": chat_message.messages + [{ "role": "assistant", "content": message }],
+              "errors": errors
+            }
+
         return app

@@ -10,7 +10,7 @@ from gpt_engineer.core.utils import curr_fn, document_to_context
 from gpt_engineer.api.model import ChatMessage
 from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
-from gpt_engineer.core.chat_to_files import parse_edits, apply_edits
+from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
 def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str):
     documents = dbs.knowledge.search(query)
@@ -52,12 +52,15 @@ def improve_existing_code(ai: AI, dbs: DBs, chat_message: ChatMessage):
     response = messages[-1].content
     edits = parse_edits(response)
 
-    error = None
+    errors = []
     try:
-      apply_edits(chat=response, dbs=dbs, no_wait=True)
+      for edit in edits:
+        success, error = apply_edit(edit=edit, workspace=dbs.workspace)
+        if error:
+          errors.append(error)
     except Exception as ex:
-      error = ex
-    return (messages, edits, error)
+      errors.append(str(ex))
+    return (messages, edits, errors)
 
 def check_knowledge_status(dbs: DBs):
     loader = dbs.knowledge.loader
@@ -67,3 +70,17 @@ def check_knowledge_status(dbs: DBs):
       "last_update": str(last_update),
       "pending_files": pending_files
     }
+
+def run_edits(ai: AI, dbs: DBs, chat_message: ChatMessage):
+    errors = []
+    total_edits = []
+    for message in chat_message.messages:
+      try:
+        edits = parse_edits(message.content)
+        total_edits = total_edits + edits
+        for edit in edits:
+          success, error = apply_edit(edit=edit, workspace=dbs.workspace)
+          errors.append(f"{edit.filename} error: {error}")
+      except Exception as ex:
+        errors.append(str(ex))
+    return f"{len(total_edits)} edits, {len(errors)} errors", errors

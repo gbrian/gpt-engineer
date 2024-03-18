@@ -17,7 +17,12 @@ export default {
       return axios.post('/api/chat', { messages })
     }
   },
-  improve (messages) {
-    return axios.post('/api/improve', { messages })
+  run: {
+    improve (messages) {
+      return axios.post('/api/run/improve', { messages })
+    },
+    edit (messages) {
+      return axios.post('/api/run/edit', { messages })
+    }
   }
 }
