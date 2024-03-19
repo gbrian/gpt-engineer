@@ -25,19 +25,21 @@ class KnowledgeLoader:
         logger.debug(
             f'KnowledgeLoader initialized {(self.path)}')
 
-    def should_index_doc(self, file_path, last_update):
+    def should_index_doc(self, file_path, last_update, current_sources=None):
         if not last_update:
-          return True
+            return True
+        if current_sources and file_path not in current_sources:
+            return True
         last_doc_update = os.path.getmtime(file_path)
         if last_doc_update > last_update:
           return True
         return False
 
-    def load(self, last_update: datetime = None, path: str = None):
+    def load(self, last_update: datetime = None, path: str = None, current_sources=None):
         logger.debug(f"Loading knowledge from filesystem, last_update: {last_update} path: {path}")
         documents = []
         code_splitter = KnowledgeCodeSplitter()
-        files = self.list_repository_files(last_update=last_update, path=path)
+        files = self.list_repository_files(last_update=last_update, path=path, current_sources=[])
         for file_path in files:
             new_docs = code_splitter.load(file_path)
             if not new_docs:
@@ -52,8 +54,8 @@ class KnowledgeLoader:
         file_paths = result.stdout.decode('utf-8').split('\n')
         return file_paths
 
-    def list_repository_files(self, last_update, path: str = None):
-        logger.debug(f"list_repository_files, last_update: {last_update} path: {path}")
+    def list_repository_files(self, last_update, path: str = None, current_sources=None):
+        logger.debug(f"list_repository_files, last_update: {last_update} path: {path} current_sources: {current_sources}")
         # Versioned files
         versioned_files = self._run_git_command(['git', 'ls-files'])
 
@@ -66,12 +68,14 @@ class KnowledgeLoader:
             if path:
                 if not (path in file):
                     return False
-
-            if not self.should_index_doc(file_path=file, last_update=last_update):
-                return False
+            
             file_errors = [err for err in self.settings.knowledge_file_ignore.split(",") if err in file]
             if file_errors:
                 return False
+            
+            if not self.should_index_doc(file_path=file, last_update=last_update, current_sources=[]):
+                return False
+            
             return True
 
         full_file_paths = [file for file in full_file_paths if isValidFile(file) ]

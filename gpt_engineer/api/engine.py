@@ -66,7 +66,8 @@ def check_knowledge_status(dbs: DBs):
     loader = dbs.knowledge.loader
     last_update = dbs.knowledge.last_update
     status = dbs.knowledge.status()
-    pending_files = loader.list_repository_files(last_update)
+    all_sources = dbs.knowledge.get_all_sources()
+    pending_files = loader.list_repository_files(last_update=last_update, current_sources=all_sources)
     return {
       "last_update": str(last_update),
       "pending_files": pending_files,

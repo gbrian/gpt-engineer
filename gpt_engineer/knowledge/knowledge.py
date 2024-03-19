@@ -43,6 +43,7 @@ class Knowledge:
         self.knowledge_prompts = knowledge_prompts
         self.index_name = slugify(str(self.path))
         self.db_path = f"{settings.project_path}/{settings.db_path}/{self.index_name}"
+        self.db_file = f"{self.db_path}/chroma.sqlite3"
         self.db_file_list = f"{self.db_path}/file_list"
 
         self.loader = KnowledgeLoader(settings=settings)
@@ -63,8 +64,8 @@ class Knowledge:
       return self.db
 
     def refresh_last_update(self):
-      if os.path.isfile(self.db_file_list):
-          self.last_update = os.path.getmtime(self.db_file_list)
+      if os.path.isfile(self.db_file):
+          self.last_update = os.path.getmtime(self.db_file)
 
     def reload(self, full: bool = False):
         self.refresh_last_update()
@@ -73,7 +74,9 @@ class Knowledge:
         try:
             logger.debug('Reloading knowledge')
             # Load the knowledge from the filesystem
-            documents = self.loader.load(last_update=self.last_update)
+            current_sources = self.get_all_sources()
+            documents = self.loader.load(last_update=self.last_update,
+                                current_sources=current_sources)
             if documents:
                 self.index_documents(documents)
 
@@ -115,12 +118,6 @@ class Knowledge:
             page_content = page_contents[ix]
           documents.append(DBDocument(id=_id, page_content=page_content, metadata=metadatas[ix]))
         return documents
-
-    def get_all_sources (self):
-        documents = self.get_all_documents()
-        doc_sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
-        logger.debug(f'All sources {len(doc_sources)}')        
-        return doc_sources
         
     def clean_deleted_documents(self):
         logger.debug('Removing deleted documents')
@@ -301,22 +298,30 @@ class Knowledge:
         self.delete_old_documents(documents)
         self.index_documents(documents)
 
+    def get_all_sources (self):
+        collection = self.get_db()._collection
+        collection_docs = collection.get(include=['metadatas'])
+        
+        metadatas = collection_docs["metadatas"]
+        doc_sources = list(dict.fromkeys([metadata["source"] for metadata in metadatas]))
+        return doc_sources
+
     def status (self):
-      collection = self.get_db()._collection
-      collection_docs = collection.get(include=['metadatas'])
-      
-      ids = collection_docs["ids"]
-      metadatas = collection_docs["metadatas"]
+        collection = self.get_db()._collection
+        collection_docs = collection.get(include=['metadatas'])
+        
+        ids = collection_docs["ids"]
+        metadatas = collection_docs["metadatas"]
 
-      doc_count = len(ids)
-      doc_sources = list(dict.fromkeys([metadata["source"] for metadata in metadatas]))
+        doc_count = len(ids)
+        doc_sources = list(dict.fromkeys([metadata["source"] for metadata in metadatas]))
 
 
-      folders = list(dict.fromkeys([Path(file_path).parent for file_path in doc_sources]))      
-      
-      file_count = len(doc_sources)
-      return {
-        "doc_count": doc_count,
-        "file_count": file_count,
-        "folders": folders
-      }
+        folders = list(dict.fromkeys([Path(file_path).parent for file_path in doc_sources]))      
+        
+        file_count = len(doc_sources)
+        return {
+          "doc_count": doc_count,
+          "file_count": file_count,
+          "folders": folders
+        }
