@@ -34,7 +34,7 @@ class KnowledgeLoader:
         return False
 
     def load(self, last_update: datetime = None, path: str = None):
-        logger.debug('Loading knowledge from filesystem')
+        logger.debug(f"Loading knowledge from filesystem, last_update: {last_update} path: {path}")
         documents = []
         code_splitter = KnowledgeCodeSplitter()
         files = self.list_repository_files(last_update=last_update, path=path)
@@ -53,6 +53,7 @@ class KnowledgeLoader:
         return file_paths
 
     def list_repository_files(self, last_update, path: str = None):
+        logger.debug(f"list_repository_files, last_update: {last_update} path: {path}")
         # Versioned files
         versioned_files = self._run_git_command(['git', 'ls-files'])
 
@@ -60,17 +61,16 @@ class KnowledgeLoader:
         unversioned_files = self._run_git_command(['git', 'ls-files', '--others', '--exclude-standard'])
 
         # joining versioned and unversioned file paths
-        full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files if file_path]
+        full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files]
         def isValidFile(file):
             if path:
-                if not path in file:
+                if not (path in file):
                     return False
 
-            if not self.should_index_doc(file, last_update):
-                logging.info(f"INVALID FILE should_index_doc {file} {last_update}")
+            if not self.should_index_doc(file_path=file, last_update=last_update):
                 return False
-            if [err for err in self.settings.knowledge_file_ignore if err in file]:
-                logging.info(f"INVALID FILE knowledge_file_ignore {file}")
+            file_errors = [err for err in self.settings.knowledge_file_ignore.split(",") if err in file]
+            if file_errors:
                 return False
             return True
 

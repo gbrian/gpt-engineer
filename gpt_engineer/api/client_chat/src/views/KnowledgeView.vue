@@ -42,7 +42,7 @@ import { API } from '../api/api'
       <div v-if="status?.pending_files?.length">{{ status?.pending_files }}</div>
       <div class="text-xs text-info" v-else>All files indexed</div>
       <div class="flex gap-2" v-if="status?.pending_files?.length">
-        <button class="btn btn-primary btn-sm" @click="reloadKnw">
+        <button class="btn btn-primary btn-sm" @click="reloadKnowledge">
           <i class="fa-solid fa-circle-info"></i> Index files now
         </button>
       </div>
@@ -63,13 +63,13 @@ import { API } from '../api/api'
           </ul>
         </div>
       </div>
-      <div class="badge badge-info flex gap-2" v-if="folderToReload">
-        <i class="fa-solid fa-folder"></i>
-        {{ folderToReload }}
-      </div>
-      <button class="btn btn-warning" v-if="folderToReload" @click="reloadFolder">
-        Reload
+      <div class="pl-4 flex gap-2 items-center " v-if="folderToReload">
+        <i class="fa-2xl fa-solid fa-folder"></i>
+        <input type="text" v-model="folderToReload" class="grow input input-md input-bordered" />
+        <button class="btn btn-warning" v-if="folderToReload" @click="reloadFolder">
+          <i class="fa-solid fa-rotate-right"></i>
       </button>
+      </div>
     </div>
     <div class="text-xs font-bold py-2">
       <div class="text-xl">Ignored folders:</div>
@@ -130,9 +130,19 @@ export default {
       this.loading = true
       try {
         await API.knowledge.reloadFolder(this.folderToReload)
+        this.folderToReload = null
+        this.folderFilter = null
+      } catch{}
+      this.loading = false
+    },
+    async reloadKnowledge () {
+      this.loading = true
+      try {
+        await API.knowledge.reload()
       } catch{}
       this.loading = false
     }
+
   }
 }
 </script>

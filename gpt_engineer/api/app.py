@@ -72,11 +72,11 @@ class GPTEngineerAPI:
             return knowledge_status(request)
 
         @app.post("/api/knowledge/reload-path")
-        def knowledge_reload(knowledgeReloadPath: KnowledgeReloadPath, request: Request):
+        def knowledge_reload_path(knowledgeReloadPath: KnowledgeReloadPath, request: Request):
             args = request.state.settings
             dbs = self.get_dbs(args)
-            dbs.knowledge.reload_path(knowledgeReloadPath.path)
-            return knowledge_status(request)
+            documents = dbs.knowledge.reload_path(knowledgeReloadPath.path)
+            return { "doc_count": len(documents) }
 
         @app.get("/api/knowledge/status")
         def knowledge_status(request: Request):

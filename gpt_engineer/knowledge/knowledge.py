@@ -90,11 +90,13 @@ class Knowledge:
         self.refresh_last_update()
 
     def reload_path(self, path: str):
+        logging.info(f"reload_path {path}")
         try:
             documents = self.loader.load(last_update=None, path=path)
             logging.info(f"reload_path {path} {len(documents)} documents")
             if documents:
                 self.index_documents(documents)
+            return documents
         except Exception as ex:
             logger.error(f"Error loading knowledge {ex}")
             pass
