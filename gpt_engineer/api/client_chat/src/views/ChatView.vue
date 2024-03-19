@@ -2,9 +2,9 @@
 import ChatEntry from '@/components/ChatEntry.vue'
 </script>
 <template>
-  <div class="px-4 py-2 flex flex-col h-full justify-between">
+  <div class="flex flex-col h-full justify-between">
     <div class="text-xl flex gap-2 items-center">
-      CODX GPT-ENGINEER - 
+      CODX
       <input type="text" class="input input-xs input-bordered" v-model="chat.name" />
       <button class="btn btn-sm" @click="saveChat">
         <i class="fa-solid fa-floppy-disk"></i>
@@ -44,12 +44,6 @@ import ChatEntry from '@/components/ChatEntry.vue'
           <button class="btn btn-primary btn-sm" @click="newChat">
             <i class="fa-solid fa-plus"></i> New chat
           </button>
-          <button class="btn btn-primary btn-sm" @click="readKnowledgeStatus">
-            <i class="fa-solid fa-circle-info"></i> Knowledge status
-          </button>
-          <button class="btn btn-primary btn-sm" @click="refreshKnowledge">
-            <i class="fa-solid fa-book"></i> Refresh knowledge
-          </button>
         </div>
       </div>
       <div class="flex gap-2 items-end">
@@ -86,8 +80,11 @@ export default {
     }
   },
   async created () {
-    this.chat = API.chatManager.newChat()
     this.chats = API.chatManager.getChats()
+    this.chat = this.chats.reverse()[0]
+    if (!this.chat) {
+      this.chat = API.chatManager.newChat()
+    }
   },
   computed: {
     editor () {

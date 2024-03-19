@@ -3,6 +3,8 @@ import os
 import shutil
 from slugify import slugify
 from datetime import datetime
+from functools import reduce
+from pathlib import Path
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -33,18 +35,17 @@ class Knowledge:
     index_name: str
     db: Chroma = None
 
-    def __init__(self, path: str, ai: AI, knowledge_prompts: KnowledgePrompts, settings: GPTEngineerSettings):
-        logger.debug(f'Initializing Knowledge {path}')
+    def __init__(self, ai: AI, knowledge_prompts: KnowledgePrompts, settings: GPTEngineerSettings):
         self.settings = settings
         self.ai = ai
 
-        self.path = path
+        self.path = self.settings.project_path
         self.knowledge_prompts = knowledge_prompts
-        self.index_name = slugify(str(path))
-        self.db_path = f"{settings.project_path}/db/{self.index_name}"
+        self.index_name = slugify(str(self.path))
+        self.db_path = f"{settings.project_path}/{settings.db_path}/{self.index_name}"
         self.db_file_list = f"{self.db_path}/file_list"
 
-        self.loader = KnowledgeLoader(self.path)
+        self.loader = KnowledgeLoader(settings=settings)
         self.embedding = OpenAIEmbeddings(
             openai_api_key=settings.openai_api_key,
             openai_api_base=settings.openai_api_base,
@@ -53,7 +54,7 @@ class Knowledge:
         self.last_update = None
         self.refresh_last_update()        
         self.last_changed_file_paths = []
-        logger.debug('Knowledge initialized')
+        logger.debug(f'Knowledge ready {self.path}')
     
     def get_db(self):
       if not self.db:
@@ -87,6 +88,16 @@ class Knowledge:
             logger.error(f"Error loading knowledge {ex}")
             pass
         self.refresh_last_update()
+
+    def reload_path(self, path: str):
+        try:
+            documents = self.loader.load(last_update=None, path=path)
+            logging.info(f"reload_path {path} {len(documents)} documents")
+            if documents:
+                self.index_documents(documents)
+        except Exception as ex:
+            logger.error(f"Error loading knowledge {ex}")
+            pass
 
     def get_all_documents (self, include=[]):
         logger.debug('Get all documents')
@@ -137,7 +148,7 @@ class Knowledge:
       source = doc.metadata.get('source')
       summary = ""
 
-      if KNOWLEDGE_ENRICH_DOCUMENTS:
+      if self.settings.knowledge_enrich_documents:
         try:
           prompt, system = self.knowledge_prompts.enrich_document_prompt(doc)
           messages = self.ai.start(system, prompt, step_name="enrich_document")
@@ -145,7 +156,7 @@ class Knowledge:
         except Exception as ex:
           logger.debug(f"Error enriching document {source}: {ex}")
           pass
-      if KNOWLEDGE_EXTRACT_DOCUMENTS_TAGS:
+      if self.settings.knowledge_extract_document_tags:
         try:
           prompt, system = self.knowledge_prompts.extract_document_tags(doc)
           messages = self.ai.start(system, prompt, step_name="extract_document_tags")
@@ -183,8 +194,7 @@ class Knowledge:
         return valid_documents
   
     def index_documents (self, documents):
-        if self.last_update:
-          self.delete_old_documents(documents)
+        self.delete_old_documents(documents)
         index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
         metadata = {
           "index_date": f"{index_date}"
@@ -198,6 +208,7 @@ class Knowledge:
                   self.embedding,
                   persist_directory=self.db_path,
                 )
+                logger.info(f"Stored document from {enriched_doc.metadata['source']}")
             except Exception as ex:
                 logger.error(f"Error indexing document {enriched_doc.metadata['source']}: {ex}")
 
@@ -273,3 +284,23 @@ class Knowledge:
         documents = [Document(page_content=text, metadata=metadata)]
         self.delete_old_documents(documents)
         self.index_documents(documents)
+
+    def status (self):
+      collection = self.get_db()._collection
+      collection_docs = collection.get(include=['metadatas'])
+      
+      ids = collection_docs["ids"]
+      metadatas = collection_docs["metadatas"]
+
+      doc_count = len(ids)
+      doc_sources = list(dict.fromkeys([metadata["source"] for metadata in metadatas]))
+
+
+      folders = list(dict.fromkeys([Path(file_path).parent for file_path in doc_sources]))      
+      
+      file_count = len(doc_sources)
+      return {
+        "doc_count": doc_count,
+        "file_count": file_count,
+        "folders": folders
+      }

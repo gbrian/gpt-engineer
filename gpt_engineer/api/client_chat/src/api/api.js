@@ -8,8 +8,8 @@ export const API = {
     chatManager,
     settings: {
       async read () {
-        const res = axios.get('/api/settings?' + query)
-        API.lasSettings = res.data
+        const res = await axios.get('/api/settings?' + query)
+        API.lastSettings = res.data
         return res
       },
       write (settings) {
@@ -22,6 +22,9 @@ export const API = {
       },
       reload () {
         return axios.get('/api/knowledge/reload?' + query)
+      },
+      reloadFolder (path) {
+        return axios.post(`/api/knowledge/reload-path?` + query, { path })
       }
     },
     chat: {
@@ -38,3 +41,5 @@ export const API = {
       }
     }
   }
+
+  window.API = API

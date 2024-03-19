@@ -65,10 +65,12 @@ def improve_existing_code(ai: AI, dbs: DBs, chat_message: ChatMessage):
 def check_knowledge_status(dbs: DBs):
     loader = dbs.knowledge.loader
     last_update = dbs.knowledge.last_update
+    status = dbs.knowledge.status()
     pending_files = loader.list_repository_files(last_update)
     return {
       "last_update": str(last_update),
-      "pending_files": pending_files
+      "pending_files": pending_files,
+      **status
     }
 
 def run_edits(ai: AI, dbs: DBs, chat_message: ChatMessage):

@@ -32,6 +32,7 @@ class GPTEngineerSettings:
     knowledge_search_document_count: int
 
     def __init__(self, **kwrgs):
+        self.project_path = "."
         self.openai_api_key = settings.OPENAI_API_KEY
         self.openai_api_base = settings.OPENAI_API_BASE
         self.knowledge_extract_document_tags = False
@@ -39,6 +40,9 @@ class GPTEngineerSettings:
         self.knowledge_search_document_count = settings.KNOWLEDGE_SEARCH_DOCUMENT_COUNT
         self.temperature = settings.TEMPERATURE
         self.model = settings.MODEL
+        self.knowledge_file_ignore = settings.KNOWLEDGE_FILE_IGNORE
+        self.db_path = ".gpteng/db"
+        self.knowledge_enrich_documents = settings.KNOWLEDGE_ENRICH_DOCUMENTS
   
         if kwrgs:
             keys = GPTEngineerSettings().__dict__.keys()

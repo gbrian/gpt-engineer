@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from gpt_engineer.api.models.chatmessage import ChatMessage
 from gpt_engineer.api.models.message import Message
 from gpt_engineer.api.models.settings import Settings
+from gpt_engineer.api.models.knowledge import KnowledgeReloadPath
 from gpt_engineer.api.app_service import clarify_business_request
 
 from gpt_engineer.core.settings import GPTEngineerSettings 
@@ -68,6 +69,13 @@ class GPTEngineerAPI:
             args = request.state.settings
             dbs = self.get_dbs(args)
             dbs.knowledge.reload()
+            return knowledge_status(request)
+
+        @app.post("/api/knowledge/reload-path")
+        def knowledge_reload(knowledgeReloadPath: KnowledgeReloadPath, request: Request):
+            args = request.state.settings
+            dbs = self.get_dbs(args)
+            dbs.knowledge.reload_path(knowledgeReloadPath.path)
             return knowledge_status(request)
 
         @app.get("/api/knowledge/status")

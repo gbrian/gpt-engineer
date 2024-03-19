@@ -1,56 +1,64 @@
 <script setup>
 import { API } from './api/api'
 import ChatViewVue from "./views/ChatView.vue";
+import KnowledgeViewVue from './views/KnowledgeView.vue';
 import ProjectSettingsVue from "./views/ProjectSettings.vue";
 </script>
 
 <template>
-  <div class="w-full h-screen max-w-screen flex flex-col">
+  <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2">
+    <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2"><i class="fa-solid fa-location-dot"></i> {{ projectPath }}</div>
     <div class="alert alert-sm text-xs alert-error" v-if="projectPathError">
       {{ projectPathError }}
     </div>
-    <div class="grow flex flex-col" v-if="projectPath">
-      <div role="tablist" class="tabs tabs-lifted">
-        <a role="tab" :class="['tab', tabIx === 0 && 'tab-active']"
-          @click="tabIx = 0"
-        >
-          <div class="font-medium flex gap-2 items-center">
-            <i class="fa-regular fa-comments"></i>
-          </div>
-        </a>
-        <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 && 'tab-active']"
-          @click="tabIx = 1"
-        >
-          <i class="fa-solid fa-brain"></i>
-          {{ projectPath }}
-        </a>
-        <a class="tab">
-          <div>
-            <label for="my_modal_6" class="btn btn-sm btn-warning">
-              <i class="fa-regular fa-folder-open"></i>
-            </label>
+    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md">
+      <a role="tab" :class="['tab', tabIx === 0 && 'tab-active']"
+        @click="tabIx = 0"
+      >
+        <div class="font-medium flex gap-2 items-center">
+          <i class="fa-regular fa-comments"></i>
+          Tasks
+        </div>
+      </a>
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 && 'tab-active']"
+        @click="tabIx = 1"
+      >
+        <i class="fa-solid fa-book"></i>
+        Knowledge
+      </a>
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 && 'tab-active']"
+        @click="tabIx = 2"
+      >
+        <i class="fa-solid fa-brain"></i>
+        GPT Settings
+      </a>
+      <a class="tab">
+        <div>
+          <label for="my_modal_6" class="btn btn-sm btn-warning">
+            <i class="fa-regular fa-folder-open"></i>
+          </label>
 
-            <!-- Put this part before </body> tag -->
-            <input type="checkbox" id="my_modal_6" class="modal-toggle" />
-            <div class="modal" role="dialog">
-              <div class="modal-box">
-                <h3 class="font-bold text-lg">Open project</h3>
-                <input type="text" class="input input-bordered w-full" v-model="newProject" />
-                <div class="modal-action">
-                  <label for="my_modal_6" class="btn" @click="onOpenProject">
-                    Open
-                  </label>
-                  <label class="modal-backdrop" for="my_modal_6">Close</label>
-                </div>
+          <!-- Put this part before </body> tag -->
+          <input type="checkbox" id="my_modal_6" class="modal-toggle" />
+          <div class="modal" role="dialog">
+            <div class="modal-box">
+              <h3 class="font-bold text-lg">Open project</h3>
+              <input type="text" class="input input-bordered w-full" v-model="newProject" />
+              <div class="modal-action">
+                <label for="my_modal_6" class="btn" @click="onOpenProject">
+                  Open
+                </label>
+                <label class="modal-backdrop" for="my_modal_6">Close</label>
               </div>
             </div>
           </div>
-        </a>
-      </div>
-      <div class="grow relative overflow-auto">
-        <ChatViewVue v-if="tabIx === 0" />
-        <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
-      </div>
+        </div>
+      </a>
+    </div>
+    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="projectPath">
+      <ChatViewVue v-if="tabIx === 0" />
+      <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
+      <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
     </div>
   </div>
 </template>

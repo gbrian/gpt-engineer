@@ -1,5 +1,6 @@
 <template>
-  <div class="form-control w-full p-4">
+  <div class="form-control w-full">
+    <div class="text-xl font-medium my-2">GPT Settings</div>
     <div class="flex justify-between mb-2" v-for="(value, key) in settings" :key="key">
       <div class="label-text">{{ key }}</div>
       <div class="w-1/2">
@@ -19,33 +20,7 @@ import { API } from '../api/api'
 export default {
   data() {
     return {
-      settings: {
-        openai_api_key: '',
-        openai_api_base: '',
-        knowledge_extract_document_tags: false,
-        knowledge_search_type: '',
-        knowledge_search_document_count: 0,
-        temperature: '',
-        model: '',
-        project_path: '',
-        chat_mode: false,
-        steps_config: '',
-        improve_mode: false,
-        update_summary: false,
-        api: true,
-        role: '',
-        lite_mode: false,
-        use_git: false,
-        prompt: false,
-        file_selector: false,
-        prompt_file: false,
-        verbose: false,
-        test: '',
-        build_knowledge: false,
-        port: '',
-        azure_endpoint: '',
-        find_files: false,
-      },
+      settings: null,
     };
   },
   async created () {

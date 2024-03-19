@@ -188,7 +188,6 @@ def build_dbs(settings: GPTEngineerSettings, ai: AI) -> DBs:
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
         knowledge=Knowledge(
-            path=workspace_path,
             ai=ai,
             knowledge_prompts=knowledge_prompts,
             settings=settings),

@@ -9,7 +9,7 @@
       @dblclick="message.collapse = !message.collapse"
     >
       <div>
-        <div class="absolute right-2 top-2 group-hover:flex gap-2 z-10 hidden">
+        <div class="absolute right-2 top-2 group-hover:flex gap-2 z-10 hidden text-wrap">
           <button class="btn btn-xs" @click="$emit('edit')">
             <i class="fa-solid fa-pencil"></i>
           </button>
@@ -29,7 +29,7 @@
           <div v-if="message.role ==='user'">You</div>
           <div v-else>gpt-engineer</div>
         </div>
-        <div class="text-md" v-html="html"></div>
+        <div class="text-md text-wrap" v-html="html"></div>
       </div>
     </div>
     <button class="btn btn-sm btn-warning abolsute right-2 top-2"
