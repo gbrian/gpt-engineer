@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from gpt_engineer.api.models.chatmessage import ChatMessage
 from gpt_engineer.api.models.message import Message
 from gpt_engineer.api.models.settings import Settings
-from gpt_engineer.api.models.knowledge import KnowledgeReloadPath
+from gpt_engineer.api.models.knowledge import KnowledgeReloadPath, KnowledgeSearch
 from gpt_engineer.api.app_service import clarify_business_request
 
 from gpt_engineer.core.settings import GPTEngineerSettings 
@@ -77,6 +77,17 @@ class GPTEngineerAPI:
             dbs = self.get_dbs(args)
             documents = dbs.knowledge.reload_path(knowledgeReloadPath.path)
             return { "doc_count": len(documents) }
+
+        @app.post("/api/knowledge/reload-search")
+        def knowledge_reload_path(knowledgeSearch: KnowledgeSearch, request: Request):
+            args = request.state.settings
+            dbs = self.get_dbs(args)
+            documents = []
+            if knowledgeSearch.search_type == "embeddings":
+                documents = dbs.knowledge.search(knowledgeSearch.search_term)
+            if knowledgeSearch.search_type == "source":
+                documents = dbs.knowledge.search_in_source(knowledgeSearch.search_term)
+            return { "documents": documents }
 
         @app.get("/api/knowledge/status")
         def knowledge_status(request: Request):

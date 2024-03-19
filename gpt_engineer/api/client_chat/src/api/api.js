@@ -25,6 +25,9 @@ export const API = {
       },
       reloadFolder (path) {
         return axios.post(`/api/knowledge/reload-path?` + query, { path })
+      },
+      search ({ searchTerm: search_term, searchType: search_type }) {
+        return axios.post(`/api/knowledge/reload-search?` + query, { search_term, search_type })
       }
     },
     chat: {

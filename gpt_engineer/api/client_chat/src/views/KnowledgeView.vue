@@ -1,12 +1,38 @@
 <script setup>
 import { API } from '../api/api'
+import MarkdownVue from '@/components/Markdown.vue'
 </script>
 <template>
-  <div class="flex flex-col gap-2 h-full justify-between">
+  <div class="gap-2 h-full justify-between">
     <div class="text-xl font-medium flex justify-between items-center gap-2">
       Knowledge
       <div class="stat-desc flex gap-2 items-center btn btn-sm" @click="reloadStatus">
         <i class="fa-solid fa-rotate-right"></i> Update
+      </div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <div class="text-xs flex gap-2 items-center">
+        <i class="fa-solid fa-sliders"></i>
+        <div class="badge">knowledge_search_type: {{ API.lastSettings.knowledge_search_type }}</div>
+        <div class="badge">knowledge_search_document_count: {{ API.lastSettings.knowledge_search_document_count }}</div>
+      </div>
+      <label class="input input-bordered flex items-center gap-2">
+        <select class="select select-xs w-20" v-model="searchType">
+          <option value="embeddings">Embeddings</option>
+          <option value="source">Source</option>
+        </select>
+        <input type="text" class="grow" placeholder="Search in knowledge"
+          @keypress.enter="onKnowledgeSearch"
+          v-model="searchTerm" />
+        <i class="fa-solid fa-magnifying-glass" @click="onKnowledgeSearch"></i>
+      </label>
+      <div class="grid grid-cols-3 gap-2">
+        <span class="badge badge-info cursor-pointer"
+            v-for="doc,ix in searchResults?.documents" :key="ix"
+            @click="showDoc = doc"
+        >
+          {{ doc.metadata.source.split("/").reverse().slice(0, 2).join(" ") }}
+        </span>
       </div>
     </div>
     <div class="stats">
@@ -38,19 +64,22 @@ import { API } from '../api/api'
     </div>
 
     <div class="p-4 flex flex-col gap-2 grow">
-      <div class="text-xl font-medium">Pending files</div>
-      <div v-if="status?.pending_files?.length">{{ status?.pending_files }}</div>
-      <div class="text-xs text-info" v-else>All files indexed</div>
-      <div class="flex gap-2" v-if="status?.pending_files?.length">
-        <button class="btn btn-primary btn-sm" @click="reloadKnowledge">
-          <i class="fa-solid fa-circle-info"></i> Index files now
-        </button>
+      <div class="border p-4 rounded-md" v-if="status?.pending_files?.length">
+        <div class="text-xl font-medium">Pending files</div>
+        <div v-if="status?.pending_files?.length">{{ status?.pending_files }}</div>
+        <div class="text-xs text-info" v-else>All files indexed</div>
+        <div class="flex gap-2" v-if="status?.pending_files?.length">
+          <button class="btn btn-primary btn-sm" @click="reloadKnowledge">
+            <i class="fa-solid fa-circle-info"></i> Index files now
+          </button>
+        </div>
       </div>
-      <div class="text-xl">
-        Reload folder
+      <div class="text-xl flex gap-2 items-center mt-2">
+        <i class="fa-solid fa-hand"></i> Manual folder indexing
       </div>
+      <div class="text-xs">Allows to index new floders or re-index existing ones</div>
       <label class="input input-bordered flex items-center gap-2">
-        <input type="text" class="grow" placeholder="Search" v-model="folderFilter" />
+        <input type="text" class="grow" :placeholder="projectPath" v-model="folderFilter" />
         <i class="fa-solid fa-magnifying-glass"></i>
       </label>
       <div class="dropdown dropdown-open" v-if="folderResulst && !folderToReload">
@@ -80,6 +109,18 @@ import { API } from '../api/api'
       </div>
       <div class="text-xs">Change this list on settings</div>
     </div>
+    <dialog class="modal modal-bottom sm:modal-middle modal-open" v-if="showDoc">
+      <div class="modal-box flex flex-col gap-2">
+        <h3 class="font-bold text-lg">{{ showDoc.metadata.source }}</h3>
+        <MarkdownVue class="prose max-h-60 overflow-auto" :text="showDocPreview" />
+        <div class="modal-action">
+          <form method="dialog">
+            <!-- if there is a button in form, it will close the modal -->
+            <button class="btn" @click="showDoc = null">Close</button>
+          </form>
+        </div>
+      </div>
+    </dialog>
   </div>
 </template>
 <script>
@@ -93,13 +134,20 @@ export default {
       status: null,
       folderToReload: null,
       loading: false,
-      folderFilter: null
+      folderFilter: null,
+      searchTerm: null,
+      searchResults: null,
+      showDoc: null,
+      searchType: "embeddings"
     }
   },
   created() {
     this.reloadStatus()
   },
   computed: {
+    projectPath () {
+      return API.lastSettings.project_path
+    },
     lastRefresh() {
       if (this.status?.last_update) {
         const ts = parseInt(this.status.last_update, 10) * 1000
@@ -114,6 +162,11 @@ export default {
       const query = this.folderFilter.toLowerCase()
       return this.status?.folders?.filter(f => f.toLowerCase().indexOf(query) !== -1)
         .slice(0, 20)
+    },
+    showDocPreview () {
+      const codePreview = this.showDoc.page_content.split("Code:")[1]
+      return codePreview || "```" + this.showDoc.metadata.language + 
+                            `\n${this.showDoc.page_content}\n` + "```"
     }
   },
   watch: {
@@ -140,7 +193,13 @@ export default {
       try {
         await API.knowledge.reload()
       } catch{}
+      this.reloadStatus()
       this.loading = false
+    },
+    async onKnowledgeSearch () {
+      const { searchTerm, searchType } = this
+      const { data } = await API.knowledge.search({ searchTerm, searchType })
+      this.searchResults = data 
     }
 
   }

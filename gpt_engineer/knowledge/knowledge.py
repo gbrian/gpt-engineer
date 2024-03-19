@@ -259,7 +259,7 @@ class Knowledge:
     def as_retriever(self):
         return self.get_db().as_retriever(
             search_type=self.settings.knowledge_search_type,
-            search_kwargs={"k": self.settings.knowledge_search_document_count },
+            search_kwargs={"k": int(self.settings.knowledge_search_document_count) },
         )
 
     def search(self, query):
@@ -270,6 +270,20 @@ class Knowledge:
       retriever = self.as_retriever()
       documents = retriever.get_relevant_documents(query)
       logging.debug(f"[Knowledge::search] {query} docs: {len(documents)}")
+      return documents
+
+    def search_in_source(self, query):
+      collection = self.get_db()._collection
+      collection_docs = collection.get(include=['metadatas', 'documents'])      
+      ids = collection_docs["ids"]
+      metadatas = collection_docs["metadatas"]
+      page_contents = collection_docs.get("documents", [])
+
+      documents = []
+      for ix, _id in enumerate(ids):
+        if query in metadatas[ix]["source"]:
+          documents.append(Document(id=ids[ix], page_content=page_contents[ix], metadata=metadatas[ix]))
+      
       return documents
 
     def extract_query_keywords(self, query):
