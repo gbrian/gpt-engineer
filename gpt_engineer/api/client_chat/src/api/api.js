@@ -4,14 +4,24 @@ import chatManager from './chatManager';
 
 const query = window.location.search.slice(1)
 export const API = {
+    liveRequests: 0,
     get (url) {
-      return axios.get(url).catch(console.error)
+      API.liveRequests++
+      return axios.get(url)
+        .catch(console.error)
+        .finally(() => API.liveRequests--)
     },
     post (url, data) {
-      return axios.post(url, data).catch(console.error)
+      API.liveRequests++
+      return axios.post(url, data)
+      .catch(console.error)
+      .finally(() => API.liveRequests--)
     },
     put (url, data) {
-      return axios.put(url, data).catch(console.error)
+      API.liveRequests++
+      return axios.put(url, data)
+      .catch(console.error)
+      .finally(() => API.liveRequests--)
     },
     lastSettings: null,
     chatManager,

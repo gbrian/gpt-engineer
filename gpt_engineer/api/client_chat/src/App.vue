@@ -10,6 +10,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
     <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="gptengPath">
       <i class="fa-solid fa-location-dot"></i> {{ gptengPath }}
     </div>
+    <progress :class="['progress progress-success w-full', liveRequests ? '': 'opacity-0']"></progress>
     <div class="alert alert-warning flex gap-2 justify-center" v-if="!gptengPath">
       No project found at <span class="">"{{gptengPath}}"</span>
       <button class="btn btn-sm" v-if="gptengPath" @click="createNewProject">
@@ -75,11 +76,17 @@ export default {
       tabIx: 0,
       newProject: null,
       gptengPath: null,
-      showOpenProjectModal: false
+      showOpenProjectModal: false,
+      liveRequests: null
     }
   },
   created () {
-    this.init()  
+    this.init()
+    setInterval(() => {
+      this.liveRequests = API.liveRequests
+    }, 200)
+  },
+  computed: {
   },
   methods: {
     async init () {
