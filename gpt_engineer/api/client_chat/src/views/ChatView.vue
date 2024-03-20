@@ -119,7 +119,7 @@ export default {
       }
       this.postMyMessage()
       this.sendApiRequest(
-        () => API.chat.message(this.chat.messages),
+        () => API.chat.message(this.chat),
         ({ message, search_results }) => {
           return `${message}
             ${search_results.map(r => JSON.stringify(r))}
@@ -146,7 +146,7 @@ export default {
     improveCode () {
       this.postMyMessage()
       this.sendApiRequest(
-        () => API.run.improve(this.chat.messages),
+        () => API.run.improve(this.chat),
         data => ['### Changes done',
                   data.messages.reverse()[0].content,
                   '### Edits done',
@@ -160,7 +160,7 @@ export default {
     },
     runEdit (codeSnipped) {
       this.sendApiRequest(
-        () => API.run.edit([{ role: 'user', content: codeSnipped }]),
+        () => API.run.edit({ id: "", messages: [{ role: 'user', content: codeSnipped }] }),
         data => [
                   data.messages.reverse()[0].content,
                   "\n\n",

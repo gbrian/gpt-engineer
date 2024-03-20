@@ -4,10 +4,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
-from gpt_engineer.api.models.chatmessage import ChatMessage
-from gpt_engineer.api.models.message import Message
-from gpt_engineer.api.models.settings import Settings
-from gpt_engineer.api.models.knowledge import KnowledgeReloadPath, KnowledgeSearch
+from gpt_engineer.api.model import Chat, Settings, KnowledgeReloadPath, KnowledgeSearch
 from gpt_engineer.api.app_service import clarify_business_request
 
 from gpt_engineer.core.settings import GPTEngineerSettings 
@@ -102,14 +99,14 @@ class GPTEngineerAPI:
             return check_knowledge_status(dbs=dbs)
 
         @app.post("/api/chat")
-        def chat(chat_message: ChatMessage, request: Request):
+        def chat(chat: Chat, request: Request):
             args = request.state.settings
             dbs = self.get_dbs(args)
             ai = self.get_ai(args)
             # Perform search on Knowledge using the input
             # Return the search results as response
-            user_input = chat_message.messages[-1].content
-            messages = [m.content for m in chat_message.messages[:-1]]
+            user_input = chat.messages[-1].content
+            messages = [m.content for m in chat.messages[:-1]]
             response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages)
             return {
               "message": response,
@@ -117,13 +114,13 @@ class GPTEngineerAPI:
             }
 
         @app.post("/api/run/improve")
-        def run_improve(chat_message: ChatMessage, request: Request):
+        def run_improve(chat: Chat, request: Request):
             args = request.state.settings
             dbs = self.get_dbs(args)
             ai = self.get_ai(args)
             # Perform search on Knowledge using the input
             # Return the search results as response
-            messages, edits, errors = improve_existing_code(ai=ai, dbs=dbs, chat_message=chat_message)
+            messages, edits, errors = improve_existing_code(ai=ai, dbs=dbs, chat=chat)
             return {
               "messages": messages,
               "edits": edits,
@@ -131,15 +128,15 @@ class GPTEngineerAPI:
             }
 
         @app.post("/api/run/edit")
-        def run_edit(chat_message: ChatMessage, request: Request):
+        def run_edit(chat: Chat, request: Request):
             args = request.state.settings
             dbs = self.get_dbs(args)
             ai = self.get_ai(args)
             # Perform search on Knowledge using the input
             # Return the search results as response
-            message, errors = run_edits(ai=ai, dbs=dbs, chat_message=chat_message)
+            message, errors = run_edits(ai=ai, dbs=dbs, chat=chat)
             return {
-              "messages": chat_message.messages + [{ "role": "assistant", "content": message }],
+              "messages": chat.messages + [{ "role": "assistant", "content": message }],
               "errors": errors
             }
 

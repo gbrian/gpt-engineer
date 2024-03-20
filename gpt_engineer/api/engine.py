@@ -10,7 +10,7 @@ from gpt_engineer.core.ai import AI
 from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.core.utils import curr_fn, document_to_context
 
-from gpt_engineer.api.models.chat import Chat
+from gpt_engineer.api.model import Chat
 from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit

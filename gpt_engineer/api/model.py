@@ -3,11 +3,13 @@ from pydantic import BaseModel
 
 from typing import List, Dict, Union
 
+from gpt_engineer.core.settings import GPTEngineerSettings
+
 class Message(BaseModel):
     role: str
     content: str
 
-class ChatMessage(BaseModel):
+class Chat(BaseModel):
     messages: List[Message]
 
 class Message(BaseModel):
@@ -35,3 +37,12 @@ class ChatResponse(BaseModel):
     choices: List[Choice]
     usage: Dict[str, int]
 
+class KnowledgeReloadPath(BaseModel):
+    path: str
+
+class KnowledgeSearch(BaseModel):
+    search_term: str
+    search_type: str
+
+class Settings(BaseModel, GPTEngineerSettings):
+  pass

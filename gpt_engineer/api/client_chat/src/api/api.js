@@ -4,49 +4,58 @@ import chatManager from './chatManager';
 
 const query = window.location.search.slice(1)
 export const API = {
+    get (url) {
+      return axios.get(url).catch(console.error)
+    },
+    post (url, data) {
+      return axios.post(url, data).catch(console.error)
+    },
+    put (url, data) {
+      return axios.put(url, data).catch(console.error)
+    },
     lastSettings: null,
     chatManager,
     project: {
       create() {
-        return axios.get('/api/project/create?' + query)
+        return API.get('/api/project/create?' + query)
       }
     },
     settings: {
       async read () {
         API.lastSettings = null
-        const res = await axios.get('/api/settings?' + query)
+        const res = await API.get('/api/settings?' + query)
         API.lastSettings = res.data
         return res
       },
       write (settings) {
-        return axios.put('/api/settings?' + query, settings)
+        return API.put('/api/settings?' + query, settings)
       }
     },
     knowledge: {
       status () {
-        return axios.get('/api/knowledge/status?' + query)
+        return API.get('/api/knowledge/status?' + query)
       },
       reload () {
-        return axios.get('/api/knowledge/reload?' + query)
+        return API.get('/api/knowledge/reload?' + query)
       },
       reloadFolder (path) {
-        return axios.post(`/api/knowledge/reload-path?` + query, { path })
+        return API.post(`/api/knowledge/reload-path?` + query, { path })
       },
       search ({ searchTerm: search_term, searchType: search_type }) {
-        return axios.post(`/api/knowledge/reload-search?` + query, { search_term, search_type })
+        return API.post(`/api/knowledge/reload-search?` + query, { search_term, search_type })
       }
     },
     chat: {
-      message (messages) {
-        return axios.post('/api/chat?' + query, { messages })
+      message (chat) {
+        return API.post('/api/chat?' + query, chat)
       }
     },
     run: {
-      improve (messages) {
-        return axios.post('/api/run/improve?' + query, { messages })
+      improve (chat) {
+        return API.post('/api/run/improve?' + query, chat)
       },
-      edit (messages) {
-        return axios.post('/api/run/edit?' + query, { messages })
+      edit (chat) {
+        return API.post('/api/run/edit?' + query, chat)
       }
     }
   }
