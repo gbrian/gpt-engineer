@@ -31,6 +31,7 @@ class GPTEngineerSettings:
     knowledge_search_type: str
     knowledge_search_document_count: int
     knowledge_context_cutoff_relevance_score: float
+    knowledge_external_folders: str
 
     def __init__(self, **kwrgs):
         self.project_path = "."
@@ -45,7 +46,7 @@ class GPTEngineerSettings:
         self.gpteng_path = "./.gpteng"
         self.knowledge_enrich_documents = settings.KNOWLEDGE_ENRICH_DOCUMENTS
         self.knowledge_context_cutoff_relevance_score = settings.KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE
-  
+        self.knowledge_external_folders = ""
         if kwrgs:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():

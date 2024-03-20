@@ -71,6 +71,11 @@ class KnowledgeLoader:
             # joining versioned and unversioned file paths
             full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files]
 
+            if self.settings.knowledge_external_folders:
+                for path in self.settings.knowledge_external_folders.split(","):
+                    external_file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*")]
+                    full_file_paths = full_file_paths + external_file_paths
+
         def isValidFile(file):
             if path:
                 if not (path in file):
