@@ -4,7 +4,13 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
-from gpt_engineer.api.model import Chat, Settings, KnowledgeReloadPath, KnowledgeSearch
+from gpt_engineer.api.model import (
+    Chat,
+    Settings,
+    KnowledgeReloadPath,
+    KnowledgeSearch,
+    KnowledgeDeleteSources
+)
 from gpt_engineer.api.app_service import clarify_business_request
 
 from gpt_engineer.core.settings import GPTEngineerSettings 
@@ -80,6 +86,13 @@ class GPTEngineerAPI:
             dbs = self.get_dbs(args)
             documents = dbs.knowledge.reload_path(knowledgeReloadPath.path)
             return { "doc_count": len(documents) }
+
+        @app.post("/api/knowledge/delete")
+        def knowledge_reload_path(knowledgeDeleteSources: KnowledgeDeleteSources, request: Request):
+            args = request.state.settings
+            dbs = self.get_dbs(args)
+            dbs.knowledge.delete_documents(sources=knowledgeDeleteSources.sources)
+            return { "ok": 1 }
 
         @app.post("/api/knowledge/reload-search")
         def knowledge_reload_path(knowledgeSearch: KnowledgeSearch, request: Request):

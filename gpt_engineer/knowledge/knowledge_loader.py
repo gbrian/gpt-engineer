@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import subprocess
+import pathlib
 from datetime import datetime
 
 from langchain.document_loaders.generic import GenericLoader
@@ -56,14 +57,20 @@ class KnowledgeLoader:
 
     def list_repository_files(self, last_update, path: str = None, current_sources=None):
         logger.debug(f"list_repository_files, last_update: {last_update} path: {path} current_sources: {current_sources}")
-        # Versioned files
-        versioned_files = self._run_git_command(['git', 'ls-files'])
+        
+        full_file_paths = None
+        if path:
+            full_file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*")]
+            logging.info(f"Indexing {full_file_paths}")
+        else:
+            # Versioned files
+            versioned_files = self._run_git_command(['git', 'ls-files'])
+            # Unversioned files
+            unversioned_files = self._run_git_command(['git', 'ls-files', '--others', '--exclude-standard'])
 
-        # Unversioned files
-        unversioned_files = self._run_git_command(['git', 'ls-files', '--others', '--exclude-standard'])
+            # joining versioned and unversioned file paths
+            full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files]
 
-        # joining versioned and unversioned file paths
-        full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files]
         def isValidFile(file):
             if path:
                 if not (path in file):

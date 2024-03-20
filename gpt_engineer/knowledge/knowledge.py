@@ -193,7 +193,7 @@ class Knowledge:
         return valid_documents
   
     def index_documents (self, documents):
-        self.delete_old_documents(documents)
+        self.delete_documents(documents)
         index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
         metadata = {
           "index_date": f"{index_date}"
@@ -226,19 +226,20 @@ class Knowledge:
           db_file_list.write("\n".join(db_files))
         
 
-    def delete_old_documents (self, documents):
+    def delete_documents (self, documents=None, sources=None):
         logger.debug('Removing old documents')
         ids_to_delete = []
         collection = self.get_db()._collection
         collection_docs = collection.get(include=['metadatas'])
+        
         def delete_doc_ids (source_doc):
           for ix, metadata in enumerate(collection_docs["metadatas"]):
               if metadata.get('source') == source_doc:
                   id_to_delete = collection_docs["ids"][ix]
                   logger.debug(f"Document to delete: {id_to_delete}: {source_doc}")
                   ids_to_delete.append(id_to_delete)
-
-        sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
+        if not sources:
+          sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
         for source in sources:
           delete_doc_ids(source_doc=source)
 
@@ -295,7 +296,7 @@ class Knowledge:
 
     def index_document(self, text, metadata):
         documents = [Document(page_content=text, metadata=metadata)]
-        self.delete_old_documents(documents)
+        self.delete_documents(documents)
         self.index_documents(documents)
 
     def get_all_sources (self):

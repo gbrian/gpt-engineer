@@ -40,6 +40,9 @@ class ChatResponse(BaseModel):
 class KnowledgeReloadPath(BaseModel):
     path: str
 
+class KnowledgeDeleteSources(BaseModel):
+    sources: List[str]
+
 class KnowledgeSearch(BaseModel):
     search_term: str
     search_type: str

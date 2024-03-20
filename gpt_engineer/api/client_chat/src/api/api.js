@@ -43,6 +43,9 @@ export const API = {
       },
       search ({ searchTerm: search_term, searchType: search_type }) {
         return API.post(`/api/knowledge/reload-search?` + query, { search_term, search_type })
+      },
+      delete (sources) {
+        return API.post(`/api/knowledge/delete?` + query, { sources })  
       }
     },
     chat: {

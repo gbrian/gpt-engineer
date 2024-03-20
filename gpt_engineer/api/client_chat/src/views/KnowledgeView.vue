@@ -114,8 +114,10 @@ import MarkdownVue from '@/components/Markdown.vue'
         <h3 class="font-bold text-lg">{{ showDoc.metadata.source }}</h3>
         <MarkdownVue class="prose max-h-60 overflow-auto" :text="showDocPreview" />
         <div class="modal-action">
-          <form method="dialog">
-            <!-- if there is a button in form, it will close the modal -->
+          <form class="flex flex-gap" method="dialog">
+            <button class="btn btn-error" @click="unIndexFile(showDoc)">
+              Drop file
+            </button>
             <button class="btn" @click="showDoc = null">Close</button>
           </form>
         </div>
@@ -200,8 +202,12 @@ export default {
       const { searchTerm, searchType } = this
       const { data } = await API.knowledge.search({ searchTerm, searchType })
       this.searchResults = data 
+    },
+    async unIndexFile(doc) {
+      await API.knowledge.delete([doc.metadata.source])
+      this.showDoc = null
+      this.onKnowledgeSearch()
     }
-
   }
 }
 </script>

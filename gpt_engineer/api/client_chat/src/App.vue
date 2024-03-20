@@ -7,10 +7,10 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 
 <template>
   <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2">
-    <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="!gptengPathError">
+    <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="gptengPath">
       <i class="fa-solid fa-location-dot"></i> {{ gptengPath }}
     </div>
-    <div class="alert alert-warning flex gap-2 justify-center" v-if="gptengPathError">
+    <div class="alert alert-warning flex gap-2 justify-center" v-if="!gptengPath">
       No project found at <span class="">"{{gptengPath}}"</span>
       <button class="btn btn-sm" v-if="gptengPath" @click="createNewProject">
         <i class="fa-solid fa-plus"></i> New
@@ -19,7 +19,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-regular fa-folder-open"></i> Open
       </button>
     </div>
-    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="!gptengPathError">
+    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="gptengPath">
       <a role="tab" :class="['tab', tabIx === 0 && 'tab-active']"
         @click="tabIx = 0"
       >
@@ -48,7 +48,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         </div>
       </a>
     </div>
-    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="!gptengPathError">
+    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="gptengPath">
       <ChatViewVue v-if="tabIx === 0" />
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
@@ -74,7 +74,7 @@ export default {
     return {
       tabIx: 0,
       newProject: null,
-      gptengPathError: null,
+      gptengPath: null,
       showOpenProjectModal: false
     }
   },
@@ -88,7 +88,6 @@ export default {
         await API.settings.read()
       } catch {}
       if (!API.lastSettings || API.lastSettings.gpteng_path !== this.gptengPath) {
-        this.gptengPathError = "No project found at " + this.gptengPath
         this.tabIx = 1
       }
     },
