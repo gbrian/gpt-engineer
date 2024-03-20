@@ -115,12 +115,12 @@ class GPTEngineerAPI:
 
         @app.post("/api/run/improve")
         def run_improve(chat: Chat, request: Request):
-            args = request.state.settings
-            dbs = self.get_dbs(args)
-            ai = self.get_ai(args)
+            settings = request.state.settings
+            dbs = self.get_dbs(settings)
+            ai = self.get_ai(settings)
             # Perform search on Knowledge using the input
             # Return the search results as response
-            messages, edits, errors = improve_existing_code(ai=ai, dbs=dbs, chat=chat)
+            messages, edits, errors = improve_existing_code(ai=ai, dbs=dbs, chat=chat, settings=settings)
             return {
               "messages": messages,
               "edits": edits,

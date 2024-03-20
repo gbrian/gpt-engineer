@@ -37,7 +37,7 @@ class GPTSteps:
         if documents:
             # Filter out irrelevant documents based on a relevance score
             relevant_documents = [doc for doc in parallel_validate_contexts(
-                dbs, query, documents) if doc]
+                dbs, query, documents, score=0.7) if doc]
             file_list = [str(Path(doc.metadata["source"]).absolute())
                         for doc in relevant_documents]
             file_list = list(dict.fromkeys(file_list))  # Remove duplicates

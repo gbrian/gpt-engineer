@@ -11,24 +11,23 @@ from gpt_engineer.core.dbs import DBs
 from gpt_engineer.settings import (
   PROMPT_FILE,
   HISTORY_PROMPT_FILE,
-  KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE,
   KNOWLEDGE_MODEL
 )
 
 KNOWLEDGE_CONTEXT_SCORE_MATCH = re.compile(r".*SCORE:\s+([0-9\.]+)", re.MULTILINE)
 
-def validate_context(ai, dbs, prompt, doc):
+def validate_context(ai, dbs, prompt, doc, score):
     # This function now handles a single document.
     if '@ai' in doc.metadata.get('user_input', ''):
         return ai_validate_context(ai, dbs, prompt, doc)
     score = float(doc.metadata.get('user_input'))
     doc.metadata["relevance_score"] = score
     logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
-    if score < KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
+    if score < score:
         return None
     return doc
 
-def parallel_validate_contexts(dbs, prompt, documents):
+def parallel_validate_contexts(dbs, prompt, documents, score=0.7):
     ai = AI(model_name=KNOWLEDGE_MODEL)
     #dbs.input.append(
     #  HISTORY_PROMPT_FILE, f"\n[[VALIDATE_CONTEXT]]\n{prompt}\nNum docs: {len(documents)}"
@@ -44,7 +43,7 @@ def parallel_validate_contexts(dbs, prompt, documents):
 
         def colored_result(doc):
           res_str = f"{doc.metadata['source']}: {doc.metadata['relevance_score']}"
-          if doc.metadata['relevance_score'] >= KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE:
+          if doc.metadata['relevance_score'] >= score:
             return colored(res_str, "green")
           return colored(res_str, "red")
 
@@ -55,7 +54,7 @@ def parallel_validate_contexts(dbs, prompt, documents):
           ""
         ]))
         return [doc for doc in valid_documents \
-          if doc and doc.metadata.get('relevance_score', 0) >= KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE]
+          if doc and doc.metadata.get('relevance_score', 0) >= score]
       
 def get_response_score (response):
     try:
@@ -99,12 +98,12 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     #)
     return doc
 
-def find_relevant_documents (ai:AI, dbs: DBs, query: str):
+def find_relevant_documents (ai:AI, dbs: DBs, query: str, score: int):
   documents = dbs.knowledge.search(query)
   if documents:
       # Filter out irrelevant documents based on a relevance score
       relevant_documents = [doc for doc in parallel_validate_contexts(
-          dbs, query, documents) if doc]
+          dbs, query, documents, score) if doc]
       file_list = [str(Path(doc.metadata["source"]).absolute())
                   for doc in relevant_documents]
       file_list = list(dict.fromkeys(file_list))  # Remove duplicates
