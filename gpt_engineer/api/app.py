@@ -100,14 +100,14 @@ class GPTEngineerAPI:
 
         @app.post("/api/chat")
         def chat(chat: Chat, request: Request):
-            args = request.state.settings
-            dbs = self.get_dbs(args)
-            ai = self.get_ai(args)
+            settings = request.state.settings
+            dbs = self.get_dbs(settings)
+            ai = self.get_ai(settings)
             # Perform search on Knowledge using the input
             # Return the search results as response
             user_input = chat.messages[-1].content
             messages = [m.content for m in chat.messages[:-1]]
-            response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages)
+            response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages, score=float(settings.knowledge_context_cutoff_relevance_score))
             return {
               "message": response,
               "search_results": documents

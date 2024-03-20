@@ -28,7 +28,7 @@ def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings:
         valid_documents = parallel_validate_contexts(dbs,
                                               query,
                                               documents,
-                                              score=settings.knowledge_context_cutoff_relevance_score)
+                                              score=float(settings.knowledge_context_cutoff_relevance_score))
         relevant_documents = [doc for doc in valid_documents if doc]
         file_list = [str(Path(doc.metadata["source"]).absolute())
                      for doc in relevant_documents]
