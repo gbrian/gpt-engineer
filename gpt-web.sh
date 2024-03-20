@@ -13,5 +13,9 @@ fi
 
 # run api
 source $VENV_PATH/bin/activate
-bash -c "cd gpt_engineer/api/client_chat && npm run dev"
+# Stop running...
+kill -9 $(ps aux | grep -e "--port 8001" | awk '{print $2}')
+kill -9 $(ps aux | grep -e "--port 8000" | awk '{print $2}')
+
+bash -c "cd gpt_engineer/api/client_chat && npm run dev" &
 gpt-engineer --api --port 8000

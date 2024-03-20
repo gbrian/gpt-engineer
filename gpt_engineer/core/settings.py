@@ -40,8 +40,8 @@ class GPTEngineerSettings:
         self.knowledge_search_document_count = settings.KNOWLEDGE_SEARCH_DOCUMENT_COUNT
         self.temperature = settings.TEMPERATURE
         self.model = settings.MODEL
-        self.knowledge_file_ignore = settings.KNOWLEDGE_FILE_IGNORE
-        self.db_path = ".gpteng/db"
+        self.knowledge_file_ignore = ",".join(settings.KNOWLEDGE_FILE_IGNORE)
+        self.gpteng_path = "./.gpteng"
         self.knowledge_enrich_documents = settings.KNOWLEDGE_ENRICH_DOCUMENTS
   
         if kwrgs:
@@ -59,14 +59,13 @@ class GPTEngineerSettings:
       return base
 
     @classmethod
-    def from_project(cls, project_path: str):
-        base = GPTEngineerSettings.from_env()
-        try:
-          with open(f"{project_path}/.gpteng/project.json", 'r') as f:
-            settings = json.loads(f.read())
-            return GPTEngineerSettings(**{ **base.__dict__, **settings })
-        except:
-          return base
+    def from_project(cls, gpteng_path: str):
+        base = GPTEngineerSettings()
+        base.gpteng_path = gpteng_path
+        base.project_path = gpteng_path
+        with open(f"{gpteng_path}/project.json", 'r') as f:
+          settings = json.loads(f.read())
+          return GPTEngineerSettings(**{ **base.__dict__, **settings })
     
     @classmethod
     def from_json(cls, settings: dict):
@@ -80,7 +79,7 @@ class GPTEngineerSettings:
 
     def save_project(self):
       settings = self.__dict__
-      path = f"{self.project_path}/.gpteng/project.json"
+      path = f"{self.gpteng_path}/project.json"
       logging.info(f"Saving project {path} {settings}")
       with open(path, 'w') as f:
         f.write(json.dumps(settings, indent=2))

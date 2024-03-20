@@ -7,11 +7,19 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 
 <template>
   <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2">
-    <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2"><i class="fa-solid fa-location-dot"></i> {{ projectPath }}</div>
-    <div class="alert alert-sm text-xs alert-error" v-if="projectPathError">
-      {{ projectPathError }}
+    <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="!gptengPathError">
+      <i class="fa-solid fa-location-dot"></i> {{ gptengPath }}
     </div>
-    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md">
+    <div class="alert alert-warning flex gap-2 justify-center" v-if="gptengPathError">
+      No project found at <span class="">"{{gptengPath}}"</span>
+      <button class="btn btn-sm" v-if="gptengPath" @click="createNewProject">
+        <i class="fa-solid fa-plus"></i> New
+      </button>
+      <button class="btn btn-sm" @click="showOpenProjectModal = true">
+        <i class="fa-regular fa-folder-open"></i> Open
+      </button>
+    </div>
+    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="!gptengPathError">
       <a role="tab" :class="['tab', tabIx === 0 && 'tab-active']"
         @click="tabIx = 0"
       >
@@ -34,31 +42,29 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       </a>
       <a class="tab">
         <div>
-          <label for="my_modal_6" class="btn btn-sm btn-warning">
+          <label for="my_modal_6" class="btn btn-sm btn-warning" @click="showOpenProjectModal = true">
             <i class="fa-regular fa-folder-open"></i>
           </label>
-
-          <!-- Put this part before </body> tag -->
-          <input type="checkbox" id="my_modal_6" class="modal-toggle" />
-          <div class="modal" role="dialog">
-            <div class="modal-box">
-              <h3 class="font-bold text-lg">Open project</h3>
-              <input type="text" class="input input-bordered w-full" v-model="newProject" />
-              <div class="modal-action">
-                <label for="my_modal_6" class="btn" @click="onOpenProject">
-                  Open
-                </label>
-                <label class="modal-backdrop" for="my_modal_6">Close</label>
-              </div>
-            </div>
-          </div>
         </div>
       </a>
     </div>
-    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="projectPath">
+    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="!gptengPathError">
       <ChatViewVue v-if="tabIx === 0" />
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
+    </div>
+    <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">Open project</h3>
+        <input type="text" class="input input-bordered w-full"
+          :placeholder="gptengPath || 'Project\'s absolute path'" v-model="newProject" />
+        <div class="modal-action">
+          <label for="my_modal_6" class="btn" @click="onOpenProject">
+            Open
+          </label>
+          <label class="modal-backdrop" for="my_modal_6">Close</label>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -68,28 +74,37 @@ export default {
     return {
       tabIx: 0,
       newProject: null,
-      projectPathError: null
+      gptengPathError: null,
+      showOpenProjectModal: false
     }
   },
-  async created () {
-    this.projectPath = this.getProjectPath() 
-    this.newProject = this.projectPath
-    await API.settings.read()
-    if (API.lastSettings.project_path !== this.projectPath) {
-      this.projectPathError = "Fix project 'project_path' in settings to match " + this.projectPath
-      this.tabIx = 1
-    }
+  created () {
+    this.init()  
   },
   methods: {
+    async init () {
+      this.gptengPath = this.getProjectPath()
+      try {
+        await API.settings.read()
+      } catch {}
+      if (!API.lastSettings || API.lastSettings.gpteng_path !== this.gptengPath) {
+        this.gptengPathError = "No project found at " + this.gptengPath
+        this.tabIx = 1
+      }
+    },
     getProjectPath () {
-      const projectPath = (window.location.search
+      const gptengPath = window.location.search
               .slice(1).split("&")
               .map(p => p.split("="))
-              .find(([k, v]) => k === "project_path")||[])[1]|| "No project selected"
-      return decodeURIComponent(projectPath)
+              .find(([k, v]) => k === "gpteng_path")
+      return gptengPath ? decodeURIComponent(gptengPath[1]) : null
     },
     onOpenProject () {
-      window.location = `${window.location.origin}?project_path=${this.newProject}`
+      window.location = `${window.location.origin}?gpteng_path=${encodeURIComponent(this.newProject)}`
+    },
+    async createNewProject () {
+      await API.project.create()
+      window.location.reload()
     }
   }
 

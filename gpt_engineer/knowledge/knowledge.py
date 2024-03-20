@@ -42,7 +42,7 @@ class Knowledge:
         self.path = self.settings.project_path
         self.knowledge_prompts = knowledge_prompts
         self.index_name = slugify(str(self.path))
-        self.db_path = f"{settings.project_path}/{settings.db_path}/{self.index_name}"
+        self.db_path = f"{settings.gpteng_path}/db/{self.index_name}"
         self.db_file = f"{self.db_path}/chroma.sqlite3"
         self.db_file_list = f"{self.db_path}/file_list"
 

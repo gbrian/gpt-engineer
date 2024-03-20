@@ -6,8 +6,14 @@ const query = window.location.search.slice(1)
 export const API = {
     lastSettings: null,
     chatManager,
+    project: {
+      create() {
+        return axios.get('/api/project/create?' + query)
+      }
+    },
     settings: {
       async read () {
+        API.lastSettings = null
         const res = await axios.get('/api/settings?' + query)
         API.lastSettings = res.data
         return res

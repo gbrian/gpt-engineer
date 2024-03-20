@@ -4,7 +4,7 @@ class TaskManager:
 
     def __init__(self, settings: GPTEngineerSettings):
         self.settings = settings
-        self.task_path = f"{settings.project_path}/.gpteng/tasks"
+        self.task_path = f"{settings.gpteng_path}/tasks"
 
     def create_task(self, task_id, chat: Chat):
         task_file = os.path.join(self.tasks_dir, f'task-{task_id}.md')

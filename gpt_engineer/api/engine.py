@@ -1,3 +1,5 @@
+import os
+import logging
 from pathlib import Path
 
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
@@ -5,12 +7,18 @@ from langchain.schema.document import Document
 
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.ai import AI
+from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.core.utils import curr_fn, document_to_context
 
-from gpt_engineer.api.model import ChatMessage
+from gpt_engineer.api.models.chat import Chat
 from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
+
+def create_project(settings=GPTEngineerSettings):
+    logging.info(f"Create new project {settings.gpteng_path}")
+    os.makedirs(settings.gpteng_path, exist_ok=True)
+    settings.save_project()
 
 def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str):
     documents = dbs.knowledge.search(query)
@@ -26,14 +34,14 @@ def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str):
     return []
 
 
-def improve_existing_code(ai: AI, dbs: DBs, chat_message: ChatMessage):
+def improve_existing_code(ai: AI, dbs: DBs, chat: Chat):
 
-    query = chat_message.messages[-1].content
+    query = chat.messages[-1].content
     messages = [
         SystemMessage(content=setup_sys_prompt_existing_code(dbs)),
     ] + [ 
         HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) \
-          for m in chat_message.messages[:-1] 
+          for m in chat.messages[:-1] 
     ]
 
     for file_path in select_afefcted_files_from_knowledge(ai=ai, dbs=dbs, query=query):
@@ -74,10 +82,10 @@ def check_knowledge_status(dbs: DBs):
       **status
     }
 
-def run_edits(ai: AI, dbs: DBs, chat_message: ChatMessage):
+def run_edits(ai: AI, dbs: DBs, chat: Chat):
     errors = []
     total_edits = []
-    for message in chat_message.messages:
+    for message in chat.messages:
       try:
         edits = parse_edits(message.content)
         total_edits = total_edits + edits
@@ -87,3 +95,9 @@ def run_edits(ai: AI, dbs: DBs, chat_message: ChatMessage):
       except Exception as ex:
         errors.append(str(ex))
     return f"{len(total_edits)} edits, {len(errors)} errors", errors
+
+def save_chat(chat: Chat, settings: GPTEngineerSettings):
+    pass
+
+def get_chat(settings: GPTEngineerSettings):
+    pass

@@ -30,8 +30,8 @@ KNOWLEDGE_SEARCH_TYPE = os.getenv("KNOWLEDGE_SEARCH_TYPE", "similarity")  # Also
 GPT_ENGINEER_METADATA_PATH=os.getenv("GPT_ENGINEER_METADATA_PATH")
 GPTENG_PATH=f"{GPT_ENGINEER_METADATA_PATH}/.gpteng" if GPT_ENGINEER_METADATA_PATH else ".gpteng"
 
-VALID_FILE_EXTENSIONS = {}
-IGNORE_FOLDERS = {}
+VALID_FILE_EXTENSIONS = []
+IGNORE_FOLDERS = []
 
 LANGUAGE_FROM_EXTENSION = {
     "py": "python",
@@ -57,7 +57,7 @@ LANGUAGE_FROM_EXTENSION = {
     "json": "js",
 }
 
-KNOWLEDGE_FILE_IGNORE = { 
+KNOWLEDGE_FILE_IGNORE = [
     "site-packages/",
     "node_modules/",
     "venv/",
@@ -69,7 +69,7 @@ KNOWLEDGE_FILE_IGNORE = {
     ".dockerignore",
     ".git",
     ".github"
-}
+]
 
 KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE=0.7
 

@@ -19,7 +19,8 @@ from gpt_engineer.api.engine import (
     select_afefcted_files_from_knowledge, 
     improve_existing_code,
     check_knowledge_status,
-    run_edits
+    run_edits,
+    create_project
 )
 
 class GPTEngineerAPI:
@@ -51,11 +52,16 @@ class GPTEngineerAPI:
 
         @app.middleware("http")
         async def add_gpt_engineer_settings(request: Request, call_next):
-            project_path = request.query_params.get("project_path")
-            settings = GPTEngineerSettings.from_env()
-            if project_path:
-                settings = GPTEngineerSettings.from_project(project_path)
-            logging.info(f"Request settings {settings.__dict__}")
+            logging.info(f"Request {request.url}")
+            gpteng_path = request.query_params.get("gpteng_path")
+            settings = None
+            if not gpteng_path:
+                raise ValueError('Missing gpteng_path')
+            try:
+                settings = GPTEngineerSettings.from_project(gpteng_path)
+                logging.info(f"Request settings {settings.__dict__}")
+            except:
+                pass
             request.state.settings = settings
             response = await call_next(request)
             return response
@@ -139,7 +145,8 @@ class GPTEngineerAPI:
 
         @app.get("/api/settings")
         def settings_check(request: Request):
-            return request.state.settings.__dict__
+            settings = request.state.settings
+            return GPTEngineerSettings.from_project(settings.gpteng_path).__dict__
 
         @app.put("/api/settings")
         async def save_settings(request: Request):
@@ -147,5 +154,17 @@ class GPTEngineerAPI:
             GPTEngineerSettings.from_json(settings).save_project()
             
             return settings_check(request)
+
+        @app.get("/api/project/create")
+        def project_create(request: Request):
+            settings = request.state.settings
+            if not settings:
+                gpteng_path = request.query_params.get("gpteng_path")
+                settings = GPTEngineerSettings()
+                settings.gpteng_path = gpteng_path
+                settings.project_path = gpteng_path
+            create_project(settings=settings)
+            return "ok"
+
 
         return app
