@@ -1,4 +1,6 @@
 from gpt_engineer.core.settings import GPTEngineerSettings
+from gpt_engineer.api.model import Chat
+from typing import List
 
 class TaskManager:
 
@@ -13,10 +15,10 @@ class TaskManager:
         return task_file
 
     def read_task(self, task_id):
-        # TODO: Implement method to read a task
+        pass
 
     def update_task(self, task_id, chats: List[Chat]):
-        # TODO: Implement method to update a task
+        pass
 
     def delete_task(self, task_id):
-        # TODO: Implement method to delete a task
+        pass
