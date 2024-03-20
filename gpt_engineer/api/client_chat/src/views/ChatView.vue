@@ -31,6 +31,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
             <ChatEntry :message="message"
               @edit="onEditMessage(ix)"
               @remove="removeMessage(ix)"
+              @hide="toggleHide(ix)"
               @run-edit="runEdit"
             />
           </div>
@@ -193,11 +194,18 @@ export default {
       this.editMessage = message.content
       this.editor.innerText = this.editMessage
       this.editMessageId = ix
+      this.saveChat()
+    },
+    toggleHide(ix) {
+      const message = this.chat.messages[ix]
+      message.hide = !message.hide 
+      this.saveChat()
     },
     onUpdateMessage () {
       const message = this.chat.messages[this.editMessageId]
       message.content = this.editMessage
       this.onResetEdit()
+      this.saveChat()
     },
     onResetEdit() {
       if (this.editMessageId !== null) {

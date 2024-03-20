@@ -15,6 +15,7 @@ class Chat(BaseModel):
 class Message(BaseModel):
     role: str
     content: str
+    hide: bool
 
 class Logprobs(BaseModel):
     tokens: List[str]

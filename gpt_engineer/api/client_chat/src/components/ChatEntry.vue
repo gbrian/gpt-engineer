@@ -1,10 +1,11 @@
 <template>
   <div :class="['mb-4 relative w-full relative',
-      message.role === 'user' ? 'chat-start': 'chat-end'
+      message.role === 'user' ? 'chat-start': 'chat-end',
     ]" >
     <div :class="['border border-slate-300/20 p-2 rounded-md prose max-w-full group w-full',
       message.role === 'user' ? '': '',
-      message.collapse ? 'h-40 overflow-hidden': 'h-fit'
+      message.collapse ? 'h-40 overflow-hidden': 'h-fit',
+      message.hide ? 'text-slate-200/20': ''
     ]"
       @dblclick="message.collapse = !message.collapse"
     >
@@ -21,11 +22,22 @@
               <i class="fa-solid fa-chevron-down"></i>
             </span>
           </button>
+          <button class="btn btn-xs" @click="$emit('hide')">
+            <span v-if="message.hide">
+              <i class="fa-solid fa-eye"></i>
+            </span>
+            <span v-else>
+              <i class="fa-solid fa-eye-slash"></i>
+            </span>
+          </button>
           <button class="btn btn-error btn-xs" @click="$emit('remove')">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
-        <div class="badge bagde-outline badge-xs font-bold">
+        <div class="badge bagde-outline badge-xs font-bold flex gap-2">
+          <span v-if="message.hide">
+            <i class="fa-solid fa-eye-slash"></i>
+          </span>
           <div v-if="message.role ==='user'">You</div>
           <div v-else>gpt-engineer</div>
         </div>
