@@ -133,11 +133,12 @@ class GPTEngineerAPI:
             ai = self.get_ai(settings)
             # Perform search on Knowledge using the input
             # Return the search results as response
-            messages, edits, errors = improve_existing_code(ai=ai, dbs=dbs, chat=chat, settings=settings)
+            messages, edits, errors, affected_files = improve_existing_code(ai=ai, dbs=dbs, chat=chat, settings=settings)
             return {
               "messages": messages,
               "edits": edits,
-              "error": errors
+              "error": errors,
+              "affected_files": affected_files
             }
 
         @app.post("/api/run/edit")

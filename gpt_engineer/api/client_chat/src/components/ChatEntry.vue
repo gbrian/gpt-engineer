@@ -30,6 +30,9 @@
               <i class="fa-solid fa-eye-slash"></i>
             </span>
           </button>
+          <button class="btn btn-info btn-xs" @click="showDoc = !showDoc">
+            <i class="fa-solid fa-code"></i>
+          </button>
           <button class="btn btn-error btn-xs" @click="$emit('remove')">
             <i class="fa-solid fa-trash"></i>
           </button>
@@ -63,7 +66,8 @@ export default {
   props: ['message'],
   data () {
     return {
-      codeBlocks: []
+      codeBlocks: [],
+      showDoc: false
     }
   },
   mounted () {
@@ -80,12 +84,17 @@ export default {
   },
   computed: {
     html () {
-      try {
-        return md.render(this.message.content)
-      } catch (ex) {
-        console.error("Message can't be rendered", this.message)
+      if (!this.showDoc) {
+        try {
+          return md.render(this.message.content)
+        } catch (ex) {
+          console.error("Message can't be rendered", this.message)
+        }
       }
-      return md.render("```json\n" + JSON.stringify(this.message, 2, null) + "\n```")
+      return this.showDocPreview
+    },
+    showDocPreview () {
+      return md.render("```json\n" + JSON.stringify(this.message, null, 2) + "\n```")
     }
   },
   methods: {

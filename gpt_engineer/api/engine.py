@@ -48,10 +48,11 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
           for m in chat.messages[:-1] if not hasattr(m, "hide")
     ]
 
-    for file_path in select_afefcted_files_from_knowledge(ai=ai,
+    affected_files = select_afefcted_files_from_knowledge(ai=ai,
                                                         dbs=dbs,
                                                         query=query,
-                                                        settings=settings):
+                                                        settings=settings)
+    for file_path in affected_files:
         with open(file_path, 'r') as f:
             doc = Document(
               page_content=f.read(),
@@ -75,7 +76,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
           errors.append(error)
     except Exception as ex:
       errors.append(str(ex))
-    return (messages, edits, errors)
+    return (messages, edits, errors, affected_files)
 
 def check_knowledge_status(dbs: DBs):
     loader = dbs.knowledge.loader

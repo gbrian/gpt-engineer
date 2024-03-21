@@ -101,11 +101,7 @@ export default {
       }
     },
     getProjectPath () {
-      const gptengPath = window.location.search
-              .slice(1).split("&")
-              .map(p => p.split("="))
-              .find(([k, v]) => k === "gpteng_path")
-      return gptengPath ? decodeURIComponent(gptengPath[1]) : null
+      return API.lastSettings?.gpteng_path
     },
     onOpenProject () {
       window.location = `${window.location.origin}?gpteng_path=${encodeURIComponent(this.newProject)}`
