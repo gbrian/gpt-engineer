@@ -20,7 +20,7 @@ const readLastSettings = () => {
   } catch {}
   return null
 }
-const query = () => `gpteng_path=${API.lastSettings?.gpteng_path}`
+const query = () => `gpteng_path=${encodeURIComponent(API.lastSettings?.gpteng_path)}`
 export const API = {
     liveRequests: 0,
     get (url) {
