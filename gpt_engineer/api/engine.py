@@ -45,7 +45,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
         SystemMessage(content=setup_sys_prompt_existing_code(dbs)),
     ] + [ 
         HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) \
-          for m in chat.messages[:-1] if not m.hide
+          for m in chat.messages[:-1] if not hasattr(m, "hide")
     ]
 
     for file_path in select_afefcted_files_from_knowledge(ai=ai,
@@ -93,7 +93,7 @@ def run_edits(ai: AI, dbs: DBs, chat: Chat):
     errors = []
     total_edits = []
     for message in chat.messages:
-      if message.hide:
+      if hasattr(message, "hide"):
         continue
       try:
         edits = parse_edits(message.content)

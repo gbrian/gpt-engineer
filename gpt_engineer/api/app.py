@@ -119,7 +119,7 @@ class GPTEngineerAPI:
             # Perform search on Knowledge using the input
             # Return the search results as response
             user_input = chat.messages[-1].content
-            messages = [m.content for m in chat.messages[:-1] if not m.hide]
+            messages = [m.content for m in chat.messages[:-1] if not hasattr(m, "hide")]
             response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages, score=float(settings.knowledge_context_cutoff_relevance_score))
             return {
               "message": response,
