@@ -290,7 +290,12 @@ def apply_edit(edit: Edit, workspace: DB):
             edit.before, edit.after
         )  # existing file
         if curr_file == workspace[filename]:
-            return False, "change not applied to file"
+            if edit.before in curr_file:
+                workspace[filename] = curr_file.replace(
+                    edit.before.trim(), edit.after
+                )  # existing file
+            if curr_file == workspace[filename]:
+                return False, "change not applied to file"
     return True, None
 
 
