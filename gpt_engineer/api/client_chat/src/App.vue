@@ -11,7 +11,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <i class="fa-solid fa-location-dot"></i> {{ gptengPath }}
     </div>
     <progress :class="['progress progress-success w-full', liveRequests ? '': 'opacity-0']"></progress>
-    <div class="alert alert-warning flex gap-2 justify-center" v-if="!gptengPath">
+    <div class="alert alert-warning flex gap-2 justify-center" v-if="!lastSettings">
       No project found at <span class="">"{{gptengPath}}"</span>
       <button class="btn btn-sm" v-if="gptengPath" @click="createNewProject">
         <i class="fa-solid fa-plus"></i> New
@@ -20,7 +20,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-regular fa-folder-open"></i> Open
       </button>
     </div>
-    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="gptengPath">
+    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="lastSettings">
       <a role="tab" :class="['tab', tabIx === 0 && 'tab-active']"
         @click="tabIx = 0"
       >
@@ -49,7 +49,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         </div>
       </a>
     </div>
-    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="gptengPath">
+    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="lastSettings">
       <ChatViewVue v-if="tabIx === 0" />
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
@@ -77,13 +77,15 @@ export default {
       newProject: null,
       gptengPath: null,
       showOpenProjectModal: false,
-      liveRequests: null
+      liveRequests: null,
+      lastSettings: null
     }
   },
-  created () {
-    this.init()
+  async created () {
+    await this.init()
     setInterval(() => {
       this.liveRequests = API.liveRequests
+      this.lastSettings = API.lastSettings
     }, 200)
   },
   computed: {
