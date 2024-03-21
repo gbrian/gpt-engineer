@@ -2,11 +2,11 @@ import axios from 'axios'
 
 import chatManager from './chatManager';
 
-
-const gpteng_path = decodeURIComponent(window.location.search
-                .slice(1).split("&")
-                .map(p => p.split("="))
-                .find(([k, v]) => k === "gpteng_path") || "")
+const gpteng_key = window.location.search
+                    .slice(1).split("&")
+                    .map(p => p.split("="))
+                    .find(([k, v]) => k === "gpteng_path")
+const gpteng_path = decodeURIComponent(gpteng_key ? gpteng_key[1] : "")
 
 const readLastSettings = () => {
   if (gpteng_path) {
