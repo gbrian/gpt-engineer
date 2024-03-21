@@ -1,7 +1,7 @@
 #!/bin/bash
 VENV_PATH=$PWD/.venv
-WEB_PORT=${1:-8001}
-API_PORT=${1:-8000}
+WEB_PORT=${WEB_PORT:-8001}
+API_PORT=${API_PORT:-8000}
 if [ ! -d "$VENV_PATH" ]; then
   echo "Installing gpt-engineer at $VENV_PATH"
   codx nodejs
