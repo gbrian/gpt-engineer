@@ -56,7 +56,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
           @paste="onContentPaste"
         >
         </div>
-        <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage" :disabled="!editMessage">
+        <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage">
           <i class="fa-solid fa-comment"></i>
         </button>
         <button class="btn btn-warning btn-sm mb-1" @click="improveCode">
