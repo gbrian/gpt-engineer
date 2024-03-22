@@ -76,6 +76,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
           errors.append(error)
     except Exception as ex:
       errors.append(str(ex))
+
     return (messages, edits, errors, affected_files)
 
 def check_knowledge_status(dbs: DBs):

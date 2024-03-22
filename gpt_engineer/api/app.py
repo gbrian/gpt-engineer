@@ -63,6 +63,7 @@ class GPTEngineerAPI:
             try:
                 settings = GPTEngineerSettings.from_project(gpteng_path)
                 logging.info(f"Request settings {settings.__dict__}")
+                get_dbs(settings).knowledge.reload()
             except:
                 pass
             request.state.settings = settings
