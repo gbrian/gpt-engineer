@@ -65,7 +65,11 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
     messages = ai.next(messages, step_name=curr_fn())
 
     response = messages[-1].content
-    edits = parse_edits(response)
+    edits = []
+    try:
+      edits = parse_edits(response)
+    except:
+      pass
     affected_files = dict.fromkeys([edit.filename for edit in edits])
 
     errors = []
