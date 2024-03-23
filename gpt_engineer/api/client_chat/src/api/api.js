@@ -90,6 +90,20 @@ export const API = {
       edit (chat) {
         return API.post('/api/run/edit?' + query(), chat)
       }
+    },
+    profiles: {
+      list () {
+        return API.get('/api/profiles?' + query())
+      },
+      load (name) {
+        return API.get(`/api/profiles/${name}?` + query())
+      },
+      save (profile) {
+        return API.post(`/api/profiles?` + query(), profile)
+      },
+      delete (name) {
+        return API.delete(`/api/profiles/${name}?` + query())
+      }
     }
   }
 

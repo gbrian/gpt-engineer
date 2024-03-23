@@ -9,13 +9,15 @@ from gpt_engineer.api.model import (
     Settings,
     KnowledgeReloadPath,
     KnowledgeSearch,
-    KnowledgeDeleteSources
+    KnowledgeDeleteSources,
+    Profile
 )
 from gpt_engineer.api.app_service import clarify_business_request
 
 from gpt_engineer.core.settings import GPTEngineerSettings 
 from gpt_engineer.core import build_dbs, build_ai
 from gpt_engineer.core.dbs import DBs
+from gpt_engineer.api.profile_manager import ProfileManager
 
 from gpt_engineer.core.step.chat import ai_chat
 from gpt_engineer.api.engine import (
@@ -177,6 +179,28 @@ class GPTEngineerAPI:
                 settings.project_path = gpteng_path
             create_project(settings=settings)
             return "ok"
+
+        @app.get("/api/profiles")
+        def create_profile(request: Request):
+            settings = request.state.settings
+            dbs = dbs = self.get_dbs(settings)
+            return ProfileManager(settings=settings).list_profiles()
+
+        @app.post("/api/profiles")
+        def create_profile(profile: Profile, request: Request):
+            settings = request.state.settings
+            return ProfileManager(settings=settings).create_profile(profile)
+            
+        @app.get("/api/profiles/{profile_name}")
+        def read_profile(profile_name, request: Request):
+            settings = request.state.settings
+            return  ProfileManager(settings=settings).read_profile(profile_name)
+
+        @app.delete("/api/profiles/{profile_name}")
+        def delete_profile(profile_name, request: Request):
+            settings = request.state.settings
+            ProfileManager(settings=settings).delete_profile(profile_name)
+            return
 
 
         return app

@@ -2,6 +2,7 @@
 import { API } from './api/api'
 import ChatViewVue from "./views/ChatView.vue";
 import KnowledgeViewVue from './views/KnowledgeView.vue';
+import ProfileViewVue from './views/ProfileView.vue';
 import ProjectSettingsVue from "./views/ProjectSettings.vue";
 </script>
 
@@ -35,11 +36,17 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-solid fa-book"></i>
         Knowledge
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 && 'tab-active']"
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 2 && 'tab-active']"
         @click="tabIx = 2"
       >
         <i class="fa-solid fa-brain"></i>
         GPT Settings
+      </a>
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 3 && 'tab-active']"
+        @click="tabIx = 3"
+      >
+      <i class="fa-solid fa-id-card-clip"></i>
+        Profiles
       </a>
       <a class="tab">
         <div>
@@ -53,6 +60,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <ChatViewVue v-if="tabIx === 0" />
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
+      <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 3" />
     </div>
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">

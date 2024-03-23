@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from typing import List, Dict, Union
 
@@ -10,12 +10,15 @@ class Message(BaseModel):
     content: str
 
 class Chat(BaseModel):
+    id: str = Field(default='')
+    name: str = Field(default='')
+    profile: str = Field(default='')
     messages: List[Message]
 
 class Message(BaseModel):
     role: str
     content: str
-    hide: bool
+    hide: bool = Field(default=False)
 
 class Logprobs(BaseModel):
     tokens: List[str]
@@ -47,6 +50,10 @@ class KnowledgeDeleteSources(BaseModel):
 class KnowledgeSearch(BaseModel):
     search_term: str
     search_type: str
+
+class Profile(BaseModel):
+    name: str
+    content: str
 
 class Settings(BaseModel, GPTEngineerSettings):
   pass

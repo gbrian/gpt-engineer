@@ -21,7 +21,8 @@ def create_project(settings=GPTEngineerSettings):
     os.makedirs(settings.gpteng_path, exist_ok=True)
     settings.save_project()
 
-def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
+
+def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
     documents = dbs.knowledge.search(query)
     if documents:
         # Filter out irrelevant documents based on a relevance score
@@ -30,12 +31,16 @@ def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings:
                                               documents,
                                               score=float(settings.knowledge_context_cutoff_relevance_score))
         relevant_documents = [doc for doc in valid_documents if doc]
-        file_list = [str(Path(doc.metadata["source"]).absolute())
-                     for doc in relevant_documents]
-        file_list = list(dict.fromkeys(file_list))  # Remove duplicates
-
-        return file_list
+        return relevant_documents
     return []
+
+def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
+    relevant_documents = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=query, settings=settings)
+    file_list = [str(Path(doc.metadata["source"]).absolute())
+                  for doc in relevant_documents]
+    file_list = list(dict.fromkeys(file_list))  # Remove duplicates
+
+    return file_list
 
 
 def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSettings):
@@ -48,26 +53,21 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
           for m in chat.messages[:-1] if not hasattr(m, "hide")
     ]
 
-    affected_files = select_afefcted_files_from_knowledge(ai=ai,
+    relevant_documents = select_afefcted_documents_from_knowledge(ai=ai,
                                                         dbs=dbs,
                                                         query=query,
                                                         settings=settings)
-    for file_path in affected_files:
-        with open(file_path, 'r') as f:
-            doc = Document(
-              page_content=f.read(),
-              metadata={
-                "source": file_path,
-                "laguage": file_path.split(".")[-1] if "." in file_path else ""
-              })
-            messages.append(HumanMessage(content=document_to_context(doc)))
+    for document in relevant_documents:
+        doc_context = document_to_context(doc)
+        messages.append(HumanMessage(content=doc_context))
 
     messages.append(HumanMessage(content=query))
     messages = ai.next(messages, step_name=curr_fn())
 
     response = messages[-1].content
     edits = parse_edits(response)
-
+    affected_files = dict.fromkeys([edit.filename for edit in edits])
+    
     errors = []
     try:
       for edit in edits:

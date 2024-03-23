@@ -6,6 +6,10 @@ import ChatEntry from '@/components/ChatEntry.vue'
     <div class="text-xl flex gap-2 items-center">
       CODX
       <input type="text" class="input input-xs input-bordered" v-model="chat.name" />
+      <select class="select select-xs select-bordered" v-model="profileName">
+        <option value="" selected>--</option>
+        <option :value="p" v-for="p in profiles" :key="p">{{ p }}</option>
+      </select>
       <button class="btn btn-sm" @click="saveChat">
         <i class="fa-solid fa-floppy-disk"></i>
       </button>
@@ -77,7 +81,8 @@ export default {
       waiting: false,
       editMessage: null,
       editMessageId: null,
-      chats: []
+      chats: [],
+      profiles: null
     }
   },
   async created () {
@@ -86,6 +91,7 @@ export default {
     if (!this.chat) {
       this.chat = API.chatManager.newChat()
     }
+    this.loadProfiles()
   },
   computed: {
     editor () {
@@ -93,6 +99,10 @@ export default {
     },
   },
   methods: {
+    async loadProfiles () {
+      const { data } = await API.profiles.list()
+      this.profiles = data
+    },
     newChat () {
       this.chat = API.chatManager.newChat()
     },
@@ -123,7 +133,7 @@ export default {
         () => API.chat.message(this.chat),
         ({ message, search_results }) => {
           return `${message}
-            ${search_results.map(r => JSON.stringify(r))}
+            ${search_results?.map(r => JSON.stringify(r))}
           `
         }
       )
