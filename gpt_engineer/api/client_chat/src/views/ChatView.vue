@@ -39,7 +39,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
               @run-edit="runEdit"
             />
           </div>
-          <div class="anchor"></div>
+          <div class="anchor" ref="anchor"></div>
         </div>
       </div>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
@@ -121,6 +121,7 @@ export default {
         })
         this.editMessage = null
         this.editor.innerText = ""
+        this.$refs.anchor.scrollIntoView()
       }
     },
     async sendMessage () {
@@ -188,6 +189,7 @@ export default {
           content: formater(data),
           data
         })
+        this.$refs.anchor.scrollIntoView()
       } catch (ex) {
         this.addMessage({
           role: 'assistant',
