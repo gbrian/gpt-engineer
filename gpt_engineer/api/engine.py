@@ -57,7 +57,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
                                                         dbs=dbs,
                                                         query=query,
                                                         settings=settings)
-    for document in relevant_documents:
+    for doc in relevant_documents:
         doc_context = document_to_context(doc)
         messages.append(HumanMessage(content=doc_context))
 
@@ -67,7 +67,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
     response = messages[-1].content
     edits = parse_edits(response)
     affected_files = dict.fromkeys([edit.filename for edit in edits])
-    
+
     errors = []
     try:
       for edit in edits:
