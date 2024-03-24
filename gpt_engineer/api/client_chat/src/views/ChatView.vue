@@ -100,8 +100,10 @@ export default {
   },
   methods: {
     async loadProfiles () {
-      const { data } = await API.profiles.list()
-      this.profiles = data
+      try {
+        const { data } = await API.profiles.list()
+        this.profiles = data
+      } catch {}
     },
     newChat () {
       this.chat = API.chatManager.newChat()
