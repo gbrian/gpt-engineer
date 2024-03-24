@@ -25,7 +25,8 @@ from gpt_engineer.api.engine import (
     improve_existing_code,
     check_knowledge_status,
     run_edits,
-    create_project
+    create_project,
+    select_afefcted_documents_from_knowledge
 )
 
 class GPTEngineerAPI:
@@ -98,15 +99,30 @@ class GPTEngineerAPI:
             return { "ok": 1 }
 
         @app.post("/api/knowledge/reload-search")
-        def knowledge_reload_path(knowledgeSearch: KnowledgeSearch, request: Request):
-            args = request.state.settings
-            dbs = self.get_dbs(args)
+        def knowledge_reload_path(knowledge_search: KnowledgeSearch, request: Request):
+            settings = request.state.settings
+            if knowledge_search.document_search_type:
+                settings.knowledge_search_type = knowledge_search.document_search_type
+            if knowledge_search.document_count:
+                settings.knowledge_search_document_count = knowledge_search.document_count
+            if knowledge_search.document_cutoff_score:
+                settings.knowledge_context_cutoff_relevance_score = knowledge_search.document_cutoff_score
+            
+            dbs = self.get_dbs(settings)
+            ai = self.get_ai(settings)
             documents = []
-            if knowledgeSearch.search_type == "embeddings":
-                documents = dbs.knowledge.search(knowledgeSearch.search_term)
-            if knowledgeSearch.search_type == "source":
-                documents = dbs.knowledge.search_in_source(knowledgeSearch.search_term)
-            return { "documents": documents }
+            if knowledge_search.search_type == "embeddings":
+                documents = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=knowledge_search.search_term, settings=settings)
+            if knowledge_search.search_type == "source":
+                documents = dbs.knowledge.search_in_source(knowledge_search.search_term)
+            return { 
+                "documents": documents, 
+                "settings": {
+                    "knowledge_search_type": settings.knowledge_search_type,
+                    "knowledge_search_document_count": settings.knowledge_search_document_count,
+                    "knowledge_context_cutoff_relevance_score": settings.knowledge_context_cutoff_relevance_score 
+                }
+            }
 
         @app.get("/api/knowledge/status")
         def knowledge_status(request: Request):

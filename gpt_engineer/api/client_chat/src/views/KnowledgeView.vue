@@ -13,8 +13,20 @@ import MarkdownVue from '@/components/Markdown.vue'
     <div class="flex flex-col gap-2">
       <div class="text-xs flex gap-2 items-center">
         <i class="fa-solid fa-sliders"></i>
-        <div class="badge">knowledge_search_type: {{ API.lastSettings.knowledge_search_type }}</div>
-        <div class="badge">knowledge_search_document_count: {{ API.lastSettings.knowledge_search_document_count }}</div>
+        <div class="flex gap-2 items-center">Search type: 
+          <select v-model="documentSearchType" class="w-20 select-bordered select select-xs">
+            <option value="similarity">similarity</option>
+          </select>
+        </div>
+        <div class="flex gap-2 items-center">Document count:
+          <input type="text" v-model="documentCount" class="w-20 input-bordered input input-xs  max-w-xs" />
+        </div>
+        <div class="flex gap-2 items-center">Document score (0-1):
+          <input type="text" v-model="cutoffScore" class="w-20 input-bordered input input-xs  max-w-xs" />
+        </div>
+        <button class="btn btn-sm" @click="saveKnowledgeSettings">
+          <i class="fa-solid fa-floppy-disk"></i>
+        </button>
       </div>
       <label class="input input-bordered flex items-center gap-2">
         <select class="select select-xs w-20" v-model="searchType">
@@ -26,11 +38,16 @@ import MarkdownVue from '@/components/Markdown.vue'
           v-model="searchTerm" />
         <i class="fa-solid fa-magnifying-glass" @click="onKnowledgeSearch"></i>
       </label>
+      <div>{{ searchResults?.settings }}</div>
       <div class="grid grid-cols-3 gap-2">
-        <span class="badge badge-info cursor-pointer"
+        <span class="border p-2 border-info cursor-pointer rounded-md bg-base-300 indicator"
             v-for="doc,ix in searchResults?.documents" :key="ix"
             @click="showDoc = doc"
         >
+          <span class="indicator-item badge badge-primary flex gap-2">
+            <i class="fa-solid fa-gauge"></i>
+            {{ doc.metadata.relevance_score }}
+          </span>
           {{ doc.metadata.source.split("/").reverse().slice(0, 2).join(" ") }}
         </span>
       </div>
@@ -140,7 +157,10 @@ export default {
       searchTerm: null,
       searchResults: null,
       showDoc: null,
-      searchType: "embeddings"
+      searchType: "embeddings",
+      documentSearchType: API.lastSettings.knowledge_search_type,
+      cutoffScore: API.lastSettings.knowledge_context_cutoff_relevance_score,
+      documentCount: API.lastSettings.knowledge_search_document_count
     }
   },
   created() {
@@ -199,14 +219,33 @@ export default {
       this.loading = false
     },
     async onKnowledgeSearch () {
-      const { searchTerm, searchType } = this
-      const { data } = await API.knowledge.search({ searchTerm, searchType })
+      const { searchTerm,
+              searchType,
+              documentSearchType,
+              cutoffScore,
+              documentCount
+      } = this
+      const { data } = await API.knowledge.search({ searchTerm,
+                                                    searchType,
+                                                    documentSearchType,
+                                                    cutoffScore,
+                                                    documentCount
+                                                  })
       this.searchResults = data 
     },
     async unIndexFile(doc) {
       await API.knowledge.delete([doc.metadata.source])
       this.showDoc = null
       this.onKnowledgeSearch()
+    },
+    async saveKnowledgeSettings () {
+      await API.settings.read()
+      API.settings.write({
+        ...API.lastSettings,
+        knowledge_search_type: this.documentSearchType,
+        knowledge_context_cutoff_relevance_score: this.cutoffScore,
+        knowledge_search_document_count: this.documentCount
+      })
     }
   }
 }

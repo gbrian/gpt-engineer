@@ -71,8 +71,20 @@ export const API = {
       reloadFolder (path) {
         return API.post(`/api/knowledge/reload-path?` + query(), { path })
       },
-      search ({ searchTerm: search_term, searchType: search_type }) {
-        return API.post(`/api/knowledge/reload-search?` + query(), { search_term, search_type })
+      search ({ 
+          searchTerm: search_term,
+          searchType: search_type,
+          documentSearchType: document_search_type,
+          cutoffScore: document_cutoff_score,
+          documentCount: document_count
+      }) {
+        return API.post(`/api/knowledge/reload-search?` + query(), {
+            search_term,
+            search_type,
+            document_search_type,
+            document_cutoff_score,
+            document_count
+        })
       },
       delete (sources) {
         return API.post(`/api/knowledge/delete?` + query(), { sources })  

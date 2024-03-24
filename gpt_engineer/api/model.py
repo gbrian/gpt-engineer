@@ -49,7 +49,10 @@ class KnowledgeDeleteSources(BaseModel):
 
 class KnowledgeSearch(BaseModel):
     search_term: str
-    search_type: str
+    search_type: str = Field(default=None)
+    document_search_type: str = Field(default=None)
+    document_count: int = Field(default=None)
+    document_cutoff_score: float = Field(default=None)
 
 class Profile(BaseModel):
     name: str
