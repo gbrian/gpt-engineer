@@ -52,14 +52,14 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </div>
       </div>
       <div class="flex gap-2 items-end">
-        <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
+        <code :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': ''
         ]" contenteditable="true"
           ref="editor" @input="onMessageChange"
           @keydown.esc="onResetEdit"
           @paste="onContentPaste"
         >
-        </div>
+      </code>
         <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage">
           <i class="fa-solid fa-comment"></i>
         </button>
@@ -236,12 +236,6 @@ export default {
       this.newChat()
     },
     onContentPaste (ev) {
-      // Reset format
-      requestAnimationFrame(() => {
-        const text = this.editor.innerText
-        this.editor.innerHTML = ""
-        this.editor.innerText = text
-      })
     },
     loadChat (newChat) {
       this.chat = newChat
