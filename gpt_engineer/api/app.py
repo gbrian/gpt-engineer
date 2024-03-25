@@ -197,7 +197,7 @@ class GPTEngineerAPI:
             return "ok"
 
         @app.get("/api/profiles")
-        def create_profile(request: Request):
+        def list_profile(request: Request):
             settings = request.state.settings
             dbs = dbs = self.get_dbs(settings)
             return ProfileManager(settings=settings).list_profiles()
