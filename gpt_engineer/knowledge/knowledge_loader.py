@@ -26,11 +26,10 @@ class KnowledgeLoader:
         logger.debug(
             f'KnowledgeLoader initialized {(self.path)}')
 
-    def should_index_doc(self, file_path, last_update, current_sources=None):
+    def should_index_doc(self, file_path, last_update):
         if not last_update:
             return True
-        if current_sources and file_path not in current_sources:
-            return True
+        
         last_doc_update = os.path.getmtime(file_path)
         if last_doc_update > last_update:
           return True
@@ -67,25 +66,34 @@ class KnowledgeLoader:
             versioned_files = self._run_git_command(['git', 'ls-files'])
             # Unversioned files
             unversioned_files = self._run_git_command(['git', 'ls-files', '--others', '--exclude-standard'])
-
             # joining versioned and unversioned file paths
             full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files]
-
+                        
             if self.settings.knowledge_external_folders:
                 for path in self.settings.knowledge_external_folders.split(","):
                     external_file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*")]
                     full_file_paths = full_file_paths + external_file_paths
 
         def isValidFile(file):
+            if not os.path.isfile(file):
+                return False
+
             if path:
                 if not (path in file):
+                    logging.info(f"FILE NOT IN PATH {file}")
                     return False
             
             file_errors = [err for err in self.settings.knowledge_file_ignore.split(",") if err in file]
             if file_errors:
+                logging.info(f"IGNORE FILE {file}")
                 return False
             
-            if not self.should_index_doc(file_path=file, last_update=last_update, current_sources=[]):
+            if current_sources and file not in current_sources:
+                # New file
+                return True
+
+            if not self.should_index_doc(file_path=file, last_update=last_update):
+                logging.info(f"DONT INDEX FILE {file}")
                 return False
             
             return True

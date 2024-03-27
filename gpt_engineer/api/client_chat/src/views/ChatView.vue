@@ -37,6 +37,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
               @remove="removeMessage(ix)"
               @hide="toggleHide(ix)"
               @run-edit="runEdit"
+              @copy="onCopy(message)"
             />
           </div>
           <div class="anchor" ref="anchor"></div>
@@ -241,6 +242,14 @@ export default {
     },
     loadChat (newChat) {
       this.chat = newChat
+    },
+    onCopy (message) {
+      navigator.permissions.query({name: "clipboard-read"}).then(result => {
+          if (result.state == "granted" || result.state == "prompt") {
+            navigator.clipboard.writeText(message.content)
+          }
+      })
+      .catch(console.error);
     }
   }
 }

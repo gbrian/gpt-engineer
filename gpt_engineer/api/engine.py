@@ -11,6 +11,8 @@ from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.core.utils import curr_fn, document_to_context
 from gpt_engineer.tasks.task_manager import TaskManager
 
+from gpt_engineer.api.profile_manager import ProfileManager
+
 from gpt_engineer.api.model import Chat
 from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
@@ -43,11 +45,13 @@ def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings:
     return file_list
 
 
-def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSettings):
+def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSettings, profiles: [str]=["philosophy","software_developer"]):
 
     query = chat.messages[-1].content
+    profile_manager = ProfileManager(settings=settings)
+    syatem_comtent = "\n".join([profile_manager.read_profile(profile).content for profile in profiles])
     messages = [
-        SystemMessage(content=setup_sys_prompt_existing_code(dbs)),
+        SystemMessage(content=syatem_comtent),
     ] + [ 
         HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) \
           for m in chat.messages[:-1] if not hasattr(m, "hide")
@@ -84,11 +88,14 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
     return (messages, edits, errors, affected_files)
 
 def check_knowledge_status(dbs: DBs):
+    logging.info("check_knowledge_status")
     loader = dbs.knowledge.loader
     last_update = dbs.knowledge.last_update
     status = dbs.knowledge.status()
     all_sources = dbs.knowledge.get_all_sources()
-    pending_files = loader.list_repository_files(last_update=last_update, current_sources=all_sources)
+    pending_files = loader.list_repository_files(
+                        last_update=last_update if all_sources else None,
+                        current_sources=all_sources)
     return {
       "last_update": str(last_update),
       "pending_files": pending_files,

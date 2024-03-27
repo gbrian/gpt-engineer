@@ -75,7 +75,7 @@ class Knowledge:
             logger.debug('Reloading knowledge')
             # Load the knowledge from the filesystem
             current_sources = self.get_all_sources()
-            documents = self.loader.load(last_update=self.last_update,
+            documents = self.loader.load(last_update=self.last_update if current_sources else None,
                                 current_sources=current_sources)
             if documents:
                 self.index_documents(documents)

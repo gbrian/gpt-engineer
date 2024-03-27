@@ -139,6 +139,8 @@ class GPTEngineerAPI:
             # Return the search results as response
             user_input = chat.messages[-1].content
             messages = [m.content for m in chat.messages[:-1] if not hasattr(m, "hide")]
+            philosophy = ProfileManager(settings=settings).read_profile("philosophy").content
+            messages = [philosophy] + messages
             response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages, score=float(settings.knowledge_context_cutoff_relevance_score))
             return {
               "message": response,
