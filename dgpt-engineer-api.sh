@@ -17,16 +17,21 @@ else
     GPT_USER="root"
   fi
 
-  CMD="docker run --rm -it \
+  docker build --progress=plain -t gpt-engineer -f docker/Dockerfile .
+
+  CMD="docker run -d -it \
     -u $GPT_USER \
     -e DEBUG=${DEBUG:-1} \
     -p $PORT:8001 \
-    ${VOLUME_PATHS}
-    -v /root/codx-cli:/gpt \
+    -v $PWD:$PWD \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    debian ls -l /gpt"
+    $VOLUME_PATHS \
+    -w "$PWD" \
+    --name gpt-engineer gpt-engineer $PWD/gpt-web.sh"
 
   echo "$CMD"
-
+  echo "Remove running container"
+  docker rm -f gpt-engineer
   $CMD
+  docker logs -f gpt-engineer
 fi

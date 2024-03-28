@@ -2,13 +2,11 @@ import os
 import logging
 from datetime import datetime
 
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileModifiedEvent
 from gpt_engineer.core.settings import GPTEngineerSettings
 
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
 
-class FileWatchManager(FileSystemEventHandler):
+class FileWatchManager():
     def __init__(self, project_paths: [GPTEngineerSettings], callback):
         self.project_paths = project_paths
         self.event_handler = self

@@ -9,12 +9,12 @@ from langchain.schema import (
     HumanMessage
 )
 
-client = OpenAI(
-    api_key=OPENAI_API_KEY,
-    base_url=OPENAI_API_BASE
-)
-
 class OpenAI_AI:
+    def __init__(self):
+        self.client = OpenAI(
+            api_key=OPENAI_API_KEY,
+            base_url=OPENAI_API_BASE
+        )
 
     def convert_message(self, gpt_message: Union[AIMessage, HumanMessage]): 
         if gpt_message.type == "ia":
@@ -23,7 +23,7 @@ class OpenAI_AI:
 
     def chat_completions(self, messages, config={}):
         openai_messages = [self.convert_message(msg) for msg in messages]
-        response = client.chat.completions.create(
+        response = self.client.chat.completions.create(
             model=config.get("model", MODEL),
             temperature=config.get("temperature", TEMPERATURE),
             messages=openai_messages,

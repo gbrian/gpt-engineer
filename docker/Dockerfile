@@ -1,20 +1,15 @@
-# Start from a Python 3.10 image
 FROM debian
 
-# Set the working directory in the container to /app
-WORKDIR /app
+RUN apt-get update && apt-get install -y curl sudo procps
 
-# Install Node.js
-RUN apt-get update && apt-get install -y curl
+RUN curl -sL "https://raw.githubusercontent.com/gbrian/codx-cli/main/codx.sh" | bash -s
+RUN codx nodejs
+RUN codx python_311
 
-# Add the current directory contents into the container at /app
-ADD . .
+ENV NVM_DIR="/root/.nvm"
+RUN . $NVM_DIR/nvm.sh
 
-# Make port 8000 available to the world outside this container
 EXPOSE 8000
-
-# Make port 5000 available to the world outside this container
 EXPOSE 8001
 
-# Run the command to start uVicorn server and Vite server
 CMD ["bash", "/app/gpt-web.sh"]
