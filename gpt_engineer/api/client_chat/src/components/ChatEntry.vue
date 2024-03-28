@@ -7,7 +7,6 @@
       message.collapse ? 'h-40 overflow-hidden': 'h-fit',
       message.hide ? 'text-slate-200/20': ''
     ]"
-      @dblclick="message.collapse = !message.collapse"
     >
       <div>
         <div class="absolute right-2 top-2 group-hover:flex gap-2 z-10 hidden text-wrap">

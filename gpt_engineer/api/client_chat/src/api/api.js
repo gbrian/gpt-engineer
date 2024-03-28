@@ -46,6 +46,12 @@ export const API = {
     project: {
       create() {
         return API.get('/api/project/create?' + query())
+      },
+      watch () {
+        return API.get('/api/project/watch?' + query())
+      },
+      unwatch () {
+        return API.get('/api/project/unwatch?' + query())
       }
     },
     settings: {

@@ -8,8 +8,16 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 
 <template>
   <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2">
-    <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="gptengPath">
-      <i class="fa-solid fa-location-dot"></i> {{ gptengPath }}
+    <div class="flex gap-2 items-center">
+      <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="gptengPath">
+      <i class="fa-solid fa-location-dot"></i> {{ gptengPath }} 
+      </div>
+      <button class="btn" @click="API.project.watch()">
+        Watch
+      </button>
+      <button class="btn" @click="API.project.unwatch()">
+        Unwatch
+      </button>
     </div>
     <progress :class="['progress progress-success w-full', liveRequests ? '': 'opacity-0']"></progress>
     <div class="alert alert-warning flex gap-2 justify-center" v-if="!validProject">

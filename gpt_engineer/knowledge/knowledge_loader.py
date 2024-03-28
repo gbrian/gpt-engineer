@@ -54,7 +54,7 @@ class KnowledgeLoader:
         file_paths = result.stdout.decode('utf-8').split('\n')
         return file_paths
 
-    def list_repository_files(self, last_update, path: str = None, current_sources=None):
+    def list_repository_files(self, last_update = None, path: str = None, current_sources=None):
         logger.debug(f"list_repository_files, last_update: {last_update} path: {path} current_sources: {current_sources}")
         
         full_file_paths = None
@@ -100,3 +100,7 @@ class KnowledgeLoader:
 
         full_file_paths = [file for file in full_file_paths if isValidFile(file) ]
         return full_file_paths
+
+    def list_repository_folders(self):
+        all_files = self.list_repository_files()
+        return list(set([os.path.dirname(file_path) for file_path in all_files]))

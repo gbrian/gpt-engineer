@@ -53,14 +53,14 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </div>
       </div>
       <div class="flex gap-2 items-end">
-        <code :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
+        <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': ''
         ]" contenteditable="true"
           ref="editor" @input="onMessageChange"
           @keydown.esc="onResetEdit"
           @paste="onContentPaste"
         >
-      </code>
+      </div>
         <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage">
           <i class="fa-solid fa-comment"></i>
         </button>

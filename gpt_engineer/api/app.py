@@ -26,8 +26,11 @@ from gpt_engineer.api.engine import (
     check_knowledge_status,
     run_edits,
     create_project,
-    select_afefcted_documents_from_knowledge
+    select_afefcted_documents_from_knowledge,
+    watch_project
 )
+
+WATCH_FOLDERS = []
 
 class GPTEngineerAPI:
     def get_dbs(self, args: GPTEngineerSettings):
@@ -220,5 +223,24 @@ class GPTEngineerAPI:
             ProfileManager(settings=settings).delete_profile(profile_name)
             return
 
+        @app.get("/api/project/watch")
+        def project_watch(request: Request):
+            settings = request.state.settings
+            global WATCH_FOLDERS
+            if settings.gpteng_path not in WATCH_FOLDERS:
+                WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
+                watch_project(project_paths=WATCH_FOLDERS)
+            
+            return { "OK": 1 }
+        
+        @app.get("/api/project/unwatch")
+        def project_unwatch(request: Request):
+            settings = request.state.settings
+            global WATCH_FOLDERS
+            if settings.gpteng_path in WATCH_FOLDERS:
+                WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]
+                watch_project(projects=WATCH_FOLDERS)
+            
+            return { "OK": 1 }
 
         return app

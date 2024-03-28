@@ -4,6 +4,7 @@ WEB_PORT=${WEB_PORT:-8001}
 API_PORT=${API_PORT:-8000}
 if [ ! -d "$VENV_PATH" ]; then
   echo "Installing gpt-engineer at $VENV_PATH"
+  curl -sL "https://raw.githubusercontent.com/gbrian/codx-cli/main/codx.sh" | bash -s
   codx nodejs
   codx python_311
   python3 -m venv $VENV_PATH

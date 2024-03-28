@@ -18,6 +18,22 @@ from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
+from gpt_engineer.core.file_watch_manager import FileWatchManager
+
+FILE_WATCH_MANGER = None
+
+
+def on_project_changed(project_path: str, file_path: str):
+    logging.info(f"Project changed {project_path} - {file_path}")
+
+def watch_project(project_paths: [str]):
+    global FILE_WATCH_MANGER
+    if FILE_WATCH_MANGER:
+        FILE_WATCH_MANGER.stop()
+    FILE_WATCH_MANGER = FileWatchManager(project_paths=project_paths, callback=on_project_changed)
+    FILE_WATCH_MANGER.start()
+
+
 def create_project(settings=GPTEngineerSettings):
     logging.info(f"Create new project {settings.gpteng_path}")
     os.makedirs(settings.gpteng_path, exist_ok=True)

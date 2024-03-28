@@ -35,7 +35,7 @@ import traceback
 import typer
 import sys
 
-from gpt_engineer.core import gtp_engineer
+from gpt_engineer.core import gtp_engineer, gpt_watch
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.db import DB, DBPrompt
 from gpt_engineer.core.dbs import DBs, archive
@@ -135,25 +135,33 @@ def parse_args(
         "--find-files",
         "-f",
         help="Find files affected by the prompt",
+    ),
+    watch: str =  typer.Option(
+        False,
+        "--watch",
+        "-w",
+        help="watches for chanes in a folder",
     )
 ):
-  args = GPTEngineerSettings(**locals())
-  logging.info(f"ARGS {args.__dict__}")
-  if args.api:
-    run_api(args=args)
+  settings = GPTEngineerSettings(**locals())
+  logging.info(f"ARGS {settings.__dict__}")
+  if settings.api:
+    run_api(settings=settings)
+  elif settings.watch:
+    gpt_watch(settings=settings)
   else:
-    run_main(args=args)
+    run_main(settings=settings)
 
-def run_api(args: GPTEngineerSettings):
-    envs = args.to_env()
-    command = f"{' '.join(envs)} uvicorn main:app --host 0.0.0.0 --port {args.port} --reload --reload-dir {args.project_path}"
+def run_api(settings: GPTEngineerSettings):
+    envs = settings.to_env()
+    command = f"{' '.join(envs)} uvicorn main:app --host 0.0.0.0 --port {settings.port} --reload --reload-dir {settings.project_path}"
     logging.info(f"API MODE: {command}")
     os.system(command)
     return
 
-def run_main(args: GPTEngineerSettings):
+def run_main(settings: GPTEngineerSettings):
     while True:
-        gtp_engineer(args)
+        gtp_engineer(settings)
 
         if test:
             print("Starting test execution...")

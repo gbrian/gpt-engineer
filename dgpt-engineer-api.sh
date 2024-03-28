@@ -1,18 +1,32 @@
 #!/bin/bash
-VOLUME_PATH=$PWD
-if [ ! "$PORT" ]; then
- read -p "Port: " PORT
-fi
+PORT=$1
+PROJECT_PATHS=$2
 
-echo "Running gpt-engineer docker at VOLUME: $VOLUME_PATH"
-docker run --rm -it \
-  -u "$(id -u):$(id -g)" \
-  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-  -e OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1} \
-  -e DEBUG=$DEBUG \
-  -e GPT_ENGINEER_METADATA_PATH=$GPT_ENGINEER_METADATA_PATH \
-  -v $VOLUME_PATH:$VOLUME_PATH \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -p $PORT:8000 \
-  --workdir=$VOLUME_PATH \
-  gpt-engineer gpt-engineer $VOLUME_PATH --api --port 8000
+if [ ! "$PORT" ] || [ ! "$PROJECT_PATHS" ]; then
+  echo "USAGE: dgpt-engineer.sh CLIENT_PORT PROJECT_PATHS"
+else
+
+  VOLUME_PATHS=""
+
+  for path in $PROJECT_PATHS; do
+    VOLUME_PATHS+="-v $path:$path "
+  done
+
+  GPT_USER="\"$(id -u):$(id -g)\""
+  if [ "$(id -u)" == "0" ]; then
+    GPT_USER="root"
+  fi
+
+  CMD="docker run --rm -it \
+    -u $GPT_USER \
+    -e DEBUG=${DEBUG:-1} \
+    -p $PORT:8001 \
+    ${VOLUME_PATHS}
+    -v /root/codx-cli:/gpt \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    debian ls -l /gpt"
+
+  echo "$CMD"
+
+  $CMD
+fi
