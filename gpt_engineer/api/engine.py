@@ -146,6 +146,7 @@ def check_project_changes(settings: GPTEngineerSettings):
     new_files = dbs.knowledge.detect_changes()    
     if not new_files:
         return
+    logging.info(f"Reload knowledge files {new_files}")
     dbs.knowledge.reload()
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat):

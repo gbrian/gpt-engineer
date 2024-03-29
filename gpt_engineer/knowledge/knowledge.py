@@ -55,7 +55,6 @@ class Knowledge:
         self.last_update = None
         self.refresh_last_update()        
         self.last_changed_file_paths = []
-        logger.debug(f'Knowledge ready {self.path}')
     
     def get_db(self):
       if not self.db:
@@ -78,7 +77,7 @@ class Knowledge:
         if full:
           self.reset()
         try:
-            logger.debug('Reloading knowledge')
+            logger.info('Reloading knowledge')
             # Load the knowledge from the filesystem
             current_sources = self.get_all_sources()
             documents = self.loader.load(last_update=self.last_update if current_sources else None,
@@ -88,7 +87,7 @@ class Knowledge:
 
             self.last_changed_file_paths = list(dict.fromkeys([d.metadata["source"] for d in documents]))
             self.build_summary()
-            logger.debug('Knowledge reloaded')
+            logger.info('Knowledge reloaded')
             changes = self.clean_deleted_documents()
             if changes or documents: 
                 self.build_summary()
@@ -111,7 +110,7 @@ class Knowledge:
             pass
 
     def get_all_documents (self, include=[]):
-        logger.debug('Get all documents')
+        logger.info('Get all documents')
         collection = self.get_db()._collection
         collection_docs = collection.get(include=include + ['metadatas'])
         documents = []
@@ -126,7 +125,7 @@ class Knowledge:
         return documents
         
     def clean_deleted_documents(self):
-        logger.debug('Removing deleted documents')
+        logger.info('Removing deleted documents')
         ids_to_delete = []
         collection = self.get_db()._collection
         documents = self.get_all_documents()
@@ -139,7 +138,7 @@ class Knowledge:
             ids_to_delete.append(doc.db_id)
 
         if len(ids_to_delete):
-          logger.debug(f'Documents to delete: {sources} {ids_to_delete}')
+          logger.info(f'Documents to delete: {sources} {ids_to_delete}')
           collection.delete(ids=ids_to_delete)
           return True
         return False
@@ -159,7 +158,7 @@ class Knowledge:
           messages = self.ai.start(system, prompt, step_name="enrich_document")
           summary = messages[-1].content.strip()
         except Exception as ex:
-          logger.debug(f"Error enriching document {source}: {ex}")
+          logger.info(f"Error enriching document {source}: {ex}")
           pass
       if self.settings.knowledge_extract_document_tags:
         try:
@@ -169,7 +168,7 @@ class Knowledge:
           keywords = [make_tag(k) for k in response.split(",")]
           doc.metadata["keywords"] = ", ".join(keywords)
         except Exception as ex:
-          logger.debug(f"Error extracting document keywords {source}: {ex}")
+          logger.info(f"Error extracting document keywords {source}: {ex}")
           pass
        
       doc.metadata["indexed"] = 1
@@ -225,7 +224,7 @@ class Knowledge:
         
 
     def delete_documents (self, documents=None, sources=None):
-        logger.debug('Removing old documents')
+        logger.info('Removing old documents')
         ids_to_delete = []
         collection = self.get_db()._collection
         collection_docs = collection.get(include=['metadatas'])
@@ -234,7 +233,7 @@ class Knowledge:
           for ix, metadata in enumerate(collection_docs["metadatas"]):
               if metadata.get('source') == source_doc:
                   id_to_delete = collection_docs["ids"][ix]
-                  logger.debug(f"Document to delete: {id_to_delete}: {source_doc}")
+                  logger.info(f"Document to delete: {id_to_delete}: {source_doc}")
                   ids_to_delete.append(id_to_delete)
         if not sources:
           sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
@@ -242,11 +241,11 @@ class Knowledge:
           delete_doc_ids(source_doc=source)
 
         if len(ids_to_delete):
-          logger.debug(f'Documents to delete: {sources} {ids_to_delete}')
+          logger.info(f'Documents to delete: {sources} {ids_to_delete}')
           collection.delete(ids=ids_to_delete)
 
     def reset(self):
-        logger.debug('Reseting retriever')
+        logger.info('Reseting retriever')
         self.db = None
         self.last_update = None
         if os.path.exists(self.db_path):
@@ -290,7 +289,7 @@ class Knowledge:
         keywords = [f"TAG_{k}" for k in response.split(",")]
         return keywords
       except Exception as ex:
-        logger.debug(f"Error extracting document keywords {source}: {ex}")
+        logger.info(f"Error extracting document keywords {source}: {ex}")
 
     def index_document(self, text, metadata):
         documents = [Document(page_content=text, metadata=metadata)]

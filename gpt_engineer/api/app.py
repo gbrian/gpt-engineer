@@ -1,5 +1,10 @@
 import time
 import logging
+logging.getLogger('apscheduler.scheduler').setLevel(logging.WARNING)
+logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
+logging.getLogger('httpx').setLevel(logging.WARNING)
+# logging.getLogger('gpt_engineer.knowledge.knowledge').setLevel(logging.WARNING)
+
 import os
 
 from fastapi import FastAPI, Request
@@ -251,7 +256,6 @@ class GPTEngineerAPI:
             global WATCH_FOLDERS
             if settings.gpteng_path not in WATCH_FOLDERS:
                 WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
-            logging.inf(f"WATCH_FOLDERS: {WATCH_FOLDERS}")
             return { "OK": 1 }
         
         @app.get("/api/project/unwatch")

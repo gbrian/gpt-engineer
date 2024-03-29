@@ -1,10 +1,6 @@
 import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
-
-logging.getLogger('apscheduler.scheduler').setLevel(logging.WARNING)
-logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
-
 # The "apscheduler." prefix is hard coded
 scheduler = BackgroundScheduler()
 

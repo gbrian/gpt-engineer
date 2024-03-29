@@ -160,7 +160,6 @@ def build_dbs(settings: GPTEngineerSettings, ai: AI=None) -> DBs:
         settings.project_path
     )  # resolve the string to a valid path (eg "a/b/../c" to "a/c")
     path = Path(project_path).absolute()
-    print("Running gpt-engineer in", path, "\n")
 
     workspace_path = path
     input_path = path

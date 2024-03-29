@@ -114,8 +114,6 @@ class AI:
 
         self.cache = False
 
-        logger.debug(f"Using model {self.settings.model}")
-
     def start(self, system: str, user: str, step_name: str, max_response_length: Optional[int] = None) -> List[Message]:
         """
         Start the conversation with a system message and a user message.

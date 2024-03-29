@@ -49,8 +49,6 @@ class AI:
 
         self.cache = cache
 
-        logger.debug(f"Using model {self.model_name}")
-
     def start(self, system: str, user: str, step_name: str) -> List[Message]:
         
 
