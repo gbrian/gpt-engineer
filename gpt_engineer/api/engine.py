@@ -148,6 +148,15 @@ def check_project_changes(settings: GPTEngineerSettings):
         return
     logging.info(f"Reload knowledge files {new_files}")
     dbs.knowledge.reload()
+    for file_path in new_files:
+        check_file_for_mentions(settings=settings, file_path=file_path)    
+
+def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
+    content_lines = None
+    return
+    with open(file_path, 'r') as f:
+        content_lines = f.read().split("\n")
+
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
     ai = build_ai(settings)
