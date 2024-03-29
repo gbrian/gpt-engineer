@@ -8,12 +8,15 @@ from langchain.schema.document import Document
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.settings import GPTEngineerSettings
+from gpt_engineer.core import build_dbs, build_ai
 from gpt_engineer.core.utils import curr_fn, document_to_context
+from gpt_engineer.core.step.chat import ai_chat
+
 from gpt_engineer.tasks.task_manager import TaskManager
 
 from gpt_engineer.api.profile_manager import ProfileManager
 
-from gpt_engineer.api.model import Chat
+from gpt_engineer.api.model import Chat, Message
 from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
@@ -22,6 +25,10 @@ from gpt_engineer.core.file_watch_manager import FileWatchManager
 
 FILE_WATCH_MANGER = None
 
+def reload_knowledge(settings: GPTEngineerSettings):
+    ai = build_ai(settings=settings)
+    dbs = build_dbs(settings=settings, ai=ai)
+    dbs.reload()
 
 def on_project_changed(project_path: str, file_path: str):
     logging.info(f"Project changed {project_path} - {file_path}")
@@ -47,7 +54,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
         valid_documents = parallel_validate_contexts(dbs,
                                               query,
                                               documents,
-                                              score=float(settings.knowledge_context_cutoff_relevance_score))
+                                              settings=settings)
         relevant_documents = [doc for doc in valid_documents if doc]
         return relevant_documents
     return []
@@ -104,14 +111,9 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
     return (messages, edits, errors, affected_files)
 
 def check_knowledge_status(dbs: DBs):
-    logging.info("check_knowledge_status")
-    loader = dbs.knowledge.loader
     last_update = dbs.knowledge.last_update
     status = dbs.knowledge.status()
-    all_sources = dbs.knowledge.get_all_sources()
-    pending_files = loader.list_repository_files(
-                        last_update=last_update if all_sources else None,
-                        current_sources=all_sources)
+    pending_files = dbs.knowledge.detect_changes()
     return {
       "last_update": str(last_update),
       "pending_files": pending_files,
@@ -139,5 +141,27 @@ def save_chat(chat: Chat, settings: GPTEngineerSettings):
     task_id = len(task_manager.get_all_tasks()) + 1
     task_manager.create_task(task_id, chat)
 
-def get_chat(settings: GPTEngineerSettings):
-    pass
+def check_project_changes(settings: GPTEngineerSettings):
+    dbs = build_dbs(settings=settings)
+    new_files = dbs.knowledge.detect_changes()    
+    if not new_files:
+        return
+    dbs.knowledge.reload()
+
+def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
+    ai = build_ai(settings)
+    dbs = build_dbs(settings, ai=ai)
+    
+    # Perform search on Knowledge using the input
+    # Return the search results as response
+    user_input = chat.messages[-1].content
+    messages = [m.content for m in chat.messages[:-1] if not hasattr(m, "hide")]
+    philosophy = ProfileManager(settings=settings).read_profile("philosophy").content
+    messages = [philosophy] + messages
+    response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages, settings=settings)
+    if documents:
+        doc_content = '\n'.join([document_to_context(doc) for doc in documents])
+        response = f"{response}\n{doc_content}"
+    response_message = Message(role="assistant", hidden=False, content=response, documents=documents)
+    chat.messages.append(response_message)
+    return chat

@@ -8,16 +8,19 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 
 <template>
   <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2">
-    <div class="flex gap-2 items-center">
-      <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="gptengPath">
+    <div class="alert alert-error text-xs font-bold text-white" v-if="!API.lastSettings?.openai_api_key">
+      Please fix your settings. No AI key present
+    </div>
+    <div class="flex gap-2 items-center justify-between">
+      <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="validProject">
       <i class="fa-solid fa-location-dot"></i> {{ gptengPath }} 
       </div>
-      <button class="btn" @click="API.project.watch()">
-        Watch
-      </button>
-      <button class="btn" @click="API.project.unwatch()">
-        Unwatch
-      </button>
+      <div class="form-control">
+        <label class="cursor-pointer label">
+          <span class="label-text mr-2">Watch project changes</span> 
+          <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="API.lastSettings.watching" @change="toggleWatch" />
+        </label>
+      </div>
     </div>
     <progress :class="['progress progress-success w-full', liveRequests ? '': 'opacity-0']"></progress>
     <div class="alert alert-warning flex gap-2 justify-center" v-if="!validProject">
@@ -30,7 +33,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       </button>
     </div>
     <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="validProject">
-      <a role="tab" :class="['tab', tabIx === 0 && 'tab-active']"
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 0 ? tabActive: tabInactive]"
         @click="tabIx = 0"
       >
         <div class="font-medium flex gap-2 items-center">
@@ -38,19 +41,19 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
           Tasks
         </div>
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 && 'tab-active']"
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 ? tabActive: tabInactive]"
         @click="tabIx = 1"
       >
         <i class="fa-solid fa-book"></i>
         Knowledge
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 2 && 'tab-active']"
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 2 ? tabActive: tabInactive]"
         @click="tabIx = 2"
       >
         <i class="fa-solid fa-brain"></i>
         GPT Settings
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 3 && 'tab-active']"
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 3 ? tabActive: tabInactive]"
         @click="tabIx = 3"
       >
       <i class="fa-solid fa-id-card-clip"></i>
@@ -94,7 +97,9 @@ export default {
       gptengPath: null,
       showOpenProjectModal: false,
       liveRequests: null,
-      lastSettings: null
+      lastSettings: null,
+      tabActive: 'text-info bg-base-100',
+      tabInactive: 'text-warning bg-base-300 opacity-50 hover:opacity-100'
     }
   },
   async created () {
@@ -116,19 +121,33 @@ export default {
       try {
         await API.settings.read()
       } catch {}
-      if (!API.lastSettings || API.lastSettings.gpteng_path !== this.gptengPath) {
-        this.tabIx = 1
+      if (!API.lastSettings ||
+          API.lastSettings.gpteng_path !== this.gptengPath ||
+          !API.lastSettings?.openai_api_key 
+      ) {
+        this.tabIx = 2
       }
     },
     getProjectPath () {
       return API.lastSettings?.gpteng_path
     },
     onOpenProject () {
-      window.location = `${window.location.origin}?gpteng_path=${encodeURIComponent(this.newProject)}`
+      this.openProject(this.newProject)
+    },
+    openProject (path) {
+      window.location = `${window.location.origin}?gpteng_path=${encodeURIComponent(path)}`
     },
     async createNewProject () {
-      await API.project.create()
-      window.location.reload()
+      const { data: { gpteng_path } } = await API.project.create(this.getProjectPath())
+      this.openProject(gpteng_path)
+    },
+    async toggleWatch () {
+      if (API.lastSettings.watching) {
+        await API.project.unwatch()
+      } else {
+        await API.project.watch()
+      }
+      API.settings.read()
     }
   }
 

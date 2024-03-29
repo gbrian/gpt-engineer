@@ -43,6 +43,7 @@ class KnowledgeLoader:
         for file_path in files:
             new_docs = code_splitter.load(file_path)
             if not new_docs:
+                logging.error(f"No documents generated for: {file_path}")
                 continue
             documents = documents + new_docs
 
@@ -85,7 +86,6 @@ class KnowledgeLoader:
             
             file_errors = [err for err in self.settings.knowledge_file_ignore.split(",") if err in file]
             if file_errors:
-                logging.info(f"IGNORE FILE {file}")
                 return False
             
             if current_sources and file not in current_sources:
@@ -93,7 +93,6 @@ class KnowledgeLoader:
                 return True
 
             if not self.should_index_doc(file_path=file, last_update=last_update):
-                logging.info(f"DONT INDEX FILE {file}")
                 return False
             
             return True

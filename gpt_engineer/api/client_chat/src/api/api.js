@@ -44,8 +44,8 @@ export const API = {
     lastSettings: readLastSettings(),
     chatManager,
     project: {
-      create() {
-        return API.get('/api/project/create?' + query())
+      create(projectPath) {
+        return API.get('/api/project/create?project_path=' + projectPath)
       },
       watch () {
         return API.get('/api/project/watch?' + query())
@@ -96,9 +96,28 @@ export const API = {
         return API.post(`/api/knowledge/delete?` + query(), { sources })  
       }
     },
-    chat: {
-      message (chat) {
-        return API.post('/api/chat?' + query(), chat)
+    chats: {
+      async list () {
+        const { data } = await API.get('/api/chats?' + query())
+        return data
+      },
+      async loadChat (name) {
+        const { data } = await API.get(`/api/chats?chat_name=${name}&` + query())
+        return data
+      },
+      async newChat () {
+        return {
+          id: new Date().getTime(),
+          name: "New chat"
+        }
+      },
+      async message (chat) {
+        const { data: message } = await API.post('/api/chats?' + query(), chat)
+        chat.messages.push(message)
+        return chat
+      },
+      save (chat) {
+        API.put(`/api/chats?` + query(), chat)
       }
     },
     run: {

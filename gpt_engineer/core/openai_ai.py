@@ -3,17 +3,18 @@ from openai import OpenAI
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
 from openai.types.chat.chat_completion_user_message_param import ChatCompletionUserMessageParam
 
-from gpt_engineer.settings import OPENAI_API_KEY, OPENAI_API_BASE, MODEL, TEMPERATURE
+from gpt_engineer.core.settings import GPTEngineerSettings
 from langchain.schema import (
     AIMessage,
     HumanMessage
 )
 
 class OpenAI_AI:
-    def __init__(self):
+    def __init__(self, settings: GPTEngineerSettings):
+        self.settings = settings
         self.client = OpenAI(
-            api_key=OPENAI_API_KEY,
-            base_url=OPENAI_API_BASE
+            api_key=settings.openai_api_key,
+            base_url=settings.openai_api_base
         )
 
     def convert_message(self, gpt_message: Union[AIMessage, HumanMessage]): 
@@ -24,8 +25,8 @@ class OpenAI_AI:
     def chat_completions(self, messages, config={}):
         openai_messages = [self.convert_message(msg) for msg in messages]
         response = self.client.chat.completions.create(
-            model=config.get("model", MODEL),
-            temperature=config.get("temperature", TEMPERATURE),
+            model=config.get("model", self.settings.model),
+            temperature=config.get("temperature", self.settings.temperature),
             messages=openai_messages,
             stream=True
         )

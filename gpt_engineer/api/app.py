@@ -1,11 +1,13 @@
 import time
 import logging
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 from gpt_engineer.api.model import (
     Chat,
+    Message,
     Settings,
     KnowledgeReloadPath,
     KnowledgeSearch,
@@ -18,8 +20,8 @@ from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.core import build_dbs, build_ai
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.api.profile_manager import ProfileManager
+from gpt_engineer.core.chat_manager import ChatManager
 
-from gpt_engineer.core.step.chat import ai_chat
 from gpt_engineer.api.engine import (
     select_afefcted_files_from_knowledge, 
     improve_existing_code,
@@ -27,10 +29,24 @@ from gpt_engineer.api.engine import (
     run_edits,
     create_project,
     select_afefcted_documents_from_knowledge,
-    watch_project
+    check_project_changes,
+    reload_knowledge,
+    chat_with_project
 )
 
 WATCH_FOLDERS = []
+from gpt_engineer.core.scheduler import add_work
+
+def process_projects_changes():
+    for gpteng_path in WATCH_FOLDERS:
+        try:
+            settings = GPTEngineerSettings.from_project(gpteng_path=gpteng_path)
+            check_project_changes(settings=settings)
+        except Exception as ex:
+            logging.error(f"Processing {gpteng_path} error: {ex}")
+            pass
+
+add_work(process_projects_changes)
 
 class GPTEngineerAPI:
     def get_dbs(self, args: GPTEngineerSettings):
@@ -64,14 +80,13 @@ class GPTEngineerAPI:
             logging.info(f"Request {request.url}")
             gpteng_path = request.query_params.get("gpteng_path")
             settings = None
-            if not gpteng_path:
-                raise ValueError('Missing gpteng_path')
-            try:
-                settings = GPTEngineerSettings.from_project(gpteng_path)
-                logging.info(f"Request settings {settings.__dict__}")
-                get_dbs(settings).knowledge.reload()
-            except:
-                pass
+            if gpteng_path:
+                try:
+                    settings = GPTEngineerSettings.from_project(gpteng_path)
+                    logging.info(f"Request settings {settings.__dict__}")
+                    get_dbs(settings).knowledge.reload()
+                except:
+                    pass
             request.state.settings = settings
             response = await call_next(request)
             return response
@@ -133,22 +148,27 @@ class GPTEngineerAPI:
             dbs = self.get_dbs(args)
             return check_knowledge_status(dbs=dbs)
 
-        @app.post("/api/chat")
+        @app.get("/api/chats")
+        def list_chats(request: Request):
+            settings = request.state.settings
+            chat_name = request.query_params.get("chat_name")
+            chat_manager = ChatManager(settings=settings)
+            if chat_name:
+                return chat_manager.load_chat(chat_name=chat_name)
+            return chat_manager.list_chats()
+
+        @app.post("/api/chats")
         def chat(chat: Chat, request: Request):
             settings = request.state.settings
-            dbs = self.get_dbs(settings)
-            ai = self.get_ai(settings)
-            # Perform search on Knowledge using the input
-            # Return the search results as response
-            user_input = chat.messages[-1].content
-            messages = [m.content for m in chat.messages[:-1] if not hasattr(m, "hide")]
-            philosophy = ProfileManager(settings=settings).read_profile("philosophy").content
-            messages = [philosophy] + messages
-            response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages, score=float(settings.knowledge_context_cutoff_relevance_score))
-            return {
-              "message": response,
-              "search_results": documents
-            }
+            chat = chat_with_project(settings=settings, chat=chat)
+            ChatManager(settings=settings).save_chat(chat)
+            return chat.messages[-1]
+
+        @app.put("/api/chats")
+        def save_chat(chat: Chat, request: Request):
+            settings = request.state.settings
+            ChatManager(settings=settings).save_chat(chat)
+        
 
         @app.post("/api/run/improve")
         def run_improve(chat: Chat, request: Request):
@@ -181,7 +201,8 @@ class GPTEngineerAPI:
         @app.get("/api/settings")
         def settings_check(request: Request):
             settings = request.state.settings
-            return GPTEngineerSettings.from_project(settings.gpteng_path).__dict__
+            settings.watching = True if settings.gpteng_path in WATCH_FOLDERS else False
+            return settings
 
         @app.put("/api/settings")
         async def save_settings(request: Request):
@@ -192,14 +213,15 @@ class GPTEngineerAPI:
 
         @app.get("/api/project/create")
         def project_create(request: Request):
-            settings = request.state.settings
-            if not settings:
-                gpteng_path = request.query_params.get("gpteng_path")
-                settings = GPTEngineerSettings()
-                settings.gpteng_path = gpteng_path
-                settings.project_path = gpteng_path
+            project_path = request.query_params.get("project_path")
+            if not project_path or not os.path.isdir(project_path):
+                return
+            settings = GPTEngineerSettings()
+            settings.gpteng_path = f"{project_path}/.gpteng"
+            settings.project_path = project_path
+            logging.info(f"/api/project/create project_path: {project_path}")
             create_project(settings=settings)
-            return "ok"
+            return settings
 
         @app.get("/api/profiles")
         def list_profile(request: Request):
@@ -229,8 +251,7 @@ class GPTEngineerAPI:
             global WATCH_FOLDERS
             if settings.gpteng_path not in WATCH_FOLDERS:
                 WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
-                watch_project(project_paths=WATCH_FOLDERS)
-            
+            logging.inf(f"WATCH_FOLDERS: {WATCH_FOLDERS}")
             return { "OK": 1 }
         
         @app.get("/api/project/unwatch")
@@ -239,7 +260,6 @@ class GPTEngineerAPI:
             global WATCH_FOLDERS
             if settings.gpteng_path in WATCH_FOLDERS:
                 WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]
-                watch_project(projects=WATCH_FOLDERS)
             
             return { "OK": 1 }
 

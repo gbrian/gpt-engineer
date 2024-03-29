@@ -48,7 +48,7 @@ from langchain.schema import (
     messages_to_dict,
 )
 
-from gpt_engineer.settings import OPENAI_API_KEY, OPENAI_API_BASE
+from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.core.openai_ai import OpenAI_AI
 
 # Type hint for a chat message
@@ -95,7 +95,7 @@ class AI:
     """
 
     def __init__(
-        self, model_name="gpt-4", temperature=0.1, azure_endpoint="", cache=None
+        self, settings: GPTEngineerSettings
     ):
         """
         Initialize the AI class.
@@ -107,16 +107,14 @@ class AI:
         temperature : float, optional
             The temperature to use for the model, by default 0.1.
         """
-        self.temperature = temperature
-        self.azure_endpoint = azure_endpoint
-        self.model_name = self._check_model_access_and_fallback(model_name)
+        self.settings = settings
 
         self.llm = self._create_chat_model()
-        self.token_usage_log = TokenUsageLog(model_name)
+        self.token_usage_log = TokenUsageLog(settings.model)
 
-        self.cache = cache
+        self.cache = False
 
-        logger.debug(f"Using model {self.model_name}")
+        logger.debug(f"Using model {self.settings.model}")
 
     def start(self, system: str, user: str, step_name: str, max_response_length: Optional[int] = None) -> List[Message]:
         """
@@ -298,32 +296,6 @@ class AI:
         ]
         return list(messages_from_dict(prevalidated_data))  # type: ignore
 
-    def _check_model_access_and_fallback(self, model_name) -> str:
-        """
-        Retrieve the specified model, or fallback to "gpt-3.5-turbo" if the model is not available.
-
-        Parameters
-        ----------
-        model : str
-            The name of the model to retrieve.
-
-        Returns
-        -------
-        str
-            The name of the retrieved model, or "gpt-3.5-turbo" if the specified model is not available.
-        """
-        try:
-            openai_client = openai.Client(api_key=OPENAI_API_KEY, base_url=OPENAI_API_BASE)
-            models = openai_client.models.list()
-            if model_name in models:
-                return model_name    
-        except openai._exceptions.BadRequestError:
-            print(
-                f"Model {model_name} not available for provided API key. Reverting "
-                "to gpt-3.5-turbo. Sign up for the GPT-4 wait list here: "
-                "https://openai.com/waitlist/gpt-4-api\n"
-            )
-        return "gpt-3.5-turbo"
 
     def _create_chat_model(self) -> BaseChatModel:
         """
@@ -341,10 +313,7 @@ class AI:
         BaseChatModel
             The created chat model.
         """
-        if self.azure_endpoint:
-            raise ValueError("NEED TO BE TESTED")
-
-        return OpenAI_AI().chat_completions
+        return OpenAI_AI(settings=self.settings).chat_completions
         """
         return ChatOpenAI(
             openai_api_key=OPENAI_API_KEY,

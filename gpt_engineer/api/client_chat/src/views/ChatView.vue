@@ -2,7 +2,7 @@
 import ChatEntry from '@/components/ChatEntry.vue'
 </script>
 <template>
-  <div class="flex flex-col h-full justify-between">
+  <div class="flex flex-col h-full justify-between" v-if="chat">
     <div class="text-xl flex gap-2 items-center">
       CODX
       <input type="text" class="input input-xs input-bordered" v-model="chat.name" />
@@ -10,15 +10,18 @@ import ChatEntry from '@/components/ChatEntry.vue'
         <option value="" selected>--</option>
         <option :value="p" v-for="p in profiles" :key="p">{{ p }}</option>
       </select>
-      <button class="btn btn-sm" @click="saveChat">
+      <button class="btn btn-primary btn-xs" @click="newChat">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+      <button class="btn btn-xs" @click="saveChat">
         <i class="fa-solid fa-floppy-disk"></i>
       </button>
-      <button class="btn btn-sm btn-error" @click="deleteChat">
+      <button class="btn btn-xs btn-error" @click="deleteChat">
         <i class="fa-solid fa-trash"></i>
       </button>
       <div class="grow"></div>
       <div class="dropdown dropdown-end">
-        <div tabindex="0" role="button btn-sm" class="btn m-1">
+        <div tabindex="0" role="button btn-sm" class="btn btn-xs">
           <i class="fa-solid fa-folder-tree"></i>
         </div>
         <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
@@ -45,13 +48,6 @@ import ChatEntry from '@/components/ChatEntry.vue'
       </div>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
   
-      <div class="flex gap-2 justify-between my-2">
-        <div class="flex gap-2">
-          <button class="btn btn-primary btn-sm" @click="newChat">
-            <i class="fa-solid fa-plus"></i> New chat
-          </button>
-        </div>
-      </div>
       <div class="flex gap-2 items-end">
         <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': ''
@@ -87,10 +83,12 @@ export default {
     }
   },
   async created () {
-    this.chats = API.chatManager.getChats()
-    this.chat = this.chats.reverse()[0]
-    if (!this.chat) {
-      this.chat = API.chatManager.newChat()
+    this.chats = await API.chats.list()
+    if (this.chats.length) {
+      this.chat = await API.chats.loadChat(this.chats.reverse()[0])
+    } else {
+      this.chat = await API.chats.newChat()
+      this.chats.push(this.chat.name)
     }
     this.loadProfiles()
   },
@@ -134,29 +132,14 @@ export default {
       }
       this.postMyMessage()
       this.sendApiRequest(
-        () => API.chat.message(this.chat),
-        ({ message, search_results }) => {
-          return `${message}
-            ${search_results?.map(r => JSON.stringify(r))}
-          `
+        () => API.chats.message(this.chat),
+        ({ content }) => {
+          return `${content}`
         }
       )
     },
     onMessageChange (ev) {
       this.editMessage = ev.target.innerText
-    },
-    refreshKnowledge () {
-      this.sendApiRequest(() => API.knowledge.reload())
-    },
-    readKnowledgeStatus () {
-      this.sendApiRequest(
-        () => API.knowledge.status(),
-        data => ['### last update',
-                  data.last_update,
-                  '### Files',
-                  data.pending_files.map(file => ` * ${file}`).join("\n"),
-                ].join("\n")
-      )
     },
     improveCode () {
       this.postMyMessage()
@@ -203,13 +186,13 @@ export default {
     },
     removeMessage(ix) {
       this.chat.messages = this.chat.messages.filter((m, i) => i !== ix)
+      this.saveChat()
     },
     onEditMessage (ix) {
       const message = this.chat.messages[ix]
       this.editMessage = message.content
       this.editor.innerText = this.editMessage
       this.editMessageId = ix
-      this.saveChat()
     },
     toggleHide(ix) {
       const message = this.chat.messages[ix]
@@ -230,8 +213,7 @@ export default {
       }
     },
     saveChat () {
-      API.chatManager.saveChat(this.chat)
-      this.chats = API.chatManager.getChats()
+      API.chats.save(this.chat)
     },
     deleteChat () {
       API.chatManager.deleteChat(this.chat)

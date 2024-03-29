@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.dbs import DBs
+from gpt_engineer.core.settings import GPTEngineerSettings
 
 from gpt_engineer.settings import (
   PROMPT_FILE,
@@ -27,8 +28,9 @@ def validate_context(ai, dbs, prompt, doc, score):
         return None
     return doc
 
-def parallel_validate_contexts(dbs, prompt, documents, score=0.7):
-    ai = AI(model_name=KNOWLEDGE_MODEL)
+def parallel_validate_contexts(dbs, prompt, documents, settings: GPTEngineerSettings):
+    ai = AI(settings=settings)
+    score = float(settings.knowledge_context_cutoff_relevance_score)
     #dbs.input.append(
     #  HISTORY_PROMPT_FILE, f"\n[[VALIDATE_CONTEXT]]\n{prompt}\nNum docs: {len(documents)}"
     #)
@@ -98,12 +100,12 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     #)
     return doc
 
-def find_relevant_documents (ai:AI, dbs: DBs, query: str, score: int):
+def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings):
   documents = dbs.knowledge.search(query)
   if documents:
       # Filter out irrelevant documents based on a relevance score
       relevant_documents = [doc for doc in parallel_validate_contexts(
-          dbs, query, documents, score) if doc]
+          dbs, query, documents, settings) if doc]
       file_list = [str(Path(doc.metadata["source"]).absolute())
                   for doc in relevant_documents]
       file_list = list(dict.fromkeys(file_list))  # Remove duplicates

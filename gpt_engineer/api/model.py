@@ -6,19 +6,15 @@ from typing import List, Dict, Union
 from gpt_engineer.core.settings import GPTEngineerSettings
 
 class Message(BaseModel):
-    role: str
-    content: str
+    role: str = Field(default='')
+    content: str = Field(default='')
+    hide: bool = Field(default=False)
 
 class Chat(BaseModel):
     id: str = Field(default='')
     name: str = Field(default='')
     profile: str = Field(default='')
-    messages: List[Message]
-
-class Message(BaseModel):
-    role: str
-    content: str
-    hide: bool = Field(default=False)
+    messages: List[Message] = Field(default=[])
 
 class Logprobs(BaseModel):
     tokens: List[str]

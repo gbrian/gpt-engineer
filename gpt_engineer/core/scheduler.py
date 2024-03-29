@@ -1,6 +1,9 @@
-
+import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
+
+logging.getLogger('apscheduler.scheduler').setLevel(logging.WARNING)
+logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
 
 # The "apscheduler." prefix is hard coded
 scheduler = BackgroundScheduler()
@@ -16,13 +19,13 @@ def on_schedule():
     for work in SCHEDULED_WORKS:
         try:
             work()
-        except:
+        except Exception as ex:
             pass
     ON_SCHEDULE = False
 
-# scheduler.add_job(on_schedule, 'interval', seconds=3)
+scheduler.add_job(on_schedule, 'interval', seconds=3)
 scheduler.start()
-print("Scheduler running on background")
 
 def add_work(work):
+    logging.info(f"Adding job")
     SCHEDULED_WORKS.append(work)

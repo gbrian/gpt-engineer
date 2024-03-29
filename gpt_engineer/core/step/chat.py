@@ -12,13 +12,13 @@ from gpt_engineer.settings import (
   CHAT_FILE
 )
 
-def ai_chat (ai: AI, dbs: DBs, user_input: str, messages = [], system=None, role=None, score=0.7):
+def ai_chat (ai: AI, dbs: DBs, user_input: str, settings, messages = [], system=None, role=None):
   if not system:
     system = dbs.roles[f"{role if role else 'qa'}.md"]
   else:
     logging.debug(f"[ai_chat] using custom system")
   # Fetch relevant documents using Knowledge
-  documents, file_list = find_relevant_documents(ai, dbs, query=user_input, score=score)
+  documents, file_list = find_relevant_documents(ai, dbs, query=user_input, settings=settings)
 
   knwoledge_context = "\n".join([document_to_context(doc) for doc in documents]) \
                         if documents else ""

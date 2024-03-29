@@ -150,15 +150,12 @@ def gtp_engineer(settings: GPTEngineerSettings):
         os.system(f'cd {path} && git add . && git commit -m "{commit_message}"')
 
 def build_ai(settings: GPTEngineerSettings) -> AI:
-    return AI(
-        model_name=settings.model,
-        temperature=settings.temperature,
-        azure_endpoint=None,
-        cache=None,
-    )
+    return AI(settings=settings)
 
 
-def build_dbs(settings: GPTEngineerSettings, ai: AI) -> DBs:
+def build_dbs(settings: GPTEngineerSettings, ai: AI=None) -> DBs:
+    if not ai:
+        ai = AI(settings=settings)
     project_path = os.path.abspath(
         settings.project_path
     )  # resolve the string to a valid path (eg "a/b/../c" to "a/c")

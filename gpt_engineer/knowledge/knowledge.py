@@ -67,6 +67,12 @@ class Knowledge:
       if os.path.isfile(self.db_file):
           self.last_update = os.path.getmtime(self.db_file)
 
+    def detect_changes(self):
+      current_sources = self.get_all_sources()
+      changes = self.loader.list_repository_files(last_update=self.last_update if current_sources else None,
+                          current_sources=current_sources)
+      return changes
+
     def reload(self, full: bool = False):
         self.refresh_last_update()
         if full:
@@ -166,14 +172,6 @@ class Knowledge:
           logger.debug(f"Error extracting document keywords {source}: {ex}")
           pass
        
-      doc.page_content = "\n".join([
-          f"Meta data: {str(doc.metadata)}",
-          f"Summary: {summary}",
-          "Code:"
-          f"```{language}",
-          doc.page_content,
-          "```"
-      ])
       doc.metadata["indexed"] = 1
       return doc
 
