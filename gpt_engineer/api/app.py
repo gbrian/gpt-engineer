@@ -33,7 +33,7 @@ from gpt_engineer.api.profile_manager import ProfileManager
 from gpt_engineer.core.chat_manager import ChatManager
 
 from gpt_engineer.api.engine import (
-    select_afefcted_files_from_knowledge, 
+    select_afected_files_from_knowledge, 
     improve_existing_code,
     check_knowledge_status,
     run_edits,

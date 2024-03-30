@@ -17,7 +17,7 @@ from gpt_engineer.tasks.task_manager import TaskManager
 from gpt_engineer.api.profile_manager import ProfileManager
 
 from gpt_engineer.api.model import Chat, Message
-from gpt_engineer.core.context import parallel_validate_contexts
+from gpt_engineer.core.context import find_relevant_documents
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
@@ -39,19 +39,10 @@ def create_project(settings=GPTEngineerSettings):
     settings.save_project()
 
 
-def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
-    documents = dbs.knowledge.search(query)
-    if documents:
-        # Filter out irrelevant documents based on a relevance score
-        valid_documents = parallel_validate_contexts(dbs,
-                                              query,
-                                              documents,
-                                              settings=settings)
-        relevant_documents = [doc for doc in valid_documents if doc]
-        return relevant_documents
-    return []
+def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings, ignore_documents: []):
+    return find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=settings, ignore_documents=ignore_documents)
 
-def select_afefcted_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
+def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
     relevant_documents = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=query, settings=settings)
     file_list = [str(Path(doc.metadata["source"]).absolute())
                   for doc in relevant_documents]
@@ -75,7 +66,8 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
     relevant_documents = select_afefcted_documents_from_knowledge(ai=ai,
                                                         dbs=dbs,
                                                         query=query,
-                                                        settings=settings)
+                                                        settings=settings,
+                                                        ignore_documents=[f"/{chat.name}"])
     for doc in relevant_documents:
         doc_context = document_to_context(doc)
         messages.append(HumanMessage(content=doc_context))
@@ -153,7 +145,17 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 
 def process_file_mentions(settings: GPTEngineerSettings, file_path, mentions):
     logging.info(f"File with mentions {file_path}: {mentions}")
+    for mention in mentions:
+        try:
+            chat = Chat(name="", messages=[
+                Message(role="user", content=mention.mention)
+            ])
+            chat = chat_with_project(settings=settings, chat=chat)
+            mention.respone = chat.messages[-1].content
+        except Exception as ex:
+            mention.respone = f"{mention.mention}/nError: str(ex)"
 
+    
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
     ai = build_ai(settings)
