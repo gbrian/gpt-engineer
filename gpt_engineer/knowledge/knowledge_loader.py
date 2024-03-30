@@ -93,11 +93,11 @@ class KnowledgeLoader:
             full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files]
                         
             if self.settings.knowledge_external_folders:
-                for path in self.settings.knowledge_external_folders.split(","):
-                    external_file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*")]
+                for ext_path in self.settings.knowledge_external_folders.split(","):
+                    external_file_paths = [str(file_path) for file_path in pathlib.Path(ext_path).rglob("*")]
                     full_file_paths = full_file_paths + external_file_paths
-
-        full_file_paths = [file for file in full_file_paths if self.is_valid_file(file, last_update, path, current_sources) ]
+        full_file_paths = [file for file in full_file_paths if self.is_valid_file(file, last_update=last_update, path=path, current_sources=current_sources) ]
+        
         return full_file_paths
 
     def list_repository_folders(self):

@@ -21,7 +21,10 @@ from gpt_engineer.core.context import find_relevant_documents
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
-from gpt_engineer.core.mention_manager import extract_mentions
+from gpt_engineer.core.mention_manager import (
+    extract_mentions,
+    replace_mentions
+)
 
 FILE_WATCH_MANGER = None
 
@@ -39,7 +42,7 @@ def create_project(settings=GPTEngineerSettings):
     settings.save_project()
 
 
-def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings, ignore_documents: []):
+def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings, ignore_documents=[]):
     return find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=settings, ignore_documents=ignore_documents)
 
 def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
@@ -137,25 +140,27 @@ def check_project_changes(settings: GPTEngineerSettings):
         check_file_for_mentions(settings=settings, file_path=file_path)    
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
+    content = None
     with open(file_path, 'r') as f:
         content = f.read()
-        mentions = extract_mentions(content)
-        if mentions:
-            process_file_mentions(settings=settings, file_path=file_path, mentions=mentions)        
 
-def process_file_mentions(settings: GPTEngineerSettings, file_path, mentions):
-    logging.info(f"File with mentions {file_path}: {mentions}")
-    for mention in mentions:
-        try:
-            chat = Chat(name="", messages=[
-                Message(role="user", content=mention.mention)
-            ])
-            chat = chat_with_project(settings=settings, chat=chat)
-            mention.respone = chat.messages[-1].content
-        except Exception as ex:
-            mention.respone = f"{mention.mention}/nError: str(ex)"
+    mentions = extract_mentions(content)
+    if mentions:
+        for mention in mentions:
+            try:
+                chat = Chat(name="", messages=[
+                    Message(role="system", content=content),
+                    Message(role="user", content=mention.mention)
+                ])
+                chat = chat_with_project(settings=settings, chat=chat)
+                mention.respone = chat.messages[-1].content
+            except Exception as ex:
+                mention.respone = f"{mention.mention}/nError: str(ex)"
+        new_content = replace_mentions(content=content, mentions=mentions)
+        if content != new_content:
+            with open(file_path, 'w') as f:
+                f.write(new_content)
 
-    
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
     ai = build_ai(settings)

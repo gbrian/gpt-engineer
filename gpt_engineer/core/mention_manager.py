@@ -1,7 +1,7 @@
 
 SINGLE_LINE_MENTION_START = "@codx:"
-MULTI_LINE_MENTION_START = ">> @codx"
-MULTI_LINE_MENTION_END = "<< @codx"
+MULTI_LINE_MENTION_START = "<codx>"
+MULTI_LINE_MENTION_END = "</codx>"
 
 class Mention():
     mention: str = None
@@ -14,6 +14,15 @@ class Mention():
         self.start_line = start_line
         self.end_line = end_line
         self.respone = respone
+
+    def diff(self):
+        return "\n".join([
+            "<<<<<<< HEAD",
+                self.mention,
+            "=======",
+                self.respone,
+            ">>>>>>> updated"
+        ])
 
 def extract_mentions(content):
     content_lines = content.split("\n")
@@ -55,7 +64,7 @@ def replace_mentions(content, mentions):
     last_index = 0
     for mention in mentions:
         new_content = new_content + content_lines[last_index:mention.start_line]
-        new_content = new_content + mention.respone.split("\n")
+        new_content = new_content + mention.diff().split("\n")
         last_index = (mention.end_line if mention.end_line else mention.start_line) + 1
     if last_index < len(content) - 1:
         new_content = new_content + content_lines[last_index:]
