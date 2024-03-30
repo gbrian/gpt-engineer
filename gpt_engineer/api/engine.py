@@ -21,7 +21,7 @@ from gpt_engineer.core.context import parallel_validate_contexts
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
-from gpt_engineer.core.file_watch_manager import FileWatchManager
+from gpt_engineer.core.mention_manager import extract_mentions
 
 FILE_WATCH_MANGER = None
 
@@ -32,14 +32,6 @@ def reload_knowledge(settings: GPTEngineerSettings):
 
 def on_project_changed(project_path: str, file_path: str):
     logging.info(f"Project changed {project_path} - {file_path}")
-
-def watch_project(project_paths: [str]):
-    global FILE_WATCH_MANGER
-    if FILE_WATCH_MANGER:
-        FILE_WATCH_MANGER.stop()
-    FILE_WATCH_MANGER = FileWatchManager(project_paths=project_paths, callback=on_project_changed)
-    FILE_WATCH_MANGER.start()
-
 
 def create_project(settings=GPTEngineerSettings):
     logging.info(f"Create new project {settings.gpteng_path}")
@@ -143,7 +135,8 @@ def save_chat(chat: Chat, settings: GPTEngineerSettings):
 
 def check_project_changes(settings: GPTEngineerSettings):
     dbs = build_dbs(settings=settings)
-    new_files = dbs.knowledge.detect_changes()    
+    dbs.knowledge.clean_deleted_documents()
+    new_files = dbs.knowledge.detect_changes()
     if not new_files:
         return
     logging.info(f"Reload knowledge files {new_files}")
@@ -152,10 +145,14 @@ def check_project_changes(settings: GPTEngineerSettings):
         check_file_for_mentions(settings=settings, file_path=file_path)    
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
-    content_lines = None
-    return
     with open(file_path, 'r') as f:
-        content_lines = f.read().split("\n")
+        content = f.read()
+        mentions = extract_mentions(content)
+        if mentions:
+            process_file_mentions(settings=settings, file_path=file_path, mentions=mentions)        
+
+def process_file_mentions(settings: GPTEngineerSettings, file_path, mentions):
+    logging.info(f"File with mentions {file_path}: {mentions}")
 
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat):

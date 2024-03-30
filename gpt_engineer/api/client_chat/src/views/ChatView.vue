@@ -2,11 +2,11 @@
 import ChatEntry from '@/components/ChatEntry.vue'
 </script>
 <template>
-  <div class="flex flex-col h-full justify-between" v-if="chat">
-    <div class="text-xl flex gap-2 items-center">
+  <div class="flex flex-col gap-2 h-full justify-between" v-if="chat">
+    <div class="text-xl flex gap-2 items-center px-2">
       CODX
-      <input type="text" class="input input-xs input-bordered" v-model="chat.name" />
-      <select class="select select-xs select-bordered" v-model="profileName">
+      <input type="text" class="input input-xs input-bordered w-24" v-model="chat.name" />
+      <select class="select select-xs select-bordered w-24" v-model="profileName">
         <option value="" selected>--</option>
         <option :value="p" v-for="p in profiles" :key="p">{{ p }}</option>
       </select>
@@ -25,8 +25,8 @@ import ChatEntry from '@/components/ChatEntry.vue'
           <i class="fa-solid fa-folder-tree"></i>
         </div>
         <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-          <li v-for="openChat in chats" :key="openChat.id" @click="loadChat(openChat)" >
-            <a>{{ openChat.name }}</a>
+          <li v-for="openChat in chats" :key="openChat" @click="loadChat(openChat)" >
+            <a>{{ openChat }}</a>
           </li>
         </ul>
       </div>
@@ -222,8 +222,8 @@ export default {
     },
     onContentPaste (ev) {
     },
-    loadChat (newChat) {
-      this.chat = newChat
+    async loadChat (newChat) {
+      this.chat = await API.chats.loadChat(newChat)
     },
     onCopy (message) {
       navigator.permissions.query({name: "clipboard-read"}).then(result => {

@@ -41,6 +41,23 @@ class KnowledgeLoader:
 
         return False
 
+    def is_valid_file(self, file, last_update=None, path=None, current_sources=None):
+        if not os.path.isfile(file):
+            return False
+
+        if path:
+            if not (path in file):
+                return False
+        
+        file_errors = [err for err in self.settings.knowledge_file_ignore.split(",") if err in file]
+        if file_errors:
+            return False
+        
+        if not self.should_index_doc(file_path=file, last_update=last_update, current_sources=current_sources):
+            return False
+    
+        return True
+
     def load(self, last_update: datetime = None, path: str = None, current_sources=None):
         documents = []
         code_splitter = KnowledgeCodeSplitter()
@@ -80,24 +97,7 @@ class KnowledgeLoader:
                     external_file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*")]
                     full_file_paths = full_file_paths + external_file_paths
 
-        def isValidFile(file):
-            if not os.path.isfile(file):
-                return False
-
-            if path:
-                if not (path in file):
-                    return False
-            
-            file_errors = [err for err in self.settings.knowledge_file_ignore.split(",") if err in file]
-            if file_errors:
-                return False
-            
-            if not self.should_index_doc(file_path=file, last_update=last_update, current_sources=current_sources):
-                return False
-        
-            return True
-
-        full_file_paths = [file for file in full_file_paths if isValidFile(file) ]
+        full_file_paths = [file for file in full_file_paths if self.is_valid_file(file, last_update, path, current_sources) ]
         return full_file_paths
 
     def list_repository_folders(self):

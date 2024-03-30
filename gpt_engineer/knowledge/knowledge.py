@@ -110,7 +110,6 @@ class Knowledge:
             pass
 
     def get_all_documents (self, include=[]):
-        logger.info('Get all documents')
         collection = self.get_db()._collection
         collection_docs = collection.get(include=include + ['metadatas'])
         documents = []
@@ -125,7 +124,6 @@ class Knowledge:
         return documents
         
     def clean_deleted_documents(self):
-        logger.info('Removing deleted documents')
         ids_to_delete = []
         collection = self.get_db()._collection
         documents = self.get_all_documents()
@@ -133,7 +131,7 @@ class Knowledge:
         sources = []
         for doc in documents:
           source = doc.metadata["source"]
-          if not os.path.isfile(source):
+          if not self.loader.is_valid_file(source):
             sources.append(source)
             ids_to_delete.append(doc.db_id)
 
