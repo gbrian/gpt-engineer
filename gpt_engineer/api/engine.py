@@ -165,7 +165,8 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
     messages = [m.content for m in chat.messages[:-1] if not hasattr(m, "hide")]
     philosophy = ProfileManager(settings=settings).read_profile("philosophy").content
     messages = [philosophy] + messages
-    response, documents = ai_chat(ai=ai, dbs=dbs, user_input=user_input, messages=messages, settings=settings)
+    response, documents = ai_chat(
+        ai=ai, dbs=dbs, user_input=user_input, messages=messages, settings=settings, ignore_documents=[f"/{chat.name}"])
     if documents:
         doc_content = '\n'.join([document_to_context(doc) for doc in documents])
         response = f"{response}\n{doc_content}"

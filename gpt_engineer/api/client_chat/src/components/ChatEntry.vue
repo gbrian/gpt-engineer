@@ -21,13 +21,8 @@
           <button class="btn btn-xs" @click="$emit('copy')">
             <i class="fa-solid fa-copy"></i>
           </button>      
-          <button class="btn btn-xs" @click="$emit('hide')">
-            <span v-if="message.hide">
-              <i class="fa-solid fa-eye"></i>
-            </span>
-            <span v-else>
-              <i class="fa-solid fa-eye-slash"></i>
-            </span>
+          <button class="btn btn-error btn-xs" @click="$emit('remove')">
+            <i class="fa-solid fa-trash"></i>
           </button>
           <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-xs"><i class="fa-solid fa-ellipsis-vertical"></i></div>
@@ -39,9 +34,14 @@
                 <button class="btn btn-info btn-xs" @click="showDoc = !showDoc">
                   <i class="fa-solid fa-code"></i>
                 </button>
-                <button class="btn btn-error btn-xs" @click="$emit('remove')">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
+                <button class="btn btn-xs" @click="$emit('hide')">
+                  <span v-if="message.hide">
+                    <i class="fa-solid fa-eye"></i>
+                  </span>
+                  <span v-else>
+                    <i class="fa-solid fa-eye-slash"></i>
+                  </span>
+                </button>      
               </li>
             </ul>
           </div>
@@ -50,8 +50,8 @@
           <span v-if="message.hide">
             <i class="fa-solid fa-eye-slash"></i>
           </span>
-          <div v-if="message.role ==='user'">You</div>
-          <div v-else>gpt-engineer</div>
+          <div v-if="message.role ==='user'">You ({{ message.role }})</div>
+          <div v-else>gpt-engineer ({{ message.role }})</div>
         </div>
         <div class="text-md text-wrap" v-html="html"></div>
       </div>

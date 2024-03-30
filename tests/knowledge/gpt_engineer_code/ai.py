@@ -69,7 +69,7 @@ class AI:
         if prompt:
             messages.append(HumanMessage(content=prompt))
 
-        logger.debug(f"Creating a new chat completion: {messages}")
+        # logger.debug(f"Creating a new chat completion: {messages}")
 
         response = None
         md5Key = messages_md5(messages) if self.cache else None
@@ -93,7 +93,7 @@ class AI:
             messages=messages, answer=response.content, step_name=step_name
         )
         messages.append(response)
-        logger.debug(f"Chat completion finished: {messages}")
+        # logger.debug(f"Chat completion finished: {messages}")
 
         return messages
 

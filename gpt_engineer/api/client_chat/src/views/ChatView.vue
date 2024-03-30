@@ -5,8 +5,8 @@ import ChatEntry from '@/components/ChatEntry.vue'
   <div class="flex flex-col gap-2 h-full justify-between" v-if="chat">
     <div class="text-xl flex gap-2 items-center px-2">
       CODX
-      <input type="text" class="input input-xs input-bordered w-24" v-model="chat.name" />
-      <select class="select select-xs select-bordered w-24" v-model="profileName">
+      <input type="text" class="input input-xs input-bordered w-40" v-model="chat.name" />
+      <select class="select select-xs select-bordered w-24 hidden" v-model="profileName">
         <option value="" selected>--</option>
         <option :value="p" v-for="p in profiles" :key="p">{{ p }}</option>
       </select>
@@ -133,8 +133,8 @@ export default {
       this.postMyMessage()
       this.sendApiRequest(
         () => API.chats.message(this.chat),
-        ({ content }) => {
-          return `${content}`
+        ({ content } = {}) => {
+          return `${ content }`
         }
       )
     },

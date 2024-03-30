@@ -100,8 +100,16 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     #)
     return doc
 
-def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings):
+def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings, ignore_documents=[]):
   documents = dbs.knowledge.search(query)
+  def is_valid_document(doc):
+    source = doc.metadata["source"]
+    checks = [check for check in ignore_documents if check in source]
+    if checks:
+      return False
+    return True
+  
+  documents = [doc for doc in documents if is_valid_document(doc)]
   if documents:
       # Filter out irrelevant documents based on a relevance score
       relevant_documents = [doc for doc in parallel_validate_contexts(
