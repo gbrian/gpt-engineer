@@ -33,5 +33,5 @@ else
   echo "Remove running container"
   docker rm -f gpt-engineer
   $CMD
-  docker logs -f gpt-engineer
+  [ "$3" == "--logs"] && docker logs -f gpt-engineer
 fi
