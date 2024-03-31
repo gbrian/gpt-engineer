@@ -211,6 +211,7 @@ class GPTEngineerAPI:
         @app.get("/api/settings")
         def settings_check(request: Request):
             settings = request.state.settings
+            global WATCH_FOLDERS
             settings.watching = True if settings.gpteng_path in WATCH_FOLDERS else False
             return settings
 
@@ -269,7 +270,6 @@ class GPTEngineerAPI:
             global WATCH_FOLDERS
             if settings.gpteng_path in WATCH_FOLDERS:
                 WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]
-            
             return { "OK": 1 }
 
         return app

@@ -8,7 +8,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 
 <template>
   <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2">
-    <div class="alert alert-error text-xs font-bold text-white" v-if="!API.lastSettings?.openai_api_key">
+    <div class="alert alert-error text-xs font-bold text-white" v-if="!lastSettings?.openai_api_key">
       Please fix your settings. No AI key present
     </div>
     <div class="flex gap-2 items-center justify-between">
@@ -18,7 +18,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <div class="form-control">
         <label class="cursor-pointer label">
           <span class="label-text mr-2">Watch project changes</span> 
-          <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="API.lastSettings.watching" @change="toggleWatch" />
+          <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="lastSettings.watching" @change="toggleWatch" />
         </label>
       </div>
     </div>
