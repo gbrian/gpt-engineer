@@ -52,6 +52,9 @@ import MarkdownVue from '@/components/Markdown.vue'
         </span>
       </div>
     </div>
+    <div class="alert alert-error" >
+      {{ status?.empty }}: Invalid indexed docs
+    </div>
     <div class="stats">
       <div class="stat">
         <div class="stat-figure text-secondary">
@@ -128,8 +131,9 @@ import MarkdownVue from '@/components/Markdown.vue'
     </div>
     <dialog class="modal modal-bottom sm:modal-middle modal-open" v-if="showDoc">
       <div class="modal-box flex flex-col gap-2">
-        <h3 class="font-bold text-lg">{{ showDoc.metadata.source }}</h3>
+        <div class="font-bold text-wrap">{{ showDoc.metadata.source }}</div>
         <MarkdownVue class="prose max-h-60 overflow-auto" :text="showDocPreview" />
+        <pre><code class="language-json text-wrap">{{ JSON.stringify(showDoc.metadata, null, 2)  }}</code></pre>
         <div class="modal-action">
           <form class="flex flex-gap" method="dialog">
             <button class="btn btn-error" @click="unIndexFile(showDoc)">

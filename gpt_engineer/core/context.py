@@ -4,7 +4,12 @@ from termcolor import colored
 from pathlib import Path
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
+from gpt_engineer.core.utils import document_to_context
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.settings import GPTEngineerSettings
@@ -15,7 +20,7 @@ from gpt_engineer.settings import (
   KNOWLEDGE_MODEL
 )
 
-KNOWLEDGE_CONTEXT_SCORE_MATCH = re.compile(r".*SCORE:\s+([0-9\.]+)", re.MULTILINE)
+KNOWLEDGE_CONTEXT_SCORE_MATCH = re.compile(r".*([0-9]+)%", re.MULTILINE)
 
 def validate_context(ai, dbs, prompt, doc, score):
     # This function now handles a single document.
@@ -59,32 +64,30 @@ def parallel_validate_contexts(dbs, prompt, documents, settings: GPTEngineerSett
           if doc and doc.metadata.get('relevance_score', 0) >= score]
       
 def get_response_score (response):
+    percent = response.strip().replace("%", "")
     try:
-      score_match = KNOWLEDGE_CONTEXT_SCORE_MATCH.findall(response)
-      nums = score_match[0].split(".")
-      score = ".".join(nums[0:2]) if len(nums) > 1 else nums[0]
-      score = float(score)
-      return score if score >= 0 and score <= 1 else None  
-    except:
-      return None
+      return float(1 / 100 * int(percent))
+    except Exception as ex:
+      logging.error(f"Error <{ex}> retrieving score from response: {percent} - '{response}'")
+    return None
   
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
-    system = ""
-    validate_prompt = dbs.preprompts["validate_context"] \
-      .replace("{{ prompt }}", prompt) \
-      .replace("{{ context }}", doc.page_content)
-
-    messages = ai.start(system, validate_prompt, step_name="ai_validate_context", max_response_length=3)
+    assert prompt
+    messages = [
+      HumanMessage(content=document_to_context(doc)),
+      HumanMessage(content=f"Score from 0% to 100% how related is this search query with the current conversation (0% if you don't know):\n{prompt}")
+    ]
+    messages = ai.next(messages=messages, step_name="ai_validate_context", max_response_length=3)
     
     response = messages[-1].content.strip()
     score = get_response_score(response)
     
-    if not score:
+    if score is None:
       if not retry_count:
         logging.error(colored(f"[validate_context] re-trying failed validation\n{prompt}\n{response}", "red"))
         return ai_validate_context(ai, dbs, prompt, doc, retry_count=1)
 
-      logging.error(colored(f"[validate_context] failed to validate {prompt}\n{response}", "red"))
+      logging.error(colored(f"[validate_context] failed to validate. prompt: {prompt}\nMessages: {messages}", "red"))
       score = -1
     
     doc.metadata["relevance_score"] = score

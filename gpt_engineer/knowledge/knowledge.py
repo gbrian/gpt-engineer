@@ -304,10 +304,11 @@ class Knowledge:
 
     def status (self):
         collection = self.get_db()._collection
-        collection_docs = collection.get(include=['metadatas'])
+        collection_docs = collection.get(include=['metadatas', 'documents'])
         
         ids = collection_docs["ids"]
         metadatas = collection_docs["metadatas"]
+        documents = collection_docs["documents"]
 
         doc_count = len(ids)
         doc_sources = list(dict.fromkeys([metadata["source"] for metadata in metadatas]))
@@ -319,5 +320,6 @@ class Knowledge:
         return {
           "doc_count": doc_count,
           "file_count": file_count,
-          "folders": folders
+          "folders": folders,
+          "empty": len(documents) - len(metadatas)
         }

@@ -3,9 +3,6 @@ import logging
 for logger in [
     'apscheduler.scheduler',
     'apscheduler.executors.default',
-    'httpx',
-    'httpcore.http11',
-    'openai._base_client',
     'httpcore.connection'
     ]:
     logging.getLogger(logger).setLevel(logging.WARNING)

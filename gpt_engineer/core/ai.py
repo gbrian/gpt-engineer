@@ -57,6 +57,10 @@ Message = Union[AIMessage, HumanMessage, SystemMessage]
 # Set up logging
 logger = logging.getLogger(__name__)
 
+
+class LogginCallbackHandler(StreamingStdOutCallbackHandler):
+    pass
+
 class AI:
     """
     A class to interface with a language model for chat-based interactions.
@@ -190,7 +194,7 @@ class AI:
             response = AIMessage(content=json.loads(self.cache[md5Key])["content"])
 
         if not response:
-            callback = StreamingStdOutCallbackHandler() 
+            callback = LogginCallbackHandler() 
             callbacks = [callback]
             response = self.backoff_inference(messages, callbacks)
             if self.cache:

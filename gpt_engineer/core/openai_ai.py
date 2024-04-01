@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 from openai import OpenAI
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
@@ -24,7 +25,7 @@ class OpenAI_AI:
 
     def chat_completions(self, messages, config={}):
         openai_messages = [self.convert_message(msg) for msg in messages]
-        response = self.client.chat.completions.create(
+        response_stream = self.client.chat.completions.create(
             model=config.get("model", self.settings.model),
             temperature=config.get("temperature", self.settings.temperature),
             messages=openai_messages,
@@ -32,7 +33,7 @@ class OpenAI_AI:
         )
         callbacks = config.get("callbacks", None)
         content_parts = []
-        for chunk in response:
+        for chunk in response_stream:
             chunk_content = chunk.choices[0].delta.content
             if not chunk_content:
                 continue
@@ -41,6 +42,5 @@ class OpenAI_AI:
             if callbacks:
                 for cb in callbacks:
                     cb.on_llm_new_token(chunk_content)
-
         return AIMessage(content="".join(content_parts))
 

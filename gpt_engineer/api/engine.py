@@ -46,7 +46,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
     return find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=settings, ignore_documents=ignore_documents)
 
 def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
-    relevant_documents = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=query, settings=settings)
+    relevant_documents, file_list = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=query, settings=settings)
     file_list = [str(Path(doc.metadata["source"]).absolute())
                   for doc in relevant_documents]
     file_list = list(dict.fromkeys(file_list))  # Remove duplicates
@@ -66,7 +66,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
           for m in chat.messages[:-1] if not hasattr(m, "hide")
     ]
 
-    relevant_documents = select_afefcted_documents_from_knowledge(ai=ai,
+    relevant_documents, file_list = select_afefcted_documents_from_knowledge(ai=ai,
                                                         dbs=dbs,
                                                         query=query,
                                                         settings=settings,
