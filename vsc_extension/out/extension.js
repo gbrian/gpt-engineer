@@ -1,55 +1,95 @@
 const vscode = require('vscode');
+const outputChannel = vscode.window.createOutputChannel("gpt-engineer");
 
-function activate(context) {
-  let disposableWebview = undefined;
+const log = (...args) => outputChannel.appendLine(args.map(JSON.stringify).join(" "))
 
-  let runTask = vscode.commands.registerCommand('gpt-engineer.runTask', function () {
-    if (disposableWebview) {
-      disposableWebview.dispose();
-    }
-    disposableWebview = vscode.window.createWebviewPanel(
-      'runTask', 
-      'Run Task', 
-      vscode.ViewColumn.One, 
-      {}
-    );
-    // Implementation for running a task in webview
-  });
+class GPTViewProvider {
 
-  let improveTask = vscode.commands.registerCommand('gpt-engineer.improveTask', function () {
-    if (disposableWebview) {
-      disposableWebview.dispose();
-    }
-    disposableWebview = vscode.window.createWebviewPanel(
-      'improveTask', 
-      'Improve Task', 
-      vscode.ViewColumn.One, 
-      {}
-    );
-    // Implementation for improving a task in webview
-  });
+	static viewType = 'gptExtensionTabView';
+	_view;
 
-  let newTask = vscode.commands.registerCommand('gpt-engineer.newTask', function () {
-    if (disposableWebview) {
-      disposableWebview.dispose();
-    }
-    disposableWebview = vscode.window.createWebviewPanel(
-      'newTask', 
-      'New Task', 
-      vscode.ViewColumn.One, 
-      {}
-    );
-    // Implementation for creating a new task in webview
-  });
+	constructor(
+		_extensionUri,
+	) { }
 
-  context.subscriptions.push(runTask);
-  context.subscriptions.push(improveTask);
-  context.subscriptions.push(newTask);
+	resolveWebviewView(
+		webviewView,
+		context,
+		_token,
+	) {
+		log("resolveWebviewView")
+
+		this._view = webviewView;
+
+		webviewView.webview.options = {
+			// Allow scripts in the webview
+			enableScripts: true,
+
+			localResourceRoots: [
+				this._extensionUri
+			]
+		};
+		const settings = vscode.workspace.getConfiguration('gptengineer');
+		
+		this._getHtmlForWebview(webviewView.webview, settings).then(html => {
+			webviewView.webview.html = html;
+			log("_getHtmlForWebview ", settings, html)
+			webviewView.webview.onDidReceiveMessage(data => {
+				log("onDidReceiveMessage ", data)
+			});
+		})
+	}
+
+	async _getHtmlForWebview(webview, settings) {
+		// const res = await fetch(settings.url)
+		// return res.text()
+		// fetch setting.url and return the html
+		return `
+		<html>
+			<head>
+				<style>
+					html, body, iframe {
+						border:none;
+						width:99% !important;
+						height:100% !important
+					}
+				</style>
+			</head>
+			<body>
+				<iframe src="${settings.url}" />
+			</body>
+		</html>`
+	}
 }
 
-function deactivate() {}
+function getNonce() {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+}
+
+function activate(context) {
+    log("Activating extension");
+	try {
+		const provider = new GPTViewProvider(context.extensionUri);
+		log("Create provider");
+
+		context.subscriptions.push(
+			vscode.window.registerWebviewViewProvider(GPTViewProvider.viewType, provider));
+		
+		log("Provider registered");
+	} catch (ex) {
+		log("Error activating extension: " + ex);
+	}
+}
+
+function deactivate () {
+}
 
 module.exports = {
-  activate,
-  deactivate
-};
+	activate,
+	deactivate
+}
