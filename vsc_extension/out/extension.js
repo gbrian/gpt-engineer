@@ -44,7 +44,7 @@ class GPTViewProvider {
 		// const res = await fetch(settings.url)
 		// return res.text()
 		// fetch setting.url and return the html
-		return `
+		return settings.url ? `
 		<html>
 			<head>
 				<style>
@@ -58,7 +58,7 @@ class GPTViewProvider {
 			<body>
 				<iframe src="${settings.url}" />
 			</body>
-		</html>`
+		</html>` : '<h2>Please set gpt-engineer extension settings</h2>'
 	}
 }
 
