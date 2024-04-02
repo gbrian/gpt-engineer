@@ -33,6 +33,7 @@ class GPTEngineerSettings:
     knowledge_context_cutoff_relevance_score: float
     knowledge_external_folders: str
     watching: bool
+    use_knowledge: bool
 
     def __init__(self, **kwrgs):
         self.project_path = "."
@@ -49,6 +50,7 @@ class GPTEngineerSettings:
         self.knowledge_context_cutoff_relevance_score = settings.KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE
         self.knowledge_external_folders = ""
         self.watching = False
+        self.use_knowledge = True
         if kwrgs:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():

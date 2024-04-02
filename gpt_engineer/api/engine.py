@@ -132,6 +132,8 @@ def check_project_changes(settings: GPTEngineerSettings):
     dbs = build_dbs(settings=settings)
     dbs.knowledge.clean_deleted_documents()
     new_files = dbs.knowledge.detect_changes()
+    
+    logging.info(f"Check knowledge files")
     if not new_files:
         return
     logging.info(f"Reload knowledge files {new_files}")

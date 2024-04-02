@@ -42,5 +42,11 @@ class OpenAI_AI:
             if callbacks:
                 for cb in callbacks:
                     cb.on_llm_new_token(chunk_content)
-        return AIMessage(content="".join(content_parts))
+
+        response_content = "".join(content_parts)
+        logging.debug("\n".join(
+            [f"[{message.type}]\n{message.content}" for message in messages] +
+            ["[AI]",response_content]
+        ))
+        return AIMessage(content=response_content)
 

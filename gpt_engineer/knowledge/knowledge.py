@@ -35,9 +35,8 @@ class Knowledge:
     index_name: str
     db: Chroma = None
 
-    def __init__(self, ai: AI, knowledge_prompts: KnowledgePrompts, settings: GPTEngineerSettings):
+    def __init__(self, knowledge_prompts: KnowledgePrompts, settings: GPTEngineerSettings):
         self.settings = settings
-        self.ai = ai
 
         self.path = self.settings.project_path
         self.knowledge_prompts = knowledge_prompts
@@ -55,7 +54,13 @@ class Knowledge:
         self.last_update = None
         self.refresh_last_update()        
         self.last_changed_file_paths = []
-    
+
+    def get_ai(self):
+      from gpt_engineer.core import build_ai
+      if not self.ai:
+        self.ai = build_ai(settings=self.settings)
+      return self.ai
+
     def get_db(self):
       if not self.db:
         self.db = Chroma(persist_directory=self.db_path, 
@@ -73,6 +78,8 @@ class Knowledge:
       return changes
 
     def reload(self, full: bool = False):
+        if not self.settings.use_knowledge:
+            return
         self.refresh_last_update()
         if full:
           self.reset()
@@ -153,7 +160,7 @@ class Knowledge:
       if self.settings.knowledge_enrich_documents:
         try:
           prompt, system = self.knowledge_prompts.enrich_document_prompt(doc)
-          messages = self.ai.start(system, prompt, step_name="enrich_document")
+          messages = self.get_ai().start(system, prompt, step_name="enrich_document")
           summary = messages[-1].content.strip()
         except Exception as ex:
           logger.info(f"Error enriching document {source}: {ex}")
@@ -161,7 +168,7 @@ class Knowledge:
       if self.settings.knowledge_extract_document_tags:
         try:
           prompt, system = self.knowledge_prompts.extract_document_tags(doc)
-          messages = self.ai.start(system, prompt, step_name="extract_document_tags")
+          messages = self.get_ai().start(system, prompt, step_name="extract_document_tags")
           response = messages[-1].content.strip()
           keywords = [make_tag(k) for k in response.split(",")]
           doc.metadata["keywords"] = ", ".join(keywords)
@@ -256,6 +263,8 @@ class Knowledge:
         )
 
     def search(self, query):
+      if not self.settings.use_knowledge:
+        return []
       if self.settings.knowledge_extract_document_tags:
         keywords = self.extract_query_keywords(query)
         query = f"{query}\n{[make_tag(k) for k in keywords]}"
@@ -282,7 +291,7 @@ class Knowledge:
     def extract_query_keywords(self, query):
       try:
         prompt, system = self.knowledge_prompts.extract_query_tags(query)
-        messages = self.ai.start(system, prompt, step_name="extract_query_tags")
+        messages = self.get_ai().start(system, prompt, step_name="extract_query_tags")
         response = messages[-1].content.strip()
         keywords = [f"TAG_{k}" for k in response.split(",")]
         return keywords

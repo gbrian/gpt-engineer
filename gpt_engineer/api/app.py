@@ -3,7 +3,6 @@ import logging
 for logger in [
     'apscheduler.scheduler',
     'apscheduler.executors.default',
-    'httpcore.connection'
     ]:
     logging.getLogger(logger).setLevel(logging.WARNING)
 
