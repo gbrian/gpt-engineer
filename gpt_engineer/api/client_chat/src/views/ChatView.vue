@@ -6,10 +6,14 @@ import ChatEntry from '@/components/ChatEntry.vue'
     <div class="text-xl flex gap-2 items-center px-2">
       CODX
       <input type="text" class="input input-xs input-bordered w-40" v-model="chat.name" />
-      <select class="select select-xs select-bordered w-24 hidden" v-model="profileName">
-        <option value="" selected>--</option>
-        <option :value="p" v-for="p in profiles" :key="p">{{ p }}</option>
-      </select>
+      <div class="dropdown">
+        <div tabindex="0" role="button" class="btn btn-sm m-1">Add profiles</div>
+        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+          <li @click="addProfile(p)" v-for="p in profiles" :key="p"
+            ><a><i class="fa-solid fa-plus"></i> {{ p }}</a>
+          </li>
+        </ul>
+      </div>
       <button class="btn btn-primary btn-xs" @click="newChat">
         <i class="fa-solid fa-plus"></i>
       </button>
@@ -47,7 +51,23 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </div>
       </div>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
-  
+      <div class="p-2" v-if="chat.file_list?.length || chat.profiles?.length">
+        <span class="cursor-pointer mr-2 hover:underline group text-primary"
+          v-for="file in chat.profiles" :key="file" :title="file"
+          @click="showFile = file"
+        >
+          <i class="fa-solid fa-rectangle-list"></i>
+          {{ file.split("/").reverse()[0] }}
+        </span>
+
+        <span class="cursor-pointer mr-2 hover:underline group text-secondary"
+          v-for="file in chat.file_list" :key="file" :title="file"
+          @click="showFile = file"
+        >
+          <i class="fa-solid fa-file"></i>
+          {{ file.split("/").reverse()[0] }}
+        </span>
+      </div>
       <div class="flex gap-2 items-end">
         <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': ''
@@ -56,13 +76,29 @@ import ChatEntry from '@/components/ChatEntry.vue'
           @keydown.esc="onResetEdit"
           @paste="onContentPaste"
         >
-      </div>
+        </div>
         <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage">
           <i class="fa-solid fa-comment"></i>
         </button>
         <button class="btn btn-warning btn-sm mb-1" @click="improveCode">
           <i class="fa-solid fa-code"></i> Code
         </button>
+      </div>
+    </div>
+    <div class="modal modal-open" role="dialog" v-if="showFile">
+      <div class="modal-box flex flex-col gap-4 p-4">
+        <h3 class="font-bold text-lg">
+          This file belongs to the task context:
+          <div class="font-thin">{{ showFile }}</div>
+        </h3>
+        <div class="flex gap-2 justify-center">
+          <button class="btn btn-error" @click="removeFileFromContext">
+            Remove
+          </button>
+          <button class="btn" @click="showFile = null">
+            Close
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -79,7 +115,8 @@ export default {
       editMessage: null,
       editMessageId: null,
       chats: [],
-      profiles: null
+      profiles: null,
+      showFile: null
     }
   },
   async created () {
@@ -112,7 +149,6 @@ export default {
         ...this.chat.messages||[],
         msg
       ]
-      this.saveChat()
     },
     postMyMessage () {
       if (this.editMessage) {
@@ -170,11 +206,7 @@ export default {
       try {
         this.waiting = true
         const { data } = await apiCall()
-        this.addMessage({
-          role: 'assistent',
-          content: formater(data),
-          data
-        })
+        await this.loadChat(this.chat.name)
         this.$refs.anchor.scrollIntoView()
       } catch (ex) {
         this.addMessage({
@@ -212,8 +244,8 @@ export default {
         this.editMessageId = null
       }
     },
-    saveChat () {
-      API.chats.save(this.chat)
+    async saveChat () {
+      return API.chats.save(this.chat)
     },
     deleteChat () {
       API.chatManager.deleteChat(this.chat)
@@ -232,6 +264,21 @@ export default {
           }
       })
       .catch(console.error);
+    },
+    async removeFileFromContext () {
+      this.chat.profiles = this.chat.profiles.filter(f => f !== this.showFile) 
+      this.chat.file_list = this.chat.file_list.filter(f => f !== this.showFile)
+      await this.saveChat()
+      await this.loadChat(this.chat.name)
+      this.showFile = null
+    },
+    async addProfile (profile) {
+      if (this.chat.profiles.find(f => f.endsWith(profile))) {
+        return
+      }
+      this.chat.profiles = [...this.chat.profiles, profile]
+      await this.saveChat()
+      await this.loadChat(this.chat.name)
     }
   }
 }

@@ -21,6 +21,8 @@ from gpt_engineer.core.context import find_relevant_documents
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
+from gpt_engineer.knowledge.knowledge import Knowledge
+
 from gpt_engineer.core.mention_manager import (
     extract_mentions,
     replace_mentions
@@ -28,10 +30,17 @@ from gpt_engineer.core.mention_manager import (
 
 FILE_WATCH_MANGER = None
 
-def reload_knowledge(settings: GPTEngineerSettings):
-    ai = build_ai(settings=settings)
-    dbs = build_dbs(settings=settings, ai=ai)
-    dbs.reload()
+def reload_knowledge(settings: GPTEngineerSettings, path: str = None):
+    knowledge = Knowledge(settings=settings)
+    if path:
+        documents = knowledge.reload_path(path)
+        return { "doc_count": len(documents) }
+    
+    knowledge.reload()
+
+def delete_knowledge_source(settings: GPTEngineerSettings, sources: [str]):
+    Knowledge(settings=settings).delete_documents(sources=sources)
+    return { "ok": 1 }
 
 def on_project_changed(project_path: str, file_path: str):
     logging.info(f"Project changed {project_path} - {file_path}")
@@ -54,31 +63,12 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
     return file_list
 
 
-def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSettings, profiles: [str]=["philosophy","software_developer"]):
+def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSettings):
 
-    query = chat.messages[-1].content
-    profile_manager = ProfileManager(settings=settings)
-    syatem_comtent = "\n".join([profile_manager.read_profile(profile).content for profile in profiles])
-    messages = [
-        SystemMessage(content=syatem_comtent),
-    ] + [ 
-        HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) \
-          for m in chat.messages[:-1] if not hasattr(m, "hide")
-    ]
+    chat = chat_with_project(settings=settings, chat=chat)
 
-    relevant_documents, file_list = select_afefcted_documents_from_knowledge(ai=ai,
-                                                        dbs=dbs,
-                                                        query=query,
-                                                        settings=settings,
-                                                        ignore_documents=[f"/{chat.name}"])
-    for doc in relevant_documents:
-        doc_context = document_to_context(doc)
-        messages.append(HumanMessage(content=doc_context))
+    response = chat.messages[-1].content
 
-    messages.append(HumanMessage(content=query))
-    messages = ai.next(messages, step_name=curr_fn())
-
-    response = messages[-1].content
     edits = []
     try:
       edits = parse_edits(response)
@@ -97,10 +87,11 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
 
     return (messages, edits, errors, affected_files)
 
-def check_knowledge_status(dbs: DBs):
-    last_update = dbs.knowledge.last_update
-    status = dbs.knowledge.status()
-    pending_files = dbs.knowledge.detect_changes()
+def check_knowledge_status(settings: GPTEngineerSettings):
+    knowledge = Knowledge(settings=settings)
+    last_update = knowledge.last_update
+    status = knowledge.status()
+    pending_files = knowledge.detect_changes()
     return {
       "last_update": str(last_update),
       "pending_files": pending_files,
@@ -166,19 +157,38 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
     ai = build_ai(settings)
-    dbs = build_dbs(settings, ai=ai)
+    dbs = build_dbs(settings)
     
-    # Perform search on Knowledge using the input
-    # Return the search results as response
-    user_input = chat.messages[-1].content
-    messages = [m.content for m in chat.messages[:-1] if not hasattr(m, "hide")]
-    philosophy = ProfileManager(settings=settings).read_profile("philosophy").content
-    messages = [philosophy] + messages
-    response, documents = ai_chat(
-        ai=ai, dbs=dbs, user_input=user_input, messages=messages, settings=settings, ignore_documents=[f"/{chat.name}"])
+    query = chat.messages[-1].content
+    profile_manager = ProfileManager(settings=settings)
+    system_content = "\n".join([profile_manager.read_profile(profile).content for profile in chat.profiles])
+    messages = [
+        SystemMessage(content=system_content),
+    ] + [ 
+        HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) \
+          for m in chat.messages[:-1] if not hasattr(m, "hide")
+    ]
+
+    documents, file_list = select_afefcted_documents_from_knowledge(ai=ai,
+                                                        dbs=dbs,
+                                                        query=query,
+                                                        settings=settings,
+                                                        ignore_documents=[f"/{chat.name}"])
+    for doc in documents:
+        doc_context = document_to_context(doc)
+        messages.append(HumanMessage(content=doc_context))
+
+    messages.append(HumanMessage(content=query))
+    messages = ai.next(messages, step_name=curr_fn())
+    response = messages[-1].content
     if documents:
         doc_content = '\n'.join([document_to_context(doc) for doc in documents])
         response = f"{response}\n{doc_content}"
+        file_list = chat.file_list if chat.file_list else []
+        doc_file_list = [doc.metadata["source"] for doc in documents]
+        chat.file_list = list(set(file_list + doc_file_list))
+        logging.info(f"chat_with_project file_list: {chat.file_list}")
+    
     response_message = Message(role="assistant", hidden=False, content=response, documents=documents)
     chat.messages.append(response_message)
     return chat

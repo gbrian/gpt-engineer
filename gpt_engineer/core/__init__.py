@@ -95,7 +95,7 @@ def gtp_engineer(settings: GPTEngineerSettings):
         steps_config = StepsConfig.IMPROVE_CODE
 
     ai = build_ai(settings=settings)
-    dbs = build_dbs(settings=settings, ai=ai)
+    dbs = build_dbs(settings=settings)
 
     if settings.build_knowledge:
         # Force full re-build
@@ -153,17 +153,14 @@ def build_ai(settings: GPTEngineerSettings) -> AI:
     return AI(settings=settings)
 
 
-def build_dbs(settings: GPTEngineerSettings, ai: AI=None) -> DBs:
-    if not ai:
-        ai = AI(settings=settings)
+def build_dbs(settings: GPTEngineerSettings) -> DBs:
     project_path = os.path.abspath(
         settings.project_path
     )  # resolve the string to a valid path (eg "a/b/../c" to "a/c")
     path = Path(project_path).absolute()
 
     workspace_path = path
-    input_path = path
-
+    
     project_metadata_path = path 
     if GPTENG_PATH:
         project_metadata_path = Path(GPTENG_PATH).absolute()

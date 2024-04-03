@@ -86,7 +86,11 @@ import MarkdownVue from '@/components/Markdown.vue'
     <div class="p-4 flex flex-col gap-2 grow">
       <div class="border p-4 rounded-md" v-if="status?.pending_files?.length">
         <div class="text-xl font-medium">Pending files</div>
-        <div v-if="status?.pending_files?.length">{{ status?.pending_files }}</div>
+        <div class="max-h-60 overflow-auto" v-if="status?.pending_files?.length">
+          <div class="text-xs" v-for="file in status?.pending_files" :key="file">
+            {{ file.replace(projectPath, "") }}
+          </div>
+        </div>
         <div class="text-xs text-info" v-else>All files indexed</div>
         <div class="flex gap-2" v-if="status?.pending_files?.length">
           <button class="btn btn-primary btn-sm" @click="reloadKnowledge">

@@ -12,8 +12,9 @@ class Message(BaseModel):
 
 class Chat(BaseModel):
     id: str = Field(default='')
+    file_list: List[str] = Field(default=[])
+    profiles: List[str] = Field(default=[])
     name: str = Field(default='')
-    profile: str = Field(default='')
     messages: List[Message] = Field(default=[])
 
 class Logprobs(BaseModel):

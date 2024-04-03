@@ -23,7 +23,6 @@ from gpt_engineer.api.model import (
 from gpt_engineer.api.app_service import clarify_business_request
 
 from gpt_engineer.core.settings import GPTEngineerSettings 
-from gpt_engineer.core import build_dbs, build_ai
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.api.profile_manager import ProfileManager
 from gpt_engineer.core.chat_manager import ChatManager
@@ -37,6 +36,7 @@ from gpt_engineer.api.engine import (
     select_afefcted_documents_from_knowledge,
     check_project_changes,
     reload_knowledge,
+    delete_knowledge_source,
     chat_with_project
 )
 
@@ -55,12 +55,6 @@ def process_projects_changes():
 add_work(process_projects_changes)
 
 class GPTEngineerAPI:
-    def get_dbs(self, args: GPTEngineerSettings):
-        return build_dbs(settings=args, ai=build_ai(args))
-
-    def get_ai(self, args: GPTEngineerSettings):
-        return build_ai(args)
-
     def start(self):
         app = FastAPI(
             title="GPTEngineerAPI",
@@ -90,7 +84,7 @@ class GPTEngineerAPI:
                 try:
                     settings = GPTEngineerSettings.from_project(gpteng_path)
                     logging.info(f"Request settings {settings.__dict__}")
-                    get_dbs(settings).knowledge.reload()
+                    reload_knowledge(settings)
                 except:
                     pass
             request.state.settings = settings
@@ -103,24 +97,20 @@ class GPTEngineerAPI:
 
         @app.get("/api/knowledge/reload")
         def knowledge_reload(request: Request):
-            args = request.state.settings
-            dbs = self.get_dbs(args)
-            dbs.knowledge.reload()
-            return knowledge_status(request)
+            settings = request.state.settings
+            reload_knowledge(settings=settings)
+            return knowledge_status(settings=settings)
 
         @app.post("/api/knowledge/reload-path")
-        def knowledge_reload_path(knowledgeReloadPath: KnowledgeReloadPath, request: Request):
-            args = request.state.settings
-            dbs = self.get_dbs(args)
-            documents = dbs.knowledge.reload_path(knowledgeReloadPath.path)
-            return { "doc_count": len(documents) }
+        def knowledge_reload_path(knowledge_reload_path: KnowledgeReloadPath, request: Request):
+            settings = request.state.settings
+            reload_knowledge(settings=settings, path=knowledge_reload_path.path)
+            return knowledge_status(settings=settings)
 
         @app.post("/api/knowledge/delete")
-        def knowledge_reload_path(knowledgeDeleteSources: KnowledgeDeleteSources, request: Request):
+        def knowledge_reload_path(knowledge_delete_sources: KnowledgeDeleteSources, request: Request):
             args = request.state.settings
-            dbs = self.get_dbs(args)
-            dbs.knowledge.delete_documents(sources=knowledgeDeleteSources.sources)
-            return { "ok": 1 }
+            return delete_knowledge_source(settings=setting, sources=knowledge_delete_sources.sources)
 
         @app.post("/api/knowledge/reload-search")
         def knowledge_reload_path(knowledge_search: KnowledgeSearch, request: Request):
@@ -150,9 +140,8 @@ class GPTEngineerAPI:
 
         @app.get("/api/knowledge/status")
         def knowledge_status(request: Request):
-            args = request.state.settings
-            dbs = self.get_dbs(args)
-            return check_knowledge_status(dbs=dbs)
+            settings = request.state.settings
+            return check_knowledge_status(settings=settings)
 
         @app.get("/api/chats")
         def list_chats(request: Request):
@@ -233,7 +222,6 @@ class GPTEngineerAPI:
         @app.get("/api/profiles")
         def list_profile(request: Request):
             settings = request.state.settings
-            dbs = dbs = self.get_dbs(settings)
             return ProfileManager(settings=settings).list_profiles()
 
         @app.post("/api/profiles")

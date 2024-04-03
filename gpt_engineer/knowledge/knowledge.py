@@ -35,7 +35,7 @@ class Knowledge:
     index_name: str
     db: Chroma = None
 
-    def __init__(self, knowledge_prompts: KnowledgePrompts, settings: GPTEngineerSettings):
+    def __init__(self, settings: GPTEngineerSettings, knowledge_prompts: KnowledgePrompts = None):
         self.settings = settings
 
         self.path = self.settings.project_path
