@@ -3,6 +3,7 @@ import logging
 for logger in [
     'apscheduler.scheduler',
     'apscheduler.executors.default',
+    'httpx'
     ]:
     logging.getLogger(logger).setLevel(logging.WARNING)
 
@@ -37,6 +38,7 @@ from gpt_engineer.api.engine import (
     check_project_changes,
     reload_knowledge,
     delete_knowledge_source,
+    knowledge_search,
     chat_with_project
 )
 
@@ -109,34 +111,13 @@ class GPTEngineerAPI:
 
         @app.post("/api/knowledge/delete")
         def knowledge_reload_path(knowledge_delete_sources: KnowledgeDeleteSources, request: Request):
-            args = request.state.settings
-            return delete_knowledge_source(settings=setting, sources=knowledge_delete_sources.sources)
+            settings = request.state.settings
+            return delete_knowledge_source(settings=settings, sources=knowledge_delete_sources.sources)
 
         @app.post("/api/knowledge/reload-search")
-        def knowledge_reload_path(knowledge_search: KnowledgeSearch, request: Request):
+        def knowledge_search_endpoint(knowledge_search_params: KnowledgeSearch, request: Request):
             settings = request.state.settings
-            if knowledge_search.document_search_type:
-                settings.knowledge_search_type = knowledge_search.document_search_type
-            if knowledge_search.document_count:
-                settings.knowledge_search_document_count = knowledge_search.document_count
-            if knowledge_search.document_cutoff_score:
-                settings.knowledge_context_cutoff_relevance_score = knowledge_search.document_cutoff_score
-            
-            dbs = self.get_dbs(settings)
-            ai = self.get_ai(settings)
-            documents = []
-            if knowledge_search.search_type == "embeddings":
-                documents = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=knowledge_search.search_term, settings=settings)
-            if knowledge_search.search_type == "source":
-                documents = dbs.knowledge.search_in_source(knowledge_search.search_term)
-            return { 
-                "documents": documents, 
-                "settings": {
-                    "knowledge_search_type": settings.knowledge_search_type,
-                    "knowledge_search_document_count": settings.knowledge_search_document_count,
-                    "knowledge_context_cutoff_relevance_score": settings.knowledge_context_cutoff_relevance_score 
-                }
-            }
+            return knowledge_search(settings=settings, knowledge_search=knowledge_search_params)
 
         @app.get("/api/knowledge/status")
         def knowledge_status(request: Request):
@@ -168,11 +149,10 @@ class GPTEngineerAPI:
         @app.post("/api/run/improve")
         def run_improve(chat: Chat, request: Request):
             settings = request.state.settings
-            dbs = self.get_dbs(settings)
-            ai = self.get_ai(settings)
             # Perform search on Knowledge using the input
             # Return the search results as response
-            messages, edits, errors, affected_files = improve_existing_code(ai=ai, dbs=dbs, chat=chat, settings=settings)
+            messages, edits, errors, affected_files = improve_existing_code(chat=chat, settings=settings)
+            ChatManager(settings=settings).save_chat(chat)
             return {
               "messages": messages,
               "edits": edits,
@@ -182,12 +162,10 @@ class GPTEngineerAPI:
 
         @app.post("/api/run/edit")
         def run_edit(chat: Chat, request: Request):
-            args = request.state.settings
-            dbs = self.get_dbs(args)
-            ai = self.get_ai(args)
+            settings = request.state.settings
             # Perform search on Knowledge using the input
             # Return the search results as response
-            message, errors = run_edits(ai=ai, dbs=dbs, chat=chat)
+            message, errors = run_edits(settings=settings, chat=chat)
             return {
               "messages": chat.messages + [{ "role": "assistant", "content": message }],
               "errors": errors

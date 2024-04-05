@@ -35,6 +35,26 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </ul>
       </div>
     </div>
+    <div class="p-2">
+      <button class="btn btn-sm mr-2" @click="addFile = ''">
+        <i class="fa-solid fa-file-circle-plus"></i>
+      </button>
+      <span class="cursor-pointer mr-2 hover:underline group text-primary"
+        v-for="file in chat.profiles" :key="file" :title="file"
+        @click="showFile = file"
+      >
+        <i class="fa-solid fa-rectangle-list"></i>
+        {{ file.split("/").reverse()[0] }}
+      </span>
+
+      <span class="cursor-pointer mr-2 hover:underline group text-secondary"
+        v-for="file in chat.file_list" :key="file" :title="file"
+        @click="showFile = file"
+      >
+        <i class="fa-solid fa-file"></i>
+        {{ file.split("/").reverse()[0] }}
+      </span>
+    </div>
     <div class="flex flex-col grow" v-if="chat">
       <div class="grow overflow-auto relative">
         <div class="absolute top-0 left-0 w-full h-full scroller">
@@ -51,23 +71,6 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </div>
       </div>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
-      <div class="p-2" v-if="chat.file_list?.length || chat.profiles?.length">
-        <span class="cursor-pointer mr-2 hover:underline group text-primary"
-          v-for="file in chat.profiles" :key="file" :title="file"
-          @click="showFile = file"
-        >
-          <i class="fa-solid fa-rectangle-list"></i>
-          {{ file.split("/").reverse()[0] }}
-        </span>
-
-        <span class="cursor-pointer mr-2 hover:underline group text-secondary"
-          v-for="file in chat.file_list" :key="file" :title="file"
-          @click="showFile = file"
-        >
-          <i class="fa-solid fa-file"></i>
-          {{ file.split("/").reverse()[0] }}
-        </span>
-      </div>
       <div class="flex gap-2 items-end">
         <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': ''
@@ -85,17 +88,23 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </button>
       </div>
     </div>
-    <div class="modal modal-open" role="dialog" v-if="showFile">
+    <div class="modal modal-open" role="dialog" v-if="showFile || addFile !== null">
       <div class="modal-box flex flex-col gap-4 p-4">
-        <h3 class="font-bold text-lg">
+        <h3 class="font-bold text-lg" v-if="showFile">
           This file belongs to the task context:
           <div class="font-thin">{{ showFile }}</div>
         </h3>
+        <div v-else>
+          <input type="text" class="input input-bordered w-full" v-model="addFile" placeholder="Add file to context, full path" />
+        </div>
         <div class="flex gap-2 justify-center">
-          <button class="btn btn-error" @click="removeFileFromContext">
+          <button class="btn btn-error" @click="removeFileFromContext" v-if="showFile">
             Remove
           </button>
-          <button class="btn" @click="showFile = null">
+          <button class="btn btn-primary" @click="addFileToContext" v-else>
+            Add
+          </button>
+          <button class="btn" @click="addFile = showFile = null">
             Close
           </button>
         </div>
@@ -116,7 +125,8 @@ export default {
       editMessageId: null,
       chats: [],
       profiles: null,
-      showFile: null
+      showFile: null,
+      addFile: null
     }
   },
   async created () {
@@ -271,6 +281,13 @@ export default {
       await this.saveChat()
       await this.loadChat(this.chat.name)
       this.showFile = null
+    },
+    async addFileToContext () {
+      this.chat.file_list = [...this.chat.file_list, this.addFile]
+      await this.saveChat()
+      await this.loadChat(this.chat.name)
+      this.showFile = null
+      this.addFile = null
     },
     async addProfile (profile) {
       if (this.chat.profiles.find(f => f.endsWith(profile))) {

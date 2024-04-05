@@ -5,7 +5,7 @@ import chatManager from './chatManager';
 const gpteng_key = window.location.search
                     .slice(1).split("&")
                     .map(p => p.split("="))
-                    .find(([k, v]) => k === "gpteng_path")
+                    .find(([k]) => k === "gpteng_path")
 const gpteng_path = decodeURIComponent(gpteng_key ? gpteng_key[1] : "")
 
 const readLastSettings = () => {
@@ -17,7 +17,9 @@ const readLastSettings = () => {
   const settings = localStorage.getItem("API_SETTINGS")
   try {
     return JSON.parse(settings)
-  } catch {}
+  } catch (ex) {
+    console.error("Invalid settings")
+  }
   return null
 }
 const query = () => `gpteng_path=${encodeURIComponent(API.lastSettings?.gpteng_path)}`
@@ -117,7 +119,7 @@ export const API = {
         return chat
       },
       save (chat) {
-        API.put(`/api/chats?` + query(), chat)
+        return API.put(`/api/chats?` + query(), chat)
       }
     },
     run: {

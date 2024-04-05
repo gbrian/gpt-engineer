@@ -16,7 +16,11 @@ from gpt_engineer.tasks.task_manager import TaskManager
 
 from gpt_engineer.api.profile_manager import ProfileManager
 
-from gpt_engineer.api.model import Chat, Message
+from gpt_engineer.api.model import (
+    Chat,
+    Message,
+    KnowledgeSearch
+)
 from gpt_engineer.core.context import find_relevant_documents
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
@@ -37,6 +41,30 @@ def reload_knowledge(settings: GPTEngineerSettings, path: str = None):
         return { "doc_count": len(documents) }
     
     knowledge.reload()
+
+def knowledge_search(settings: GPTEngineerSettings, knowledge_search: KnowledgeSearch):
+    if knowledge_search.document_search_type:
+        settings.knowledge_search_type = knowledge_search.document_search_type
+    if knowledge_search.document_count:
+        settings.knowledge_search_document_count = knowledge_search.document_count
+    if knowledge_search.document_cutoff_score:
+        settings.knowledge_context_cutoff_relevance_score = knowledge_search.document_cutoff_score
+    
+    dbs = build_dbs(settings=settings)
+    ai = build_ai(settings=settings)
+    documents = []
+    if knowledge_search.search_type == "embeddings":
+        documents, _ = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=knowledge_search.search_term, settings=settings)
+    if knowledge_search.search_type == "source":
+        documents = dbs.knowledge.search_in_source(knowledge_search.search_term)
+    return { 
+        "documents": documents, 
+        "settings": {
+            "knowledge_search_type": settings.knowledge_search_type,
+            "knowledge_search_document_count": settings.knowledge_search_document_count,
+            "knowledge_context_cutoff_relevance_score": settings.knowledge_context_cutoff_relevance_score 
+        }
+    }
 
 def delete_knowledge_source(settings: GPTEngineerSettings, sources: [str]):
     Knowledge(settings=settings).delete_documents(sources=sources)
@@ -63,9 +91,11 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
     return file_list
 
 
-def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSettings):
-
-    chat = chat_with_project(settings=settings, chat=chat)
+def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
+    dbs = build_dbs(settings=settings)
+    ai = build_ai(settings=settings)
+    
+    chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
 
     response = chat.messages[-1].content
 
@@ -74,7 +104,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
       edits = parse_edits(response)
     except:
       pass
-    affected_files = dict.fromkeys([edit.filename for edit in edits])
+    affected_files = []
 
     errors = []
     try:
@@ -85,7 +115,7 @@ def improve_existing_code(ai: AI, dbs: DBs, chat: Chat, settings: GPTEngineerSet
     except Exception as ex:
       errors.append(str(ex))
 
-    return (messages, edits, errors, affected_files)
+    return (chat.messages, edits, errors, affected_files)
 
 def check_knowledge_status(settings: GPTEngineerSettings):
     knowledge = Knowledge(settings=settings)
@@ -98,7 +128,10 @@ def check_knowledge_status(settings: GPTEngineerSettings):
       **status
     }
 
-def run_edits(ai: AI, dbs: DBs, chat: Chat):
+def run_edits(settings: GPTEngineerSettings, chat: Chat):
+    dbs = build_dbs(settings=settings)
+    ai = build_ai(settings=settings)
+    
     errors = []
     total_edits = []
     for message in chat.messages:
@@ -124,7 +157,6 @@ def check_project_changes(settings: GPTEngineerSettings):
     dbs.knowledge.clean_deleted_documents()
     new_files = dbs.knowledge.detect_changes()
     
-    logging.info(f"Check knowledge files")
     if not new_files:
         return
     logging.info(f"Reload knowledge files {new_files}")
@@ -155,7 +187,7 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
                 f.write(new_content)
 
 
-def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
+def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True):
     ai = build_ai(settings)
     dbs = build_dbs(settings)
     
@@ -169,21 +201,22 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat):
           for m in chat.messages[:-1] if not hasattr(m, "hide")
     ]
 
-    documents, file_list = select_afefcted_documents_from_knowledge(ai=ai,
+    documents = []
+    file_list = []
+    if use_knowledge:
+        documents, file_list = select_afefcted_documents_from_knowledge(ai=ai,
                                                         dbs=dbs,
                                                         query=query,
                                                         settings=settings,
                                                         ignore_documents=[f"/{chat.name}"])
-    for doc in documents:
-        doc_context = document_to_context(doc)
-        messages.append(HumanMessage(content=doc_context))
+        for doc in documents:
+            doc_context = document_to_context(doc)
+            messages.append(HumanMessage(content=doc_context))
 
     messages.append(HumanMessage(content=query))
     messages = ai.next(messages, step_name=curr_fn())
     response = messages[-1].content
     if documents:
-        doc_content = '\n'.join([document_to_context(doc) for doc in documents])
-        response = f"{response}\n{doc_content}"
         file_list = chat.file_list if chat.file_list else []
         doc_file_list = [doc.metadata["source"] for doc in documents]
         chat.file_list = list(set(file_list + doc_file_list))

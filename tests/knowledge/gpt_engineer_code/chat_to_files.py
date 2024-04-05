@@ -160,7 +160,7 @@ def parse_edits(llm_response):
             return Edit(filename, before, after, full_text)
 
         logger.info(f"Request user confirmation to execute {lines}")
-        return []
+        return None
 
     def parse_all_edits(txt):
         edits = []
@@ -185,7 +185,7 @@ def parse_edits(llm_response):
             if in_fence:
                 current_edit.append(line)
 
-        return edits
+        return [edit for edit in edits if edit]
 
     return parse_all_edits(llm_response)
 

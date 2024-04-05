@@ -1,9 +1,36 @@
 #!/bin/bash
 PORT=$1
-PROJECT_PATHS=$2
+PROJECT_PATHS=()
+LOGS=0
+CMD="/gpt-engineer/gpt-web.sh"
+
+while [ "$1" != "" ]; do
+  if [ "$1" == "-p" ]; then
+    shift
+    PORT=$1
+  fi
+  if [ "$1" == "-v" ]; then
+    shift
+    PROJECT_PATHS+=($1)
+  fi
+  if [ "$1" == "-c" ]; then
+    shift
+    CMD=$1
+  fi
+  if [ "$1" == "--logs" ]; then
+    LOGS=1
+  fi
+  shift
+done
 
 if [ ! "$PORT" ] || [ ! "$PROJECT_PATHS" ]; then
-  echo "USAGE: dgpt-engineer.sh CLIENT_PORT PROJECT_PATHS"
+  echo "USAGE: dgpt-engineer.sh -p CLIENT_PORT -v PROJECT_PATH_1 -v PROJECT_PATH_2 ... [--logs -c]
+
+  -p      gpt-engineer web client port
+  -v      Projects absolute paths
+  -c      Overwrite default command gpt-wbe.sh
+  --logs  Show logs
+  "
 else
 
   VOLUME_PATHS=""
@@ -19,20 +46,22 @@ else
     fi
   fi
 
-  docker build --progress=plain -t gpt-engineer -f docker/Dockerfile .
+  docker build --progress=plain \
+        --build-arg="GPT_USER=$(id -u)" \
+        --build-arg="GPT_USER_GROUP=$(id -g)" \
+        -t gpt-engineer -f docker/Dockerfile .
 
   CMD="docker run -d -it \
-    -u $GPT_USER \
     -e DEBUG=${DEBUG:-1} \
     -p $PORT:8001 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v $PWD:/gpt-engineer \
     $VOLUME_PATHS \
-    --name gpt-engineer gpt-engineer /gpt-engineer/gpt-web.sh"
+    --name gpt-engineer gpt-engineer $CMD"
 
-  echo "$CMD"
+  echo "$CMD LOGS: $LOGS"
   echo "Remove running container"
   docker rm -f gpt-engineer
   $CMD
-  [ "$3" == "--logs" ] && docker logs -f gpt-engineer
+  [ "$LOGS" == "1" ] && docker logs -f gpt-engineer
 fi
