@@ -38,7 +38,7 @@ def reload_knowledge(settings: GPTEngineerSettings, path: str = None):
     knowledge = Knowledge(settings=settings)
     if path:
         documents = knowledge.reload_path(path)
-        return { "doc_count": len(documents) }
+        return { "doc_count": len(documents) if documents else 0 }
     
     knowledge.reload()
 

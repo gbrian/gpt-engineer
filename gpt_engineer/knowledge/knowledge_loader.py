@@ -82,7 +82,10 @@ class KnowledgeLoader:
     def list_repository_files(self, last_update = None, path: str = None, current_sources=None):        
         full_file_paths = None
         if path:
-            full_file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*")]
+            if os.path.isfile(path):
+                full_file_paths = [path]
+            else:  
+                full_file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*")]
             logging.info(f"Indexing {full_file_paths}")
         else:
             # Versioned files

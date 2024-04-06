@@ -86,7 +86,6 @@ class GPTEngineerAPI:
                 try:
                     settings = GPTEngineerSettings.from_project(gpteng_path)
                     logging.info(f"Request settings {settings.__dict__}")
-                    reload_knowledge(settings)
                 except:
                     pass
             request.state.settings = settings
@@ -101,13 +100,13 @@ class GPTEngineerAPI:
         def knowledge_reload(request: Request):
             settings = request.state.settings
             reload_knowledge(settings=settings)
-            return knowledge_status(settings=settings)
+            return check_knowledge_status(settings=settings)
 
         @app.post("/api/knowledge/reload-path")
         def knowledge_reload_path(knowledge_reload_path: KnowledgeReloadPath, request: Request):
             settings = request.state.settings
             reload_knowledge(settings=settings, path=knowledge_reload_path.path)
-            return knowledge_status(settings=settings)
+            return check_knowledge_status(settings=settings)
 
         @app.post("/api/knowledge/delete")
         def knowledge_reload_path(knowledge_delete_sources: KnowledgeDeleteSources, request: Request):
@@ -120,7 +119,7 @@ class GPTEngineerAPI:
             return knowledge_search(settings=settings, knowledge_search=knowledge_search_params)
 
         @app.get("/api/knowledge/status")
-        def knowledge_status(request: Request):
+        def api_knowledge_status(request: Request):
             settings = request.state.settings
             return check_knowledge_status(settings=settings)
 

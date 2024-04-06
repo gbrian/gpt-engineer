@@ -1,5 +1,5 @@
 <template>
-  <div class="text-md text-wrap" v-html="html"></div>
+  <div class="text-md text-wrap prose" v-html="html"></div>
 </template>
 <script>
 import { full as emoji } from 'markdown-it-emoji'

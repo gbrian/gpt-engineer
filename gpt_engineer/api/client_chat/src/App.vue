@@ -18,7 +18,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <div class="form-control">
         <label class="cursor-pointer label">
           <span class="label-text mr-2">Watch project changes</span> 
-          <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="lastSettings.watching" @change="toggleWatch" />
+          <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="lastSettings?.watching" @change="toggleWatch" :disabled="!lastSettings" />
         </label>
       </div>
     </div>
@@ -51,7 +51,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         @click="tabIx = 2"
       >
         <i class="fa-solid fa-brain"></i>
-        GPT Settings
+        Setting
       </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 3 ? tabActive: tabInactive]"
         @click="tabIx = 3"
@@ -142,6 +142,9 @@ export default {
       this.openProject(gpteng_path)
     },
     async toggleWatch () {
+      if (!API.lastSettings) {
+        return
+      }
       if (API.lastSettings.watching) {
         await API.project.unwatch()
       } else {

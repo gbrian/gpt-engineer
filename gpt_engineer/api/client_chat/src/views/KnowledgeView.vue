@@ -52,9 +52,6 @@ import MarkdownVue from '@/components/Markdown.vue'
         </span>
       </div>
     </div>
-    <div class="alert alert-error" >
-      {{ status?.empty }}: Invalid indexed docs
-    </div>
     <div class="stats">
       <div class="stat">
         <div class="stat-figure text-secondary">
@@ -88,7 +85,12 @@ import MarkdownVue from '@/components/Markdown.vue'
         <div class="text-xl font-medium">Pending files</div>
         <div class="max-h-60 overflow-auto" v-if="status?.pending_files?.length">
           <div class="text-xs" v-for="file in status?.pending_files" :key="file">
-            {{ file.replace(projectPath, "") }}
+            <div class="flex gap-2">
+              {{ file.replace(projectPath, "") }}
+              <button class="btn btn-xs" @click="reloadPath(file)" >
+                <i class="fa-regular fa-circle-play"></i>
+              </button>
+            </div>
           </div>
         </div>
         <div class="text-xs text-info" v-else>All files indexed</div>
@@ -190,7 +192,9 @@ export default {
         return []
       }
       const query = this.folderFilter.toLowerCase()
-      return this.status?.folders?.filter(f => f.toLowerCase().indexOf(query) !== -1)
+
+      const allFolders = [...this.status?.pending_files||[], ...this.status?.folders||[]]
+      return allFolders.filter((f, ix, arr) => arr.findIndex(f) === ix && f.toLowerCase().indexOf(query) !== -1)
         .slice(0, 20)
     },
     showDocPreview () {
@@ -210,9 +214,13 @@ export default {
       this.status = data
     },
     async reloadFolder () {
+      this.reloadPath(this.folderToReload)
+    },
+    async reloadPath(path) {
       this.loading = true
       try {
-        await API.knowledge.reloadFolder(this.folderToReload)
+        await API.knowledge.reloadFolder(path)
+        await this.reloadStatus()
         this.folderToReload = null
         this.folderFilter = null
       } catch{}

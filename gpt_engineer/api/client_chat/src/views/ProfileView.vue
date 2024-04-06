@@ -42,7 +42,7 @@ import { API } from '../api/api'
 export default {
   data () {
     return {
-      profileName: null,
+      profileName: 'project',
       profile: null,
       profiles: null,
       newProfile: null,
@@ -51,6 +51,7 @@ export default {
   },
   async mounted () {
     this.loadProfiles()
+    this.loadProfile()
   },
   methods: {
     async loadProfiles () {

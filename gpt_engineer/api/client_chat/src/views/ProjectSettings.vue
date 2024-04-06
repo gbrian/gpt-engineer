@@ -1,16 +1,22 @@
 <template>
-  <div class="form-control w-full">
-    <div class="text-xl font-medium my-2">GPT Settings</div>
-    <div class="flex justify-between mb-2" v-for="(value, key) in settings" :key="key">
-      <div class="label-text">{{ key }}</div>
-      <div class="w-1/2">
-        <input v-if="typeof value === 'boolean'" type="checkbox" v-model="settings[key]" class="toggle" />
-        <input v-else type="text" v-model="settings[key]" class="input input-bordered w-full" />
+  <div class="flex flex-col gap-2 h-full">
+    <div class="text-xl font-medium my-2 flex justify-between">
+      GPT Settings
+      <div class="flex gap-2 justify-end">
+        <button type="button" @click="reloadSettings" class="btn btn-sm btn-outline btn-accent">Reload</button>
+        <button type="submit" class="btn  btn-sm btn-primary" @click="saveSettings">Save</button>
       </div>
     </div>
-    <div class="flex gap-2 justify-end">
-      <button type="button" @click="reloadSettings" class="btn btn-outline btn-accent">Reload</button>
-      <button type="submit" class="btn btn-primary" @click="saveSettings">Save</button>
+    <div class="grow relative overflow-auto">
+      <div class="absolute top-0 left-0 right-0 bottom-0">
+        <div class="flex justify-between mb-2" v-for="(value, key) in settings" :key="key">
+          <div class="label-text">{{ key }}</div>
+          <div class="w-1/2">
+            <input v-if="typeof value === 'boolean'" type="checkbox" v-model="settings[key]" class="toggle" />
+            <input v-else type="text" v-model="settings[key]" class="input input-bordered w-full" />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

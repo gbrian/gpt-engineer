@@ -106,15 +106,11 @@ class Knowledge:
 
     def reload_path(self, path: str):
         logging.info(f"reload_path {path}")
-        try:
-            documents = self.loader.load(last_update=None, path=path)
-            logging.info(f"reload_path {path} {len(documents)} documents")
-            if documents:
-                self.index_documents(documents)
-            return documents
-        except Exception as ex:
-            logger.error(f"Error loading knowledge {ex}")
-            pass
+        documents = self.loader.load(last_update=None, path=path)
+        logging.info(f"reload_path {path} {len(documents)} documents")
+        if documents:
+            self.index_documents(documents, raiseIfError=True)
+        return documents
 
     def get_all_documents (self, include=[]):
         collection = self.get_db()._collection
@@ -194,7 +190,7 @@ class Knowledge:
               valid_documents.append(result)
         return valid_documents
   
-    def index_documents (self, documents):
+    def index_documents (self, documents, raiseIfError=False):
         self.delete_documents(documents)
         index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
         metadata = {
@@ -212,6 +208,8 @@ class Knowledge:
                 logger.info(f"Stored document from {enriched_doc.metadata['source']}")
             except Exception as ex:
                 logger.error(f"Error indexing document {enriched_doc.metadata['source']}: {ex}")
+                if raiseIfError:
+                    raise ex
 
     def get_last_changed_file_paths (self):
       return self.last_changed_file_paths
@@ -326,9 +324,12 @@ class Knowledge:
         folders = list(dict.fromkeys([Path(file_path).parent for file_path in doc_sources]))      
         
         file_count = len(doc_sources)
-        return {
+        
+        status_info = {
           "doc_count": doc_count,
           "file_count": file_count,
           "folders": folders,
           "empty": len(documents) - len(metadatas)
         }
+        logging.info(f"Knowledge self.last_update: {self.last_update} {status_info}")
+        return status_info
