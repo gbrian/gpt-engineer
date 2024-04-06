@@ -193,7 +193,8 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     
     query = chat.messages[-1].content
     profile_manager = ProfileManager(settings=settings)
-    system_content = "\n".join([profile_manager.read_profile(profile).content for profile in chat.profiles])
+    profiles = list(set(["project"] + chat.profiles))
+    system_content = "\n".join([profile_manager.read_profile(profile).content for profile in profiles])
     messages = [
         SystemMessage(content=system_content),
     ] + [ 
