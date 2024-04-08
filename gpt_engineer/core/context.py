@@ -121,4 +121,4 @@ def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings, ignore_docum
                   for doc in relevant_documents]
       file_list = list(dict.fromkeys(file_list))  # Remove duplicates
       return relevant_documents, file_list
-  return None, None
+  return [], []

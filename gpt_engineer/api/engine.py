@@ -173,14 +173,16 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     if mentions:
         for mention in mentions:
             try:
-                chat = Chat(name="", messages=[
-                    Message(role="system", content=content),
-                    Message(role="user", content=mention.mention)
-                ])
+                chat = Chat(name="", 
+                  messages=[
+                      Message(role="user", content=content),
+                      Message(role="user", content=mention.mention)
+                  ])
                 chat = chat_with_project(settings=settings, chat=chat)
                 mention.respone = chat.messages[-1].content
             except Exception as ex:
-                mention.respone = f"{mention.mention}/nError: str(ex)"
+                logging.error(str(ex), exc_info = ex)
+                mention.respone = f"{mention.mention}/nError: str({ex})"
         new_content = replace_mentions(content=content, mentions=mentions)
         if content != new_content:
             with open(file_path, 'w') as f:
@@ -195,12 +197,16 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     profile_manager = ProfileManager(settings=settings)
     profiles = list(set(["project"] + chat.profiles))
     system_content = "\n".join([profile_manager.read_profile(profile).content for profile in profiles])
-    messages = [
-        SystemMessage(content=system_content),
-    ] + [ 
-        HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) \
-          for m in chat.messages[:-1] if not hasattr(m, "hide")
-    ]
+    
+    messages = []
+    if system_content:
+        messages.append(SystemMessage(content=system_content))
+    
+    for m in chat.messages[0:-1]:
+        if hasattr(m, "hide") and m.hide:
+            continue
+        msg = HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
+        messages.append(msg)
 
     documents = []
     file_list = []
@@ -210,9 +216,10 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
                                                         query=query,
                                                         settings=settings,
                                                         ignore_documents=[f"/{chat.name}"])
-        for doc in documents:
-            doc_context = document_to_context(doc)
-            messages.append(HumanMessage(content=doc_context))
+        if documents:
+            for doc in documents:
+                doc_context = document_to_context(doc)
+                messages.append(HumanMessage(content=doc_context))
 
     messages.append(HumanMessage(content=query))
     messages = ai.next(messages, step_name=curr_fn())

@@ -3,6 +3,12 @@ SINGLE_LINE_MENTION_START = "@codx:"
 MULTI_LINE_MENTION_START = "<codx>"
 MULTI_LINE_MENTION_END = "</codx>"
 
+SINGLE_LINE_MENTION_START_PROGRESS = "@codx ...processing:"
+MULTI_LINE_MENTION_START_PROGRESS = "<codx ...processing>"
+
+SINGLE_LINE_MENTION_START_DONE = "@codx done:"
+MULTI_LINE_MENTION_START_DONE = "<codx done>"
+
 class Mention():
     mention: str = None
     start_line: int = None
@@ -14,6 +20,15 @@ class Mention():
         self.start_line = start_line
         self.end_line = end_line
         self.respone = respone
+
+    def in_progress(self):
+        if self.end_line:
+            return "\n".join([
+              SINGLE_LINE_MENTION_START_PROGRESS,
+              self.mention,
+              MULTI_LINE_MENTION_END
+            ])
+        return f"{SINGLE_LINE_MENTION_START_PROGRESS} {self.mention}"
 
     def diff(self):
         return "\n".join([
@@ -57,6 +72,18 @@ def extract_mentions(content):
         elif mention is not None:
             mention.append(line)
     return mentions
+
+def notify_mentions_in_progress(content, mentions):
+    content_lines = content.split("\n")
+    new_content = []
+    last_index = 0
+    for mention in mentions:
+        new_content = new_content + content_lines[last_index:mention.start_line]
+        new_content = new_content + mention.in_progress().split("\n")
+        last_index = (mention.end_line if mention.end_line else mention.start_line) + 1
+    if last_index < len(content) - 1:
+        new_content = new_content + content_lines[last_index:]
+    return "\n".join(new_content)
 
 def replace_mentions(content, mentions):
     content_lines = content.split("\n")

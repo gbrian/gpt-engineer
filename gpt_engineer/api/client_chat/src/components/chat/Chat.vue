@@ -137,7 +137,7 @@ export default {
       try {
         this.waiting = true
         const { data } = await apiCall()
-        await this.loadChat(this.chat.name)
+        this.$emit('change')
         this.$refs.anchor.scrollIntoView()
       } catch (ex) {
         this.addMessage({

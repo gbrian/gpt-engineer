@@ -211,7 +211,7 @@ class AI:
             messages=messages, answer=response.content, step_name=step_name
         )
         messages.append(response)
-        # logger.debug(f"Chat completion finished: {messages}")
+        logger.debug(f"Chat completion finished: {messages}")
 
         return messages
 

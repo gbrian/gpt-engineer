@@ -55,7 +55,7 @@ import Chat from '@/components/chat/Chat.vue'
         {{ file.split("/").reverse()[0] }}
       </span>
     </div>
-    <Chat :chat="chat" v-if="chat"/>
+    <Chat :chat="chat" @change="loadChat(chat.name)" v-if="chat"/>
     <div class="modal modal-open" role="dialog" v-if="showFile || addFile !== null">
       <div class="modal-box flex flex-col gap-4 p-4">
         <h3 class="font-bold text-lg" v-if="showFile">

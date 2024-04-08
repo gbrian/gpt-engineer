@@ -27,7 +27,7 @@ class OpenAI_AI:
         openai_messages = [self.convert_message(msg) for msg in messages]
         response_stream = self.client.chat.completions.create(
             model=config.get("model", self.settings.model),
-            temperature=config.get("temperature", self.settings.temperature),
+            temperature=float(config.get("temperature", self.settings.temperature)),
             messages=openai_messages,
             stream=True
         )
