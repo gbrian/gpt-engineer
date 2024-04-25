@@ -9,3 +9,7 @@
   overflow-anchor: auto;
   height: 1px;
 }
+
+.click {
+  cursor: pointer;
+}

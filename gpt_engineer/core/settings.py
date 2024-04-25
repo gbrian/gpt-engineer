@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import pathlib
 from gpt_engineer import settings
 
 class GPTEngineerSettings:
@@ -90,3 +91,22 @@ class GPTEngineerSettings:
       logging.info(f"Saving project {path} {settings}")
       with open(path, 'w') as f:
         f.write(json.dumps(settings, indent=2))
+
+    def detect_sub_projects(self):
+      try:
+        return [str(project_path).replace("/.gpteng/project.json", "") for project_path in \
+          pathlib.Path(self.project_path).rglob("./*/.gpteng/project.json")]
+      except Exception as ex:
+        log.debug(f"Error {ex}")
+
+      return []
+
+    def get_parent_project(self):
+      parent_project = self.project_path + "/.."
+      if os.path.isfile(f"{parent_project}/.gpteng/project.json"):
+        return os.path.abspath(parent_project)
+      return None
+
+    def get_dbs(self):
+      from gpt_engineer.core import build_dbs
+      return build_dbs(settings=self)

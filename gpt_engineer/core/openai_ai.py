@@ -10,6 +10,8 @@ from langchain.schema import (
     HumanMessage
 )
 
+logger = logging.getLogger(__name__)
+
 class OpenAI_AI:
     def __init__(self, settings: GPTEngineerSettings):
         self.settings = settings

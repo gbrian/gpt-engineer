@@ -31,6 +31,7 @@ import shutil
 import subprocess
 from pathlib import Path
 import traceback
+import pexpect
 
 import typer
 import sys
@@ -154,9 +155,10 @@ def parse_args(
 
 def run_api(settings: GPTEngineerSettings):
     envs = settings.to_env()
-    command = f"{' '.join(envs)} uvicorn main:app --host 0.0.0.0 --port {settings.port} --reload --reload-dir {settings.project_path}"
+    command = f"{' '.join(envs)} uvicorn main:app --host 0.0.0.0 --port {settings.port} --log-level debug --reload --reload-dir {settings.project_path}"
     logging.info(f"API MODE: {command}")
     os.system(command)
+    logging.info(f"API DONE")
     return
 
 def run_main(settings: GPTEngineerSettings):

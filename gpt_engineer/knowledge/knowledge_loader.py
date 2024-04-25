@@ -74,10 +74,11 @@ class KnowledgeLoader:
         logger.debug(f"Loaded {len(documents)} documents from {len(files)} files")
         return documents
 
-    def _run_git_command(self, command):
-        result = subprocess.run(command, cwd=self.path, stdout=subprocess.PIPE)
+    def run_command(self, command):
+        result = subprocess.run(command, cwd=self.path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         file_paths = result.stdout.decode('utf-8').split('\n')
-        return file_paths
+        error = result.stderr.decode('utf-8') if result.stderr else None
+        return file_paths, error
 
     def list_repository_files(self, last_update = None, path: str = None, current_sources=None):        
         full_file_paths = None
@@ -89,9 +90,9 @@ class KnowledgeLoader:
             logging.info(f"Indexing {full_file_paths}")
         else:
             # Versioned files
-            versioned_files = self._run_git_command(['git', 'ls-files'])
+            versioned_files, _ = self.run_command(['git', 'ls-files'])
             # Unversioned files
-            unversioned_files = self._run_git_command(['git', 'ls-files', '--others', '--exclude-standard'])
+            unversioned_files, _ = self.run_command(['git', 'ls-files', '--others', '--exclude-standard'])
             # joining versioned and unversioned file paths
             full_file_paths = [os.path.join(self.path, file_path) for file_path in versioned_files + unversioned_files]
                         
@@ -106,3 +107,11 @@ class KnowledgeLoader:
     def list_repository_folders(self):
         all_files = self.list_repository_files()
         return list(set([os.path.dirname(file_path) for file_path in all_files]))
+
+    def fix_repo(self):
+        _, error = self.run_command(['git', 'ls-files'])
+        if error and "detected dubious ownership in repository" in error:
+            fix = [err for err in error.split("\n") if "git config" in err][0]
+            logging.info(f"Fixing git error {fix}")
+            self.run_command(fix.strip().split(" "))
+

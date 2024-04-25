@@ -4,7 +4,6 @@ import shutil
 from dataclasses import dataclass
 
 from gpt_engineer.core.db import DB, DBPrompt
-from gpt_engineer.knowledge.knowledge import Knowledge
 from gpt_engineer.core.settings import GPTEngineerSettings
 
 # dataclass for all dbs:
@@ -18,7 +17,6 @@ class DBs:
     workspace: DB
     archive: DB
     project_metadata: DB
-    knowledge: Knowledge
     settings: GPTEngineerSettings
 
 def archive(dbs: DBs) -> None:

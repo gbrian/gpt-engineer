@@ -17,11 +17,10 @@ from gpt_engineer.core.ai import AI
 from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
 from gpt_engineer.knowledge.knowledge_prompts import KnowledgePrompts
+from gpt_engineer.knowledge.knowledge_keywords import KnowledgeKeywords
+
 
 logger = logging.getLogger(__name__)
-
-def make_tag (tag):
-  return f"TAG_{tag.replace(' ', '_')}"
 
 class DBDocument (Document):
   db_id: str = None
@@ -34,16 +33,19 @@ class Knowledge:
     db_file_list: str
     index_name: str
     db: Chroma = None
+    ai: AI
 
-    def __init__(self, settings: GPTEngineerSettings, knowledge_prompts: KnowledgePrompts = None):
+    def __init__(self, settings: GPTEngineerSettings):
+        self.ai = None
         self.settings = settings
 
         self.path = self.settings.project_path
-        self.knowledge_prompts = knowledge_prompts
+        self.knowledge_prompts = KnowledgePrompts(settings=settings)
         self.index_name = slugify(str(self.path))
         self.db_path = f"{settings.gpteng_path}/db/{self.index_name}"
         self.db_file = f"{self.db_path}/chroma.sqlite3"
         self.db_file_list = f"{self.db_path}/file_list"
+        self.knowledge_keywords = KnowledgeKeywords(settings=settings)
 
         self.loader = KnowledgeLoader(settings=settings)
         self.embedding = OpenAIEmbeddings(
@@ -105,9 +107,9 @@ class Knowledge:
         self.refresh_last_update()
 
     def reload_path(self, path: str):
-        logging.info(f"reload_path {path}")
+        logger.info(f"reload_path {path}")
         documents = self.loader.load(last_update=None, path=path)
-        logging.info(f"reload_path {path} {len(documents)} documents")
+        logger.info(f"reload_path {path} {len(documents)} documents")
         if documents:
             self.index_documents(documents, raiseIfError=True)
         return documents
@@ -162,18 +164,24 @@ class Knowledge:
           logger.info(f"Error enriching document {source}: {ex}")
           pass
       if self.settings.knowledge_extract_document_tags:
-        try:
-          prompt, system = self.knowledge_prompts.extract_document_tags(doc)
-          messages = self.get_ai().start(system, prompt, step_name="extract_document_tags")
-          response = messages[-1].content.strip()
-          keywords = [make_tag(k) for k in response.split(",")]
-          doc.metadata["keywords"] = ", ".join(keywords)
-        except Exception as ex:
-          logger.info(f"Error extracting document keywords {source}: {ex}")
-          pass
+          self.extract_doc_keywords(doc)
        
       doc.metadata["indexed"] = 1
       return doc
+
+    def extract_doc_keywords(self, doc):
+      try:          
+        prompt, system = self.knowledge_prompts.extract_document_tags(doc)
+        messages = self.get_ai().start(system, prompt, step_name="extract_document_tags")
+        response = messages[-1].content.strip()
+        keywords = response.split(",")
+        doc.metadata["keywords"] = ",".join(keywords)
+        source = doc.metadata['source']
+        logger.info(f"Extracted keywords from {source}: {keywords}")
+        self.knowledge_keywords.add_keywords(source, keywords)
+      except Exception as ex:
+        logger.info(f"Error extracting document keywords {doc.metadata}: {ex}")
+        pass
 
     def parallel_enrich(self, documents, metadata):
       with ThreadPoolExecutor() as executor:
@@ -242,6 +250,7 @@ class Knowledge:
           sources = list(dict.fromkeys([doc.metadata["source"] for doc in documents]))
         for source in sources:
           delete_doc_ids(source_doc=source)
+          self.knowledge_keywords.remove_keywords(source)
 
         if len(ids_to_delete):
           logger.info(f'Documents to delete: {sources} {ids_to_delete}')
@@ -263,13 +272,10 @@ class Knowledge:
     def search(self, query):
       if not self.settings.use_knowledge:
         return []
-      if self.settings.knowledge_extract_document_tags:
-        keywords = self.extract_query_keywords(query)
-        query = f"{query}\n{[make_tag(k) for k in keywords]}"
 
       retriever = self.as_retriever()
       documents = retriever.get_relevant_documents(query)
-      logging.debug(f"[Knowledge::search] {query} docs: {len(documents)}")
+      logger.debug(f"[Knowledge::search] {query} docs: {len(documents)}")
       return documents
 
     def search_in_source(self, query):
@@ -324,12 +330,30 @@ class Knowledge:
         folders = list(dict.fromkeys([Path(file_path).parent for file_path in doc_sources]))      
         
         file_count = len(doc_sources)
+
+        keywords = self.knowledge_keywords.get_keywords()
+        keyword_count = 0
+        for key, value in keywords.items():
+            keyword_count += len(value)
         
         status_info = {
           "doc_count": doc_count,
           "file_count": file_count,
           "folders": folders,
-          "empty": len(documents) - len(metadatas)
+          "empty": len(documents) - len(metadatas),
+          "keyword_count": keyword_count
         }
-        logging.info(f"Knowledge self.last_update: {self.last_update} {status_info}")
+        logger.info(f"Knowledge self.last_update: {self.last_update} {status_info}")
         return status_info
+    
+    @classmethod
+    def get_documents_from_sources(cls, file_paths: [str]) -> [Document]:
+        def create_document(file_path: str) -> Document:
+            language = file_path.split(".")[-1] if "." in file_path else "txt"
+            with open(file_path, 'r') as f:
+                return Document(page_content=f.read(), metadata={ 
+                    "language": language,
+                    "source": file_path 
+                })
+        return [create_document(file_path) for file_path in file_paths]
+            

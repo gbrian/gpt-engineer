@@ -18,6 +18,30 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </div>
       </div>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
+      <div class="dropdown dropdown-top dropdown-open mb-1" >
+        <div tabindex="0" role="button" class="rounded-md bg-base-300 w-fit p-2">
+          <div class="flex p-1 items-center text-sky-600">
+            <i class="fa-solid fa-at"></i>
+            <input type="text" v-model="termSearchQuery"
+              ref="termSearcher"
+              class="-ml-1 input input-xs text-lg bg-transparent" placeholder="search term..." />
+            <button class="btn btn-xs btn-circle btn-outline btn-error"
+              @click="termSearchQuery = null"            
+              v-if="termSearchQuery">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+          </div>
+        </div>
+        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-300 rounded-box w-fit">
+          <li v-for="term in searchTerms" :key="term.key">
+            <a @click="addSerchTerm(term)">
+              <div class="">
+                <span class="text-sky-600 font-bold">@{{ term.key }}</span> <span class="text-xs">({{ term.file.split("/").reverse()[0] }})</span>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </div>
       <div class="flex gap-2 items-end">
         <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': ''
@@ -47,12 +71,23 @@ export default {
       waiting: false,
       editMessage: null,
       editMessageId: null,
+      termSearchQuery: null,
+      searchTerms: null
     }
   },
   computed: {
     editor () {
       return this.$refs.editor
     },
+  },
+  watch: {
+    termSearchQuery (newVal) {
+      if (newVal?.length > 2) {
+        this.searchKeywords()
+      } else {
+        this.searchTerms = null
+      }
+    }
   },
   methods: {
     onEditMessage (ix) {
@@ -76,6 +111,9 @@ export default {
     },
     onMessageChange (ev) {
       this.editMessage = ev.target.innerText
+      if (this.editMessage[this.editMessage.length-1] === '@') {
+        this.$refs.termSearcher.focus()
+      }
     },
     improveCode () {
       this.postMyMessage()
@@ -136,8 +174,8 @@ export default {
     async sendApiRequest (apiCall, formater = defFormater) {
       try {
         this.waiting = true
-        const { data } = await apiCall()
-        this.$emit('change')
+        await apiCall()
+        this.$emit('refresh-chat')
         this.$refs.anchor.scrollIntoView()
       } catch (ex) {
         this.addMessage({
@@ -164,6 +202,29 @@ export default {
       this.chat.messages = this.chat.messages.filter((m, i) => i !== ix)
       this.saveChat()
     },
+    async searchKeywords () {
+      const { data } = await API.knowledge.searchKeywords(this.termSearchQuery)
+      this.searchTerms = Object.keys(data).map(k => data[k].reduce((acc, term) => {
+        acc.push({
+          key: term,
+          file: k
+        })
+        return acc
+      }, []))
+      .reduce((a, b) => a.concat(b), [])
+    },
+    addSerchTerm(term) {
+      let text = this.$refs.editor.innerText
+      if (text[text.length-1] === '@') {
+        text = text.slice(0, text.length-1)
+      }
+      text += `@${term.key} `
+      this.editMessage = text
+      this.$refs.editor.innerText = this.editMessage
+      this.searchTerms = null
+      this.termSearchQuery = null
+      this.$emit('add-file', term.file) 
+    }
   }
 }
 </script>

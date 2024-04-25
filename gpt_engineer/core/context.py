@@ -13,6 +13,7 @@ from gpt_engineer.core.utils import document_to_context
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.settings import GPTEngineerSettings
+from gpt_engineer.knowledge.knowledge import Knowledge
 
 from gpt_engineer.settings import (
   PROMPT_FILE,
@@ -104,7 +105,8 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     return doc
 
 def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings, ignore_documents=[]):
-  documents = dbs.knowledge.search(query)
+  
+  documents = Knowledge(settings=settings).search(query)
   def is_valid_document(doc):
     source = doc.metadata["source"]
     checks = [check for check in ignore_documents if check in source]

@@ -7,13 +7,30 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 </script>
 
 <template>
-  <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2">
+  <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2 dark relative" data-theme="dark">
     <div class="alert alert-error text-xs font-bold text-white" v-if="!lastSettings?.openai_api_key">
       Please fix your settings. No AI key present
     </div>
     <div class="flex gap-2 items-center justify-between">
-      <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2" v-if="validProject">
-      <i class="fa-solid fa-location-dot"></i> {{ gptengPath }} 
+      <div v-if="validProject">
+        <div class="flex gap-2 items-center">
+          <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
+          @click="openProject(lastSettings.parent_project + '/.gpteng')"
+            v-if="lastSettings.parent_project">
+            <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project.split("/").reverse()[0] }} 
+          </div>
+          <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2">
+            <i class="fa-solid fa-location-dot"></i> {{ gptengPath }} 
+          </div>
+        </div>
+        <div class="flex gap-2" v-if="subProjects.length">
+          <div tabindex="0" class="click badge badge-info text-white badge-xs"
+            v-for="project in subProjects" :key="project"
+              @click="openProject(project + '/.gpteng')"
+          >
+            <i class="fa-solid fa-caret-down"></i> {{ project.split("/").reverse()[0] }} 
+          </div>
+        </div>
       </div>
       <div class="form-control">
         <label class="cursor-pointer label">
@@ -86,6 +103,12 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         </div>
       </div>
     </div>
+    <div class="toast toast-end">
+      <div class="bg-error text-white overflow-auto rounded-md p-2 max-w-96 max-h-60 text-xs"
+        v-if="lastError" @click="lastError = null">
+        <pre><code>ERROR: {{ lastError }}</code></pre>
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -99,10 +122,17 @@ export default {
       liveRequests: null,
       lastSettings: null,
       tabActive: 'text-info bg-base-100',
-      tabInactive: 'text-warning bg-base-300 opacity-50 hover:opacity-100'
+      tabInactive: 'text-warning bg-base-300 opacity-50 hover:opacity-100',
+      lastError: null
     }
   },
   async created () {
+    API.axiosRequest.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        this.lastError = error.response.data.join("\n")
+        console.error("API ERROR:", this.lastError);
+      });
     await this.init()
     setInterval(() => {
       this.liveRequests = API.liveRequests
@@ -113,6 +143,9 @@ export default {
     validProject () {
       return this.lastSettings?.gpteng_path &&
         this.lastSettings?.project_path
+    },
+    subProjects () {
+      return this.lastSettings?.sub_projects
     }
   },
   methods: {

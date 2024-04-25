@@ -20,6 +20,9 @@ while [ "$1" != "" ]; do
   if [ "$1" == "--logs" ]; then
     LOGS=1
   fi
+  if [ "$1" == "--build" ]; then
+    docker image rm gpt-engineer
+  fi
   shift
 done
 
@@ -46,10 +49,12 @@ else
     fi
   fi
 
-  docker build --progress=plain \
-        --build-arg="GPT_USER=$(id -u)" \
-        --build-arg="GPT_USER_GROUP=$(id -g)" \
-        -t gpt-engineer -f docker/Dockerfile .
+  if [ "$(docker image ls | grep gpt-engineer)" == "" ];then
+    docker build --progress=plain \
+          --build-arg="GPT_USER=$(id -u)" \chatvi
+          --build-arg="GPT_USER_GROUP=$(id -g)" \
+          -t gpt-engineer -f docker/Dockerfile .
+  fi
 
   CMD="docker run -d -it \
     -e DEBUG=${DEBUG:-1} \

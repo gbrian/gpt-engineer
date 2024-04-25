@@ -1,15 +1,19 @@
+import os
 import time
 import logging
-for logger in [
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+import traceback
+for logger_id in [
     'apscheduler.scheduler',
     'apscheduler.executors.default',
     'httpx'
     ]:
-    logging.getLogger(logger).setLevel(logging.WARNING)
-
-import os
+    logging.getLogger(logger_id).setLevel(logging.WARNING)
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from gpt_engineer.api.model import (
@@ -19,7 +23,8 @@ from gpt_engineer.api.model import (
     KnowledgeReloadPath,
     KnowledgeSearch,
     KnowledgeDeleteSources,
-    Profile
+    Profile,
+    Document
 )
 from gpt_engineer.api.app_service import clarify_business_request
 
@@ -39,7 +44,10 @@ from gpt_engineer.api.engine import (
     reload_knowledge,
     delete_knowledge_source,
     knowledge_search,
-    chat_with_project
+    chat_with_project,
+    check_project,
+    extract_tags,
+    get_keywords
 )
 
 WATCH_FOLDERS = []
@@ -51,7 +59,7 @@ def process_projects_changes():
             settings = GPTEngineerSettings.from_project(gpteng_path=gpteng_path)
             check_project_changes(settings=settings)
         except Exception as ex:
-            logging.error(f"Processing {gpteng_path} error: {ex}")
+            logger.error(f"Processing {gpteng_path} error: {ex}")
             pass
 
 add_work(process_projects_changes)
@@ -68,9 +76,18 @@ class GPTEngineerAPI:
         )
 
         app.mount("/static", StaticFiles(directory="gpt_engineer/api/client_chat", html=True), name="client_chat")
+        @app.on_event("startup")
+        def startup_event():
+            logger.info("Creating FASTAPI")
+        
+        @app.exception_handler(Exception)
+        async def my_exception_handler(request: Request, ex: Exception):
+            return JSONResponse(status_code=500, 
+                content=traceback.format_exception(ex))
 
         @app.middleware("http")
         async def add_process_time_header(request: Request, call_next):
+            logger.info("FASTAPI::add_process_time_header")
             start_time = time.time()
             response = await call_next(request)
             process_time = time.time() - start_time
@@ -79,18 +96,19 @@ class GPTEngineerAPI:
 
         @app.middleware("http")
         async def add_gpt_engineer_settings(request: Request, call_next):
-            logging.info(f"Request {request.url}")
+            logger.info("FASTAPI::add_process_time_header")
+            logger.info(f"Request {request.url}")
             gpteng_path = request.query_params.get("gpteng_path")
             settings = None
             if gpteng_path:
                 try:
                     settings = GPTEngineerSettings.from_project(gpteng_path)
-                    logging.info(f"Request settings {settings.__dict__}")
+                    logger.info(f"Request settings {settings.__dict__}")
                 except:
                     pass
             request.state.settings = settings
-            response = await call_next(request)
-            return response
+            return await call_next(request)
+
 
         @app.get("/api/health")
         def health_check():
@@ -135,7 +153,7 @@ class GPTEngineerAPI:
         @app.post("/api/chats")
         def chat(chat: Chat, request: Request):
             settings = request.state.settings
-            chat = chat_with_project(settings=settings, chat=chat)
+            chat = chat_with_project(settings=settings, chat=chat, use_knowledge=True)
             ChatManager(settings=settings).save_chat(chat)
             return chat.messages[-1]
 
@@ -172,10 +190,16 @@ class GPTEngineerAPI:
 
         @app.get("/api/settings")
         def settings_check(request: Request):
+            logger.info("/api/settings")
             settings = request.state.settings
+            check_project(settings=settings)
             global WATCH_FOLDERS
             settings.watching = True if settings.gpteng_path in WATCH_FOLDERS else False
-            return settings
+            return {
+                **settings.__dict__,
+                "sub_projects": settings.detect_sub_projects(),
+                "parent_project": settings.get_parent_project()
+            }
 
         @app.put("/api/settings")
         async def save_settings(request: Request):
@@ -192,7 +216,7 @@ class GPTEngineerAPI:
             settings = GPTEngineerSettings()
             settings.gpteng_path = f"{project_path}/.gpteng"
             settings.project_path = project_path
-            logging.info(f"/api/project/create project_path: {project_path}")
+            logger.info(f"/api/project/create project_path: {project_path}")
             create_project(settings=settings)
             return settings
 
@@ -233,4 +257,18 @@ class GPTEngineerAPI:
                 WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]
             return { "OK": 1 }
 
+        @app.get("/api/knowledge/keywords")
+        def api_get_keywords(request: Request):
+            settings = request.state.settings
+            query = request.query_params.get("query")
+            return get_keywords(settings=settings, query=query)
+
+        @app.post("/api/knowledge/keywords")
+        def api_extract_tags(doc: Document, request: Request):
+            settings = request.state.settings
+            logging.info(f"Extract keywords from {doc}")
+            doc = extract_tags(settings=settings, doc=doc)
+            return doc.__dict__
+
         return app
+            

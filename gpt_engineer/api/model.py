@@ -57,3 +57,8 @@ class Profile(BaseModel):
 
 class Settings(BaseModel, GPTEngineerSettings):
   pass
+
+class Document(BaseModel):
+    id: int = Field(default=None)
+    page_content: str
+    metadata: dict

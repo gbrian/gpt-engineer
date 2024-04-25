@@ -24,6 +24,9 @@ import MarkdownVue from '@/components/Markdown.vue'
         <div class="flex gap-2 items-center">Document score (0-1):
           <input type="text" v-model="cutoffScore" class="w-20 input-bordered input input-xs  max-w-xs" />
         </div>
+        <div class="flex gap-2 items-center">Keywords:
+          <input type="checkbox" v-model="enableKeywords" class="w-20 checkbox checkbox-xs" />
+        </div>
         <button class="btn btn-sm" @click="saveKnowledgeSettings">
           <i class="fa-solid fa-floppy-disk"></i>
         </button>
@@ -68,6 +71,15 @@ import MarkdownVue from '@/components/Markdown.vue'
         </div>
         <div class="stat-title">Indexed files</div>
         <div class="stat-value">{{ status?.file_count }}</div>
+        <div class="stat-desc"></div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-figure text-info">
+          <i class="fa-solid fa-book"></i>
+        </div>
+        <div class="stat-title">Keywords</div>
+        <div class="stat-value">{{ status?.keyword_count }}</div>
         <div class="stat-desc"></div>
       </div>
 
@@ -138,14 +150,30 @@ import MarkdownVue from '@/components/Markdown.vue'
     <dialog class="modal modal-bottom sm:modal-middle modal-open" v-if="showDoc">
       <div class="modal-box flex flex-col gap-2">
         <div class="font-bold text-wrap">{{ showDoc.metadata.source }}</div>
-        <MarkdownVue class="prose max-h-60 overflow-auto" :text="showDocPreview" />
-        <pre><code class="language-json text-wrap">{{ JSON.stringify(showDoc.metadata, null, 2)  }}</code></pre>
-        <div class="modal-action">
-          <form class="flex flex-gap" method="dialog">
-            <button class="btn btn-error" @click="unIndexFile(showDoc)">
+        <div class="flex flex-col gap-2 grow">
+          <MarkdownVue class="prose h-60 overflow-auto" :text="showDocPreview" />
+          <div>
+            <span class="badge badge-primary badge-xs mr-2" v-for="keyword in showDoc.metadata.keywords?.split(',')" :key="keyword">
+              {{ keyword }}  
+            </span>
+          </div>
+          <pre class="h-1/4"><code class="language-json text-wrap text-xs">{{ JSON.stringify(showDoc.metadata, null, 2)  }}</code></pre>
+        </div>
+        <div>
+          <form class="flex gap-2" method="dialog">
+            <button class="btn btn-info text-white" @click="reIndexFile(showDoc)">
+              Re-index
+            </button>
+            <button class="btn btn-info text-white" @click="extractKeywords(showDoc)">
+              Keywords
+            </button>
+            <button class="btn btn-error text-white" @click="unIndexFile(showDoc)">
               Drop file
             </button>
-            <button class="btn" @click="showDoc = null">Close</button>
+            <div class="grow"></div>
+            <button class="btn" @click="showDoc = null">
+              Close
+            </button>
           </form>
         </div>
       </div>
@@ -170,7 +198,8 @@ export default {
       searchType: "embeddings",
       documentSearchType: API.lastSettings.knowledge_search_type,
       cutoffScore: API.lastSettings.knowledge_context_cutoff_relevance_score,
-      documentCount: API.lastSettings.knowledge_search_document_count
+      documentCount: API.lastSettings.knowledge_search_document_count,
+      enableKeywords: API.lastSettings.knowledge_extract_document_tags
     }
   },
   created() {
@@ -254,13 +283,22 @@ export default {
       this.showDoc = null
       this.onKnowledgeSearch()
     },
+    async reIndexFile(doc) {
+      await API.knowledge.reloadFolder([doc.metadata.source])
+      this.onKnowledgeSearch()
+    },
+    async extractKeywords(doc) {
+      const { data } = await API.knowledge.keywords(doc)
+      this.showDoc = data
+    },
     async saveKnowledgeSettings () {
       await API.settings.read()
       API.settings.write({
         ...API.lastSettings,
         knowledge_search_type: this.documentSearchType,
         knowledge_context_cutoff_relevance_score: this.cutoffScore,
-        knowledge_search_document_count: this.documentCount
+        knowledge_search_document_count: this.documentCount,
+        knowledge_extract_document_tags: this.enableKeywords
       })
     }
   }

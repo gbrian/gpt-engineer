@@ -1,11 +1,14 @@
 
 from gpt_engineer.core.db import DB
+from gpt_engineer.core.settings import GPTEngineerSettings
 
 class KnowledgePrompts:
-  db: DB = None
+  db: DB
+  settings: GPTEngineerSettings
 
-  def __init__(self, db: DB):
-    self.db = db
+  def __init__(self, settings: GPTEngineerSettings):
+    self.settings = settings
+    self.db = settings.get_dbs().preprompts
 
   def template_replace(self, template: str, values: dict):
     for key in values.keys():

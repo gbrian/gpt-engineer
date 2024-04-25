@@ -19,18 +19,22 @@ from gpt_engineer.api.profile_manager import ProfileManager
 from gpt_engineer.api.model import (
     Chat,
     Message,
-    KnowledgeSearch
+    KnowledgeSearch,
+    Document
 )
 from gpt_engineer.core.context import find_relevant_documents
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
 from gpt_engineer.knowledge.knowledge import Knowledge
+from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
+from gpt_engineer.knowledge.knowledge_keywords import KnowledgeKeywords
 
 from gpt_engineer.core.mention_manager import (
     extract_mentions,
     replace_mentions
 )
+
 
 FILE_WATCH_MANGER = None
 
@@ -56,7 +60,7 @@ def knowledge_search(settings: GPTEngineerSettings, knowledge_search: KnowledgeS
     if knowledge_search.search_type == "embeddings":
         documents, _ = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=knowledge_search.search_term, settings=settings)
     if knowledge_search.search_type == "source":
-        documents = dbs.knowledge.search_in_source(knowledge_search.search_term)
+        documents = Knowledge(settings=settings).search_in_source(knowledge_search.search_term)
     return { 
         "documents": documents, 
         "settings": {
@@ -153,14 +157,14 @@ def save_chat(chat: Chat, settings: GPTEngineerSettings):
     task_manager.create_task(task_id, chat)
 
 def check_project_changes(settings: GPTEngineerSettings):
-    dbs = build_dbs(settings=settings)
-    dbs.knowledge.clean_deleted_documents()
-    new_files = dbs.knowledge.detect_changes()
+    knowledge = Knowledge(settings=settings)
+    knowledge.clean_deleted_documents()
+    new_files = knowledge.detect_changes()
     
     if not new_files:
         return
     logging.info(f"Reload knowledge files {new_files}")
-    dbs.knowledge.reload()
+    knowledge.reload()
     for file_path in new_files:
         check_file_for_mentions(settings=settings, file_path=file_path)    
 
@@ -195,7 +199,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     
     query = chat.messages[-1].content
     profile_manager = ProfileManager(settings=settings)
-    profiles = list(set(["project"] + chat.profiles))
+    profiles = list(set(["gpt-engineer", "project"] + chat.profiles))
     system_content = "\n".join([profile_manager.read_profile(profile).content for profile in profiles])
     
     messages = []
@@ -220,12 +224,20 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
             for doc in documents:
                 doc_context = document_to_context(doc)
                 messages.append(HumanMessage(content=doc_context))
+        doc_length = len(documents) if documents else 0
+        logging.info(f"chat_with_project found {doc_length} relevan documents")
+    
+    file_list = chat.file_list if chat.file_list else []
+    if file_list:
+        for doc in Knowledge.get_documents_from_sources(file_list):
+            doc_context = document_to_context(doc)
+            messages.append(HumanMessage(content=doc_context))
 
     messages.append(HumanMessage(content=query))
     messages = ai.next(messages, step_name=curr_fn())
     response = messages[-1].content
+    
     if documents:
-        file_list = chat.file_list if chat.file_list else []
         doc_file_list = [doc.metadata["source"] for doc in documents]
         chat.file_list = list(set(file_list + doc_file_list))
         logging.info(f"chat_with_project file_list: {chat.file_list}")
@@ -233,3 +245,19 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     response_message = Message(role="assistant", hidden=False, content=response, documents=documents)
     chat.messages.append(response_message)
     return chat
+
+def check_project(settings: GPTEngineerSettings):
+    try:
+        logging.info(f"check_project")
+        loader = KnowledgeLoader(settings=settings)
+        loader.fix_repo()
+    except Exception as ex:
+        logging.exception(str(ex))
+
+def extract_tags(settings: GPTEngineerSettings, doc):
+    knowledge = Knowledge(settings=settings)
+    knowledge.extract_doc_keywords(doc)
+    return doc
+
+def get_keywords(settings: GPTEngineerSettings, query):
+    return KnowledgeKeywords(settings=settings).get_keywords(query)

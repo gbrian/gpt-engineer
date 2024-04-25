@@ -25,22 +25,28 @@ class KnowledgeCodeSplitter:
         )
 
     def load(self, file_path):
-        try:
-            return self.load_with_code_plitter(file_path=file_path)
-        except Exception as ex:
-            logging.debug(f"[KnowledgeCodeSplitter] load_with_code_plitter load error: {ex} - {file_path}")
+        def file_to_documents():
+            try:
+                return self.load_with_code_plitter(file_path=file_path)
+            except Exception as ex:
+                logging.debug(f"[KnowledgeCodeSplitter] load_with_code_plitter load error: {ex} - {file_path}")
 
-        try:
-            return self.load_with_language_parser(file_path=file_path)
-        except Exception as ex:
-            logging.debug(f"[KnowledgeCodeSplitter] load_with_language_parser load error: {ex} - {file_path}")
-            
-        try:
-            return self.load_as_text(file_path=file_path)
-        except Exception as ex:
-            logging.debug(f"[KnowledgeCodeSplitter] load_as_text load error: {ex} - {file_path}")
+            try:
+                return self.load_with_language_parser(file_path=file_path)
+            except Exception as ex:
+                logging.debug(f"[KnowledgeCodeSplitter] load_with_language_parser load error: {ex} - {file_path}")
+                
+            try:
+                return self.load_as_text(file_path=file_path)
+            except Exception as ex:
+                logging.debug(f"[KnowledgeCodeSplitter] load_as_text load error: {ex} - {file_path}")
 
-        return None
+            return None
+        docs = file_to_documents()
+        if docs:
+            for ix, doc in enumerate(docs):
+              doc.metadata["index"] = ix
+        return docs
 
     def load_with_code_plitter(self, file_path):
         suffix = file_path.split(".")[-1] if "." in file_path else "txt"

@@ -1,5 +1,6 @@
-Return 5 tags about this piece of code in CSV format:
+Create a CSV list of single words with the most relevants keywords like classes,
+variables, methods from this piece of code, 
+or just return "none" if there's nothing such like this:
 ```{{ language }}
 {{ page_content }}
 ```
-FILE: {{ source }}

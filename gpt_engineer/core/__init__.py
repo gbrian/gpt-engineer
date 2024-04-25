@@ -31,9 +31,6 @@ from gpt_engineer.cli.collect import collect_learnings
 from gpt_engineer.cli.learning import check_collection_consent
 from gpt_engineer.cli.file_selector import clear_selected_files_list
 
-from gpt_engineer.knowledge.knowledge_prompts import KnowledgePrompts
-from gpt_engineer.knowledge.knowledge import Knowledge
-
 from gpt_engineer.settings import GPTENG_PATH, PROMPT_FILE, USE_AI_CACHE
 
 
@@ -97,9 +94,6 @@ def gtp_engineer(settings: GPTEngineerSettings):
     ai = build_ai(settings=settings)
     dbs = build_dbs(settings=settings)
 
-    if settings.build_knowledge:
-        # Force full re-build
-        dbs.knowledge.reset()
     # Always refresh index to catch user changes
     index_changed = dbs.knowledge.reload()
 
@@ -170,7 +164,6 @@ def build_dbs(settings: GPTEngineerSettings) -> DBs:
     prompt_path = project_metadata_path
 
     preprompts_db = DB(preprompts_path())
-    knowledge_prompts = KnowledgePrompts(preprompts_db)
     return DBs(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
@@ -180,9 +173,6 @@ def build_dbs(settings: GPTEngineerSettings) -> DBs:
         roles=DB(roles_path()),
         archive=DB(archive_path),
         project_metadata=DB(project_metadata_path),
-        knowledge=Knowledge(
-            knowledge_prompts=knowledge_prompts,
-            settings=settings),
         settings=settings
     )
 
