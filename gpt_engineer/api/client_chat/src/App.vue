@@ -19,8 +19,11 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
             v-if="lastSettings.parent_project">
             <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project.split("/").reverse()[0] }} 
           </div>
-          <div class="badge badge-xs my-2 flex gap-2 badge-primary badge-ouline p-2">
-            <i class="fa-solid fa-location-dot"></i> {{ gptengPath }} 
+          <div class="badge my-2 flex gap-2 badge-primary badge-ouline p-2 flex gap-2 items-center">
+            <i class="fa-solid fa-location-dot"></i>
+            <div class="-mt-1">
+              {{ gptengPath.split("/").reverse()[1] }}
+            </div> 
           </div>
         </div>
         <div class="flex gap-2" v-if="subProjects.length">

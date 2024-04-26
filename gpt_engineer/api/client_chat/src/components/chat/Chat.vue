@@ -24,7 +24,11 @@ import ChatEntry from '@/components/ChatEntry.vue'
             <i class="fa-solid fa-at"></i>
             <input type="text" v-model="termSearchQuery"
               ref="termSearcher"
-              class="-ml-1 input input-xs text-lg bg-transparent" placeholder="search term..." />
+              class="-ml-1 input input-xs text-lg bg-transparent" placeholder="search term..."
+              @keydown.down.stop="onSelNext"
+              @keydown.up.stop="onSelPrev"
+              @keydown.enter.stop="addSerchTerm(searchTerms[searchTermSelIx])"
+            />
             <button class="btn btn-xs btn-circle btn-outline btn-error"
               @click="termSearchQuery = null"            
               v-if="termSearchQuery">
@@ -32,10 +36,10 @@ import ChatEntry from '@/components/ChatEntry.vue'
             </button>
           </div>
         </div>
-        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-300 rounded-box w-fit">
-          <li v-for="term in searchTerms" :key="term.key">
+        <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-300 rounded-box w-fit" v-if="searchTerms">
+          <li v-for="term, ix in searchTerms" :key="term.key">
             <a @click="addSerchTerm(term)">
-              <div class="">
+              <div :class="[searchTermSelIx === ix ? 'underline':'']">
                 <span class="text-sky-600 font-bold">@{{ term.key }}</span> <span class="text-xs">({{ term.file.split("/").reverse()[0] }})</span>
               </div>
             </a>
@@ -47,7 +51,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
           editMessageId !== null ? 'border-error': ''
         ]" contenteditable="true"
           ref="editor" @input="onMessageChange"
-          @keydown.esc="onResetEdit"
+          @keydown="onResetEdit"
           @paste="onContentPaste"
         >
         </div>
@@ -72,7 +76,8 @@ export default {
       editMessage: null,
       editMessageId: null,
       termSearchQuery: null,
-      searchTerms: null
+      searchTerms: null,
+      searchTermSelIx: -1
     }
   },
   computed: {
@@ -212,6 +217,7 @@ export default {
         return acc
       }, []))
       .reduce((a, b) => a.concat(b), [])
+      this.searchTermSelIx = 0
     },
     addSerchTerm(term) {
       let text = this.$refs.editor.innerText
@@ -219,11 +225,35 @@ export default {
         text = text.slice(0, text.length-1)
       }
       text += `@${term.key} `
-      this.editMessage = text
+      this.editMessage = text.trim()
       this.$refs.editor.innerText = this.editMessage
+      
+      const target = this.$refs.editor
+
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(target);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      target.focus();
+      range.detach();
+
       this.searchTerms = null
       this.termSearchQuery = null
-      this.$emit('add-file', term.file) 
+      this.$emit('add-file', term.file)
+    },
+    onSelNext () {
+      this.searchTermSelIx++
+      if (this.searchTermSelIx === this.searchTerms?.length) {
+        this.searchTermSelIx = 0
+      }
+    },
+    onSelPrev () {
+      this.searchTermSelIx--
+      if (this.searchTermSelIx === -1) {
+        this.searchTermSelIx = this.searchTerms?.length - 1
+      }
     }
   }
 }
