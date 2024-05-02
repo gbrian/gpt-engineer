@@ -6,6 +6,13 @@ import MarkdownVue from '@/components/Markdown.vue'
   <div class="gap-2 h-full justify-between">
     <div class="text-xl font-medium flex justify-between items-center gap-2">
       Knowledge
+      <div class="grow"></div>
+      <button class="btn btn-sm" @click="settings.watching = !settings?.watching">
+        <span class="label-text mr-2">Watch changes</span> 
+        <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="settings?.watching"
+          @change="toggleWatch" :disabled="!settings" />
+      </button>
+      
       <div class="stat-desc flex gap-2 items-center btn btn-sm" @click="reloadStatus">
         <i class="fa-solid fa-rotate-right"></i> Update
       </div>
@@ -206,6 +213,9 @@ export default {
     this.reloadStatus()
   },
   computed: {
+    settings () {
+      return API.lastSettings
+    },
     projectPath () {
       return API.lastSettings.project_path
     },
@@ -300,6 +310,17 @@ export default {
         knowledge_search_document_count: this.documentCount,
         knowledge_extract_document_tags: this.enableKeywords
       })
+    },
+    async toggleWatch () {
+      if (!API.settings) {
+        return
+      }
+      if (API.settings.watching) {
+        await API.project.unwatch()
+      } else {
+        await API.project.watch()
+      }
+      API.settings.read()
     }
   }
 }

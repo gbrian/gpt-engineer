@@ -15,31 +15,34 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <div v-if="validProject">
         <div class="flex gap-2 items-center">
           <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
-          @click="openProject(lastSettings.parent_project + '/.gpteng')"
+            @click="openProject(lastSettings.parent_project + '/.gpteng')"
             v-if="lastSettings.parent_project">
             <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project.split("/").reverse()[0] }} 
           </div>
+          <div>CODX</div>
           <div class="badge my-2 flex gap-2 badge-primary badge-ouline p-2 flex gap-2 items-center">
-            <i class="fa-solid fa-location-dot"></i>
+            <i class="fa-regular fa-folder-open"></i>
             <div class="-mt-1">
               {{ gptengPath.split("/").reverse()[1] }}
             </div> 
           </div>
         </div>
         <div class="flex gap-2" v-if="subProjects.length">
-          <div tabindex="0" class="click badge badge-info text-white badge-xs"
+          <div tabindex="0" class="click badge badge-info text-white flex gap-1 items-center"
             v-for="project in subProjects" :key="project"
               @click="openProject(project + '/.gpteng')"
           >
-            <i class="fa-solid fa-caret-down"></i> {{ project.split("/").reverse()[0] }} 
+            <i class="fa-solid fa-folder"></i>
+            {{ project.split("/").reverse()[0] }} 
           </div>
         </div>
       </div>
-      <div class="form-control">
-        <label class="cursor-pointer label">
-          <span class="label-text mr-2">Watch project changes</span> 
-          <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="lastSettings?.watching" @change="toggleWatch" :disabled="!lastSettings" />
-        </label>
+      <div class="flex gap-2 items-center">
+        <div>
+          <label for="my_modal_6" class="btn btn-sm btn-warning" @click="showOpenProjectModal = true">
+            <i class="fa-regular fa-folder-open"></i>
+          </label>
+        </div>
       </div>
     </div>
     <progress :class="['progress progress-success w-full', liveRequests ? '': 'opacity-0']"></progress>
@@ -57,8 +60,8 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         @click="tabIx = 0"
       >
         <div class="font-medium flex gap-2 items-center">
-          <i class="fa-regular fa-comments"></i>
-          Tasks
+          <i class="fa-solid fa-comments"></i>
+          Chat
         </div>
       </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 ? tabActive: tabInactive]"
@@ -78,13 +81,6 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       >
       <i class="fa-solid fa-id-card-clip"></i>
         Profiles
-      </a>
-      <a class="tab">
-        <div>
-          <label for="my_modal_6" class="btn btn-sm btn-warning" @click="showOpenProjectModal = true">
-            <i class="fa-regular fa-folder-open"></i>
-          </label>
-        </div>
       </a>
     </div>
     <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="validProject">
@@ -168,6 +164,9 @@ export default {
       return API.lastSettings?.gpteng_path
     },
     onOpenProject () {
+      if (!this.newProject.endsWith("/.gpteng")) {
+        this.newProject += "/.gpteng"
+      }
       this.openProject(this.newProject)
     },
     openProject (path) {
@@ -176,17 +175,6 @@ export default {
     async createNewProject () {
       const { data: { gpteng_path } } = await API.project.create(this.getProjectPath())
       this.openProject(gpteng_path)
-    },
-    async toggleWatch () {
-      if (!API.lastSettings) {
-        return
-      }
-      if (API.lastSettings.watching) {
-        await API.project.unwatch()
-      } else {
-        await API.project.watch()
-      }
-      API.settings.read()
     }
   }
 

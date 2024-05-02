@@ -56,7 +56,7 @@ class GPTViewProvider {
 				</style>
 			</head>
 			<body>
-				<iframe src="${settings.url}" />
+				<iframe allow="*" src="${settings.url}" />
 			</body>
 		</html>` : '<h2>Please set gpt-engineer extension settings</h2>'
 	}

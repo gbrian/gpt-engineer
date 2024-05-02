@@ -14,6 +14,7 @@ for logger_id in [
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from gpt_engineer.api.model import (
@@ -153,9 +154,17 @@ class GPTEngineerAPI:
         @app.post("/api/chats")
         def chat(chat: Chat, request: Request):
             settings = request.state.settings
-            chat = chat_with_project(settings=settings, chat=chat, use_knowledge=True)
-            ChatManager(settings=settings).save_chat(chat)
-            return chat.messages[-1]
+            streaming = request.query_params.get("streaming")
+            if streaming:
+              def doStreaming():
+                data_buffer = DataBuffer()
+                chat = chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+                ChatManager(settings=settings).save_chat(chat) 
+              return StreamingResponse()
+            else:
+              chat = chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+              ChatManager(settings=settings).save_chat(chat)
+              return chat.messages[-1]
 
         @app.put("/api/chats")
         def save_chat(chat: Chat, request: Request):

@@ -37,6 +37,8 @@ def validate_context(ai, dbs, prompt, doc, score):
 def parallel_validate_contexts(dbs, prompt, documents, settings: GPTEngineerSettings):
     ai = AI(settings=settings)
     score = float(settings.knowledge_context_cutoff_relevance_score)
+    if not score:
+      return documents
     #dbs.input.append(
     #  HISTORY_PROMPT_FILE, f"\n[[VALIDATE_CONTEXT]]\n{prompt}\nNum docs: {len(documents)}"
     #)

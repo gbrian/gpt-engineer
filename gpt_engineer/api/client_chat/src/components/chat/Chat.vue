@@ -18,7 +18,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </div>
       </div>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
-      <div class="dropdown dropdown-top dropdown-open mb-1" >
+      <div class="dropdown dropdown-top dropdown-open mb-1" v-if="showTermSearch">
         <div tabindex="0" role="button" class="rounded-md bg-base-300 w-fit p-2">
           <div class="flex p-1 items-center text-sky-600">
             <i class="fa-solid fa-at"></i>
@@ -28,6 +28,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
               @keydown.down.stop="onSelNext"
               @keydown.up.stop="onSelPrev"
               @keydown.enter.stop="addSerchTerm(searchTerms[searchTermSelIx])"
+              @keydown.esc="closeTermSearch"
             />
             <button class="btn btn-xs btn-circle btn-outline btn-error"
               @click="termSearchQuery = null"            
@@ -46,12 +47,11 @@ import ChatEntry from '@/components/ChatEntry.vue'
           </li>
         </ul>
       </div>
-      <div class="flex gap-2 items-end">
+      <div class="flex gap-2 items-end mt-2">
         <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': ''
         ]" contenteditable="true"
           ref="editor" @input="onMessageChange"
-          @keydown="onResetEdit"
           @paste="onContentPaste"
         >
         </div>
@@ -77,7 +77,8 @@ export default {
       editMessageId: null,
       termSearchQuery: null,
       searchTerms: null,
-      searchTermSelIx: -1
+      searchTermSelIx: -1,
+      showTermSearch: false
     }
   },
   computed: {
@@ -117,7 +118,9 @@ export default {
     onMessageChange (ev) {
       this.editMessage = ev.target.innerText
       if (this.editMessage[this.editMessage.length-1] === '@') {
-        this.$refs.termSearcher.focus()
+        this.showTermSearch = true
+        requestAnimationFrame(() => 
+        this.$refs.termSearcher.focus())
       }
     },
     improveCode () {
@@ -228,6 +231,13 @@ export default {
       this.editMessage = text.trim()
       this.$refs.editor.innerText = this.editMessage
       
+      this.$emit('add-file', term.file)
+      this.closeTermSearch ();
+    },
+    closeTermSearch () {
+      this.searchTerms = null
+      this.termSearchQuery = null
+      this.showTermSearch = false
       const target = this.$refs.editor
 
       const range = document.createRange();
@@ -238,10 +248,6 @@ export default {
       sel.addRange(range);
       target.focus();
       range.detach();
-
-      this.searchTerms = null
-      this.termSearchQuery = null
-      this.$emit('add-file', term.file)
     },
     onSelNext () {
       this.searchTermSelIx++

@@ -153,7 +153,8 @@ class AI:
         prompt: Optional[str] = None,
         *,
         step_name: str,
-        max_response_length: Optional[int] = None
+        max_response_length: Optional[int] = None,
+        callback = None
     ) -> List[Message]:
         """
         Advances the conversation by sending message history to LLM and updating with the response.
@@ -194,8 +195,7 @@ class AI:
             response = AIMessage(content=json.loads(self.cache[md5Key])["content"])
 
         if not response:
-            callback = LogginCallbackHandler() 
-            callbacks = [callback]
+            callbacks = [LogginCallbackHandler(), callback]
             response = self.backoff_inference(messages, callbacks)
             if self.cache:
                 self.cache[md5Key] = json.dumps(

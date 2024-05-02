@@ -193,7 +193,7 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
                 f.write(new_content)
 
 
-def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True):
+def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None):
     ai = build_ai(settings)
     dbs = build_dbs(settings)
     
@@ -234,7 +234,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
             messages.append(HumanMessage(content=doc_context))
 
     messages.append(HumanMessage(content=query))
-    messages = ai.next(messages, step_name=curr_fn())
+    messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
     
     if documents:

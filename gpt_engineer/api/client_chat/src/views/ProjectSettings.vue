@@ -2,6 +2,7 @@
   <div class="flex flex-col gap-2 h-full">
     <div class="text-xl font-medium my-2 flex justify-between">
       GPT Settings
+      <div class="grow"></div>
       <div class="flex gap-2 justify-end">
         <button type="button" @click="reloadSettings" class="btn btn-sm btn-outline btn-accent">Reload</button>
         <button type="submit" class="btn  btn-sm btn-primary" @click="saveSettings">Save</button>
