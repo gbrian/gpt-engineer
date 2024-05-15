@@ -32,11 +32,11 @@ from gpt_engineer.knowledge.knowledge_keywords import KnowledgeKeywords
 
 from gpt_engineer.core.mention_manager import (
     extract_mentions,
-    replace_mentions
+    replace_mentions,
+    notify_mentions_in_progress,
+    strip_mentions
 )
 
-
-FILE_WATCH_MANGER = None
 
 def reload_knowledge(settings: GPTEngineerSettings, path: str = None):
     knowledge = Knowledge(settings=settings)
@@ -163,34 +163,81 @@ def check_project_changes(settings: GPTEngineerSettings):
     
     if not new_files:
         return
-    logging.info(f"Reload knowledge files {new_files}")
-    knowledge.reload()
+    logging.info(f"check_file_for_mentions {new_files}")
     for file_path in new_files:
-        check_file_for_mentions(settings=settings, file_path=file_path)    
+        try:
+            check_file_for_mentions(settings=settings, file_path=file_path)
+        except:
+            logging.exception(f"Error checking changes in file {file_path}")
+
+    logging.info(f"Reload knowledge files {new_files}")
+    reload_knowledge(settings=settings)
+    
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     content = None
     with open(file_path, 'r') as f:
         content = f.read()
 
+    def save_file (new_content):
+        with open(file_path, 'w') as f:
+            f.write(new_content)
+
     mentions = extract_mentions(content)
-    if mentions:
-        for mention in mentions:
-            try:
-                chat = Chat(name="", 
-                  messages=[
-                      Message(role="user", content=content),
-                      Message(role="user", content=mention.mention)
-                  ])
-                chat = chat_with_project(settings=settings, chat=chat)
-                mention.respone = chat.messages[-1].content
-            except Exception as ex:
-                logging.error(str(ex), exc_info = ex)
-                mention.respone = f"{mention.mention}/nError: str({ex})"
-        new_content = replace_mentions(content=content, mentions=mentions)
-        if content != new_content:
-            with open(file_path, 'w') as f:
-                f.write(new_content)
+    new_content = notify_mentions_in_progress(content)
+    save_file(new_content=new_content)
+    
+    org_content = strip_mentions(content=content, mentions=mentions)
+    try:
+        def mention_info(mention):
+          return f"Comment from line {mention.start_line}: {mention.mention}"
+
+        query = "\n".join([mention_info(mention) for mention in mentions])
+        context_documents = []
+        if settings.use_knowledge:
+          ai = build_ai(settings)
+          dbs = build_dbs(settings)
+          documents, _ = select_afefcted_documents_from_knowledge(ai=ai,
+                                                        dbs=dbs,
+                                                        query=query,
+                                                        settings=settings,
+                                                        ignore_documents=[f"/{file_path}"])
+          if documents:
+              for doc in documents:
+                  doc_context = document_to_context(doc)
+                  context_documents.append(HumanMessage(content=doc_context))
+
+        tasks = "\n".join(
+              context_documents + [
+              query,
+              "Add a line with <<<<<< to indicate the start of the new file content",
+              "Add a line with >>>>>> to indicate the end of the new file content"
+            ]
+        )
+        request = f"Please change this file:\n```{file_path}\n{org_content}\n```\nWith:\n{tasks}"
+        chat = Chat(name="", 
+            messages=[
+                Message(role="user", content=request)
+            ])
+        chat = chat_with_project(settings=settings, chat=chat)
+        new_content = chat.messages[-1].content
+        
+        add_line = False
+        content_lines = []
+        for line in new_content.split("\n"): 
+          if line == "<<<<<<":
+              add_line = True
+          if line == ">>>>>>":
+              break
+          if add_line:
+              content_lines.append(line)
+
+        new_content = "\n".join(content_lines)
+    except Exception as ex:
+        logging.error(str(ex), exc_info = ex)
+        
+    if content != new_content:
+        save_file(new_content=new_content)
 
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None):

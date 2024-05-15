@@ -19,10 +19,8 @@ class ChatManager:
 
     def save_chat(self, chat: Chat):
         chat_file = f"{self.chat_path}/{chat.name}"
-        logging.info(f"Save chat {chat}")
         with open(chat_file, 'w') as f:
             chat_content = self.serialize_chat(chat)
-            logging.info(f"serialize_chat: {chat_content}")
             f.write(chat_content)
 
     def load_chat(self, chat_name):

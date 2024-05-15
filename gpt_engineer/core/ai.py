@@ -38,7 +38,7 @@ from gpt_engineer.core.token_usage import TokenUsageLog
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     AIMessage,
@@ -114,7 +114,7 @@ class AI:
         self.settings = settings
 
         self.llm = self._create_chat_model()
-        self.token_usage_log = TokenUsageLog(settings.model)
+        # self.token_usage_log = TokenUsageLog(settings.model)
 
         self.cache = False
 
@@ -195,7 +195,9 @@ class AI:
             response = AIMessage(content=json.loads(self.cache[md5Key])["content"])
 
         if not response:
-            callbacks = [LogginCallbackHandler(), callback]
+            callbacks = [LogginCallbackHandler()]
+            if callback:
+                callbacks.append(callback)
             response = self.backoff_inference(messages, callbacks)
             if self.cache:
                 self.cache[md5Key] = json.dumps(
@@ -207,9 +209,9 @@ class AI:
         else:
             logger.debug(f"Response from cache: {messages} {response}")
 
-        self.token_usage_log.update_log(
-            messages=messages, answer=response.content, step_name=step_name
-        )
+        #self.token_usage_log.update_log(
+        #    messages=messages, answer=response.content, step_name=step_name
+        #)
         messages.append(response)
         logger.debug(f"Chat completion finished: {messages}")
 

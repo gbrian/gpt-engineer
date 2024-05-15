@@ -60,7 +60,7 @@ def process_projects_changes():
             settings = GPTEngineerSettings.from_project(gpteng_path=gpteng_path)
             check_project_changes(settings=settings)
         except Exception as ex:
-            logger.error(f"Processing {gpteng_path} error: {ex}")
+            logger.exception(f"Processing {gpteng_path} error: {ex}")
             pass
 
 add_work(process_projects_changes)
@@ -118,6 +118,7 @@ class GPTEngineerAPI:
         @app.get("/api/knowledge/reload")
         def knowledge_reload(request: Request):
             settings = request.state.settings
+            check_project_changes(settings=settings)
             reload_knowledge(settings=settings)
             return check_knowledge_status(settings=settings)
 

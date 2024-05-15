@@ -207,8 +207,7 @@ export default {
       }
     },
     removeMessage(ix) {
-      this.chat.messages = this.chat.messages.filter((m, i) => i !== ix)
-      this.saveChat()
+      this.$emit("delete-message", ix)
     },
     async searchKeywords () {
       const { data } = await API.knowledge.searchKeywords(this.termSearchQuery)

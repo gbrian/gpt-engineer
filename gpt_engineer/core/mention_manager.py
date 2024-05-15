@@ -1,13 +1,11 @@
 
-SINGLE_LINE_MENTION_START = "@codx:"
-MULTI_LINE_MENTION_START = "<codx>"
-MULTI_LINE_MENTION_END = "</codx>"
+SINGLE_LINE_MENTION_START = "@codx-processing:"
+MULTI_LINE_MENTION_START = "<codx-processing>"
+MULTI_LINE_MENTION_END = "</codx-processing>"
 
-SINGLE_LINE_MENTION_START_PROGRESS = "@codx ...processing:"
-MULTI_LINE_MENTION_START_PROGRESS = "<codx ...processing>"
-
-SINGLE_LINE_MENTION_START_DONE = "@codx done:"
-MULTI_LINE_MENTION_START_DONE = "<codx done>"
+SINGLE_LINE_MENTION_START_PROGRESS = "@codx-processing:"
+MULTI_LINE_MENTION_START_PROGRESS = "<codx-processing>"
+MULTI_LINE_MENTION_END_PROGRESS = "</codx-processing>"
 
 class Mention():
     mention: str = None
@@ -73,13 +71,18 @@ def extract_mentions(content):
             mention.append(line)
     return mentions
 
-def notify_mentions_in_progress(content, mentions):
+def notify_mentions_in_progress(content):
+    return content.replace(SINGLE_LINE_MENTION_START, SINGLE_LINE_MENTION_START_PROGRESS) \
+              .replace(MULTI_LINE_MENTION_START, MULTI_LINE_MENTION_START_PROGRESS) \
+              .replace(MULTI_LINE_MENTION_END, MULTI_LINE_MENTION_END_PROGRESS)  
+
+
+def strip_mentions(content, mentions):
     content_lines = content.split("\n")
     new_content = []
     last_index = 0
     for mention in mentions:
         new_content = new_content + content_lines[last_index:mention.start_line]
-        new_content = new_content + mention.in_progress().split("\n")
         last_index = (mention.end_line if mention.end_line else mention.start_line) + 1
     if last_index < len(content) - 1:
         new_content = new_content + content_lines[last_index:]

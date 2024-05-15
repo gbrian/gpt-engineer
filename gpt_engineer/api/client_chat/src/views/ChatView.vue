@@ -83,7 +83,11 @@ import Chat from '@/components/chat/Chat.vue'
           {{ file.split("/").reverse()[0] }}
         </span>
       </div>
-      <Chat :chat="chat" @refresh-chat="loadChat(chat.name)" @add-file="onAddFile" v-if="chat"/>
+      <Chat :chat="chat"
+        @refresh-chat="loadChat(chat.name)"
+        @add-file="onAddFile"
+        @delete-message="onRemoveMessage" 
+      v-if="chat"/>
       <div class="modal modal-open" role="dialog" v-if="showFile || addFile !== null">
         <div class="modal-box flex flex-col gap-4 p-4">
           <h3 class="font-bold text-lg" v-if="showFile">
@@ -139,6 +143,13 @@ export default {
       return this.chat?.file_list
     }
   },
+  watch: {
+    async showChatsTree(newVal) {
+      if (newVal) {
+        this.chats = await API.chats.list()
+      }
+    }
+  },
   methods: {
     async loadProfiles () {
       try {
@@ -149,14 +160,14 @@ export default {
     newChat () {
       this.chat = API.chatManager.newChat()
     },
-    
     async saveChat () {
       this.editName = false
-      return API.chats.save(this.chat)
+      API.chats.save(this.chat)
+      this.chats = await API.chats.list()
     },
-    deleteChat () {
+    async deleteChat () {
       API.chatManager.deleteChat(this.chat)
-      this.chats = API.chatManager.getChats()
+      this.chats = await API.chats.list()
       this.newChat()
     },
     async loadChat (newChat) {
@@ -186,6 +197,10 @@ export default {
       this.chat.profiles = [...this.chat.profiles||[], profile]
       await this.saveChat()
       await this.loadChat(this.chat.name)
+    },
+    onRemoveMessage (ix) {
+      this.chat.messages = this.chat.messages.filter((m, i) => i !== ix)
+      this.saveChat()
     }
   }
 }
