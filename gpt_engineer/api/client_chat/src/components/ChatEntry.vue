@@ -2,7 +2,8 @@
   <div :class="['mb-4 relative w-full relative',
       message.role === 'user' ? 'chat-start': 'chat-end',
     ]" >
-    <div :class="['border border-slate-300/20 p-2 rounded-md prose max-w-full group w-full',
+    <div :class="['border p-2 rounded-md prose max-w-full group w-full',
+      message.improvement ? 'border-green-300/20 bg-green-900' : 'border-slate-300/20',
       message.role === 'user' ? '': '',
       message.collapse ? 'h-40 overflow-hidden': 'h-fit',
       message.hide ? 'text-slate-200/20': ''

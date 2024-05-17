@@ -4,12 +4,6 @@ ARG GPT_USER=1000
 
 RUN apt-get update && apt-get install -y curl sudo procps python3-full python3-pip python3.11-venv
 
-RUN curl -sL "https://raw.githubusercontent.com/gbrian/codx-cli/main/codx.sh" | bash -s
-RUN codx nodejs
-
-ENV NVM_DIR="/root/.nvm"
-RUN . $NVM_DIR/nvm.sh
-
 EXPOSE 8000
 EXPOSE 8001
 
@@ -30,5 +24,7 @@ RUN pip3 install -e .
 RUN [ "${GPT_USER_GROUP}" != "0" ] && groupadd --gid ${GPT_USER_GROUP} gpt || true
 RUN [ "${GPT_USER}" != "0" ] && useradd --uid ${GPT_USER} --gid gpt --shell /bin/bash --create-home gpt  || true
 USER "${GPT_USER}:${GPT_USER_GROUP}"
+
+RUN curl -sL "https://raw.githubusercontent.com/gbrian/codx-cli/main/nodejs.sh" | bash -s
 
 CMD ["bash", "/app/gpt-web.sh"]

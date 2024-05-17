@@ -84,7 +84,20 @@ def create_project(settings=GPTEngineerSettings):
 
 
 def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings, ignore_documents=[]):
-    return find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=settings, ignore_documents=ignore_documents)
+    docs, file_list = find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=settings, ignore_documents=ignore_documents)
+    if not docs:
+        docs = []
+        file_list = []
+
+    if settings.sub_projects:
+        for sub_project in settings.sub_projects.split(","):
+            sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
+            sub_docs, sub_file_list = find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=sub_settings, ignore_documents=ignore_documents)
+            if sub_docs:
+                docs = docs + sub_docs
+            if sub_file_list:
+                file_list = file_list + sub_file_list
+    return docs, file_list
 
 def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
     relevant_documents, file_list = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=query, settings=settings)
@@ -96,30 +109,38 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
 
 
 def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
-    dbs = build_dbs(settings=settings)
-    ai = build_ai(settings=settings)
-    
-    chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
-
+    request = \
+    """Create a list of files to be modified with this structure:
+      <GPT_CODE_CHANGE>
+      FILE: file_path
+      CHANGES: Explain which changed do we need to apply to this file
+      </GPT_CODE_CHANGE>
+      <GPT_CODE_CHANGE>
+      FILE: file_path
+      CHANGES: Explain which changed do we need to apply to this file
+      </GPT_CODE_CHANGE>
+      Repeat for as many files we have to change
+    """
+    if not chat.messages[-1].improvement:
+        chat.messages.append(Message(role="user", content=request))
+        chat = chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+        chat.messages[-1].improvement = True
+        return
     response = chat.messages[-1].content
+    instructions = list(split_blocks_by_gt_lt(response))
+    logging.info(f"improve_existing_code: {instructions}")
+    for instruction in instructions:
+        file_path = instruction[0].split(":")[1].strip()
+        changes = "\n".join(instruction[1:])
+        logging.info(f"improve_existing_code instruction file: {file_path}")
+        logging.info(f"improve_existing_code instruction changes: {changes}")
+        chat.messages.append(Message(role="assistant", content="\n".join(instruction)))
+        with open(file_path) as f:
+          content = f.read()
+        new_content = change_file(context_documents=[], query=changes, file_path=file_path, org_content=content, settings=settings)
+        with open(file_path, 'w') as f:
+          content = f.write(new_content)
 
-    edits = []
-    try:
-      edits = parse_edits(response)
-    except:
-      pass
-    affected_files = []
-
-    errors = []
-    try:
-      for edit in edits:
-        success, error = apply_edit(edit=edit, workspace=dbs.workspace)
-        if error:
-          errors.append(error)
-    except Exception as ex:
-      errors.append(str(ex))
-
-    return (chat.messages, edits, errors, affected_files)
 
 def check_knowledge_status(settings: GPTEngineerSettings):
     knowledge = Knowledge(settings=settings)
@@ -173,6 +194,38 @@ def check_project_changes(settings: GPTEngineerSettings):
     logging.info(f"Reload knowledge files {new_files}")
     reload_knowledge(settings=settings)
     
+def split_blocks_by_gt_lt(content):
+    add_line = False
+    content_lines = []
+    for line in content.split("\n"): 
+      if line == "<GPT_CODE_CHANGE>":
+          add_line = True
+          continue
+      if add_line:
+          content_lines.append(line)
+          continue
+      if line == "</GPT_CODE_CHANGE>":
+          yield content_lines
+          add_line = False
+          content_lines = []
+
+def change_file(context_documents, query, file_path, org_content, settings):
+    tasks = "\n".join(
+          context_documents + [
+          query,
+          "Add a line with <GPT_CODE_CHANGE> (six '<') to indicate the start of the new file content",
+          "Add a line with </GPT_CODE_CHANGE> (six '>') to indicate the end of the new file content"
+        ]
+    )
+    request = f"Please change this file:\n```{file_path}\n{org_content}\n```\nWith:\n{tasks}"
+    chat = Chat(name="", 
+        messages=[
+            Message(role="user", content=request)
+        ])
+    chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
+    new_content = chat.messages[-1].content
+    
+    return "\n".join(next(split_blocks_by_gt_lt(new_content)))
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     content = None
@@ -207,32 +260,7 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
                   doc_context = document_to_context(doc)
                   context_documents.append(HumanMessage(content=doc_context))
 
-        tasks = "\n".join(
-              context_documents + [
-              query,
-              "Add a line with <<<<<< to indicate the start of the new file content",
-              "Add a line with >>>>>> to indicate the end of the new file content"
-            ]
-        )
-        request = f"Please change this file:\n```{file_path}\n{org_content}\n```\nWith:\n{tasks}"
-        chat = Chat(name="", 
-            messages=[
-                Message(role="user", content=request)
-            ])
-        chat = chat_with_project(settings=settings, chat=chat)
-        new_content = chat.messages[-1].content
-        
-        add_line = False
-        content_lines = []
-        for line in new_content.split("\n"): 
-          if line == "<<<<<<":
-              add_line = True
-          if line == ">>>>>>":
-              break
-          if add_line:
-              content_lines.append(line)
-
-        new_content = "\n".join(content_lines)
+        new_content = change_file(context_documents, query, file_path, org_content, settings)
     except Exception as ex:
         logging.error(str(ex), exc_info = ex)
         
@@ -254,7 +282,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         messages.append(SystemMessage(content=system_content))
     
     for m in chat.messages[0:-1]:
-        if hasattr(m, "hide") and m.hide:
+        if m.hide or m.improvement:
             continue
         msg = HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
         messages.append(msg)
@@ -272,7 +300,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
                 doc_context = document_to_context(doc)
                 messages.append(HumanMessage(content=doc_context))
         doc_length = len(documents) if documents else 0
-        logging.info(f"chat_with_project found {doc_length} relevan documents")
+        logging.info(f"chat_with_project found {doc_length} relevant documents")
     
     file_list = chat.file_list if chat.file_list else []
     if file_list:

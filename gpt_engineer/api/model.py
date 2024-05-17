@@ -9,6 +9,7 @@ class Message(BaseModel):
     role: str = Field(default='')
     content: str = Field(default='')
     hide: bool = Field(default=False)
+    improvement: bool = Field(default=False)
 
 class Chat(BaseModel):
     id: str = Field(default='')

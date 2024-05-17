@@ -178,14 +178,9 @@ class GPTEngineerAPI:
             settings = request.state.settings
             # Perform search on Knowledge using the input
             # Return the search results as response
-            messages, edits, errors, affected_files = improve_existing_code(chat=chat, settings=settings)
+            improve_existing_code(chat=chat, settings=settings)
             ChatManager(settings=settings).save_chat(chat)
-            return {
-              "messages": messages,
-              "edits": edits,
-              "error": errors,
-              "affected_files": affected_files
-            }
+            return chat
 
         @app.post("/api/run/edit")
         def run_edit(chat: Chat, request: Request):
@@ -207,7 +202,7 @@ class GPTEngineerAPI:
             settings.watching = True if settings.gpteng_path in WATCH_FOLDERS else False
             return {
                 **settings.__dict__,
-                "sub_projects": settings.detect_sub_projects(),
+                "sub_projects": settings.sub_projects if settings.sub_projects else settings.detect_sub_projects(),
                 "parent_project": settings.get_parent_project()
             }
 

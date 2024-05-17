@@ -66,7 +66,8 @@ import Chat from '@/components/chat/Chat.vue'
             <i class="fa-solid fa-file-circle-plus"></i>
           </button>
         </div>
-
+      </div>
+      <div>
         <span class="cursor-pointer mr-2 hover:underline group text-primary"
           v-for="file in chat.profiles" :key="file" :title="file"
           @click="showFile = file"
@@ -74,9 +75,8 @@ import Chat from '@/components/chat/Chat.vue'
           <i class="fa-solid fa-user-doctor"></i>
           {{ file.split("/").reverse()[0] }}
         </span>
-
         <span class="cursor-pointer mr-2 hover:underline group text-secondary"
-          v-for="file in chatFiles" :key="file" :title="file"
+          v-for="file in chat.file_list" :key="file" :title="file"
           @click="showFile = file"
         >
           <i class="fa-solid fa-file"></i>
@@ -139,9 +139,6 @@ export default {
     this.loadProfiles()
   },
   computed: {
-    chatFiles () {
-      return this.chat?.file_list
-    }
   },
   watch: {
     async showChatsTree(newVal) {

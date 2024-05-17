@@ -53,7 +53,9 @@ class ChatManager:
         for line in lines[1:]:
             if line.startswith("[[{") and line.endswith("}]]"):
                 message_json = json.loads(line[2:-2])
-                chat_message = Message(role=message_json.get("role") or "error", hide=message_json.get("hide") or False)
+                chat_message = Message(role=message_json.get("role") or "error",
+                                      hide=message_json.get("hide") or False,
+                                      improvement=message_json.get("improvement") or False)
                 chat_message.content = ""
                 chat.messages.append(chat_message)
                 continue

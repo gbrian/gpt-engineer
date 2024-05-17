@@ -3,6 +3,7 @@ PORT=$1
 PROJECT_PATHS=()
 LOGS=0
 CMD="/gpt-engineer/gpt-web.sh"
+BUILD=0
 
 while [ "$1" != "" ]; do
   if [ "$1" == "-p" ]; then
@@ -21,7 +22,7 @@ while [ "$1" != "" ]; do
     LOGS=1
   fi
   if [ "$1" == "--build" ]; then
-    docker image rm gpt-engineer
+    BUILD=1
   fi
   shift
 done
@@ -36,11 +37,13 @@ if [ ! "$PORT" ] || [ ! "$PROJECT_PATHS" ]; then
   "
 else
 
-  VOLUME_PATHS=""
-
+  VOLUME_PATHS="-v /var/run/docker.sock:/var/run/docker.sock "
   for path in $PROJECT_PATHS; do
     VOLUME_PATHS+="-v $path:$path "
   done
+  if [ "$DEBUG" != "" ]; then
+    VOLUME_PATHS+="-v $PWD:/gpt-engineer"
+  fi
 
   if [ "$GPT_USER" == "" ]; then
     GPT_USER="\"$(id -u):$(id -g)\""
@@ -49,18 +52,18 @@ else
     fi
   fi
 
-  if [ "$(docker image ls | grep gpt-engineer)" == "" ];then
+  IMAGE_EXISTS="$(docker image ls | grep gpt-engineer)"
+  if [ "$IMAGE_EXISTS" == "" ] || [ "$BUILD" == "1" ];then
     docker build --progress=plain \
-          --build-arg="GPT_USER=$(id -u)" \chatvi
+          --build-arg="GPT_USER=$(id -u)" \
           --build-arg="GPT_USER_GROUP=$(id -g)" \
           -t gpt-engineer -f docker/Dockerfile .
   fi
-
+  
   CMD="docker run -d -it \
     -e DEBUG=${DEBUG:-1} \
     -p $PORT:8001 \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v $PWD:/gpt-engineer \
+     \
     $VOLUME_PATHS \
     --name gpt-engineer gpt-engineer $CMD"
 

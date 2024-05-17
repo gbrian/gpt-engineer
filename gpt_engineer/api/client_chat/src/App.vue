@@ -144,6 +144,9 @@ export default {
         this.lastSettings?.project_path
     },
     subProjects () {
+      if (!Array.isArray(this.lastSettings?.sub_projects)) {
+        return this.lastSettings?.sub_projects.split(",")
+      }
       return this.lastSettings?.sub_projects
     }
   },
