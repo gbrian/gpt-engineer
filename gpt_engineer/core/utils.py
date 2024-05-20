@@ -11,3 +11,25 @@ def document_to_context(doc):
       doc.page_content,
       "```"
     ])
+
+def extract_blocks(content):
+    add_line = False
+    block_type = None
+    content_lines = []
+    for line in content.split("\n"):
+      if line.startswith("```"):
+          if add_line:
+              yield {
+                      "type": block_type,
+                      "content": "\n".join(content_lines)
+                    }
+              add_line = False
+              block_type = None
+              content_lines = []
+          else:
+              add_line = True
+              block_type = line.replace('```', '')
+          continue
+      if add_line:
+          content_lines.append(line)
+          continue

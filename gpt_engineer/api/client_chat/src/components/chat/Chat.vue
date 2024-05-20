@@ -197,7 +197,7 @@ export default {
       const message = this.chat.messages[this.editMessageId]
       message.content = this.editMessage
       this.onResetEdit()
-      this.saveChat()
+      this.$emit('save')
     },
     onResetEdit() {
       if (this.editMessageId !== null) {

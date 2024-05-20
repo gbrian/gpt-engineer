@@ -23,6 +23,8 @@ RUN pip3 install -e .
 # Add gpt user
 RUN [ "${GPT_USER_GROUP}" != "0" ] && groupadd --gid ${GPT_USER_GROUP} gpt || true
 RUN [ "${GPT_USER}" != "0" ] && useradd --uid ${GPT_USER} --gid gpt --shell /bin/bash --create-home gpt  || true
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 USER "${GPT_USER}:${GPT_USER_GROUP}"
 
 RUN curl -sL "https://raw.githubusercontent.com/gbrian/codx-cli/main/nodejs.sh" | bash -s

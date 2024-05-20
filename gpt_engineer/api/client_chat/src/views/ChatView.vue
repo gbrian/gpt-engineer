@@ -86,7 +86,8 @@ import Chat from '@/components/chat/Chat.vue'
       <Chat :chat="chat"
         @refresh-chat="loadChat(chat.name)"
         @add-file="onAddFile"
-        @delete-message="onRemoveMessage" 
+        @delete-message="onRemoveMessage"
+        @save="saveChat"
       v-if="chat"/>
       <div class="modal modal-open" role="dialog" v-if="showFile || addFile !== null">
         <div class="modal-box flex flex-col gap-4 p-4">
@@ -169,6 +170,7 @@ export default {
     },
     async loadChat (newChat) {
       this.chat = await API.chats.loadChat(newChat)
+      this.showChatsTree = false
     },
     async removeFileFromContext () {
       this.chat.profiles = this.chat.profiles.filter(f => f !== this.showFile) 

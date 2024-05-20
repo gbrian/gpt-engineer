@@ -122,13 +122,18 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
       Repeat for as many files we have to change
     """
     if not chat.messages[-1].improvement:
-        chat.messages.append(Message(role="user", content=request))
-        chat = chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+        request_chat = Chat(messages=chat.messages + [
+          Message(role="user", content=request)
+        ])
+        request_chat = chat_with_project(settings=settings, chat=request_chat, use_knowledge=True)
+        chat.messages.append(request_chat.messages[-1])
         chat.messages[-1].improvement = True
         return
     response = chat.messages[-1].content
     instructions = list(split_blocks_by_gt_lt(response))
     logging.info(f"improve_existing_code: {instructions}")
+    if not instructions:
+        logging.error(f"improve_existing_code ERROR no instrucctions at: {response} {chat.messages[-1]}")
     for instruction in instructions:
         file_path = instruction[0].split(":")[1].strip()
         changes = "\n".join(instruction[1:])
@@ -197,27 +202,35 @@ def check_project_changes(settings: GPTEngineerSettings):
 def split_blocks_by_gt_lt(content):
     add_line = False
     content_lines = []
-    for line in content.split("\n"): 
+    for line in content.split("\n"):
       if line == "<GPT_CODE_CHANGE>":
           add_line = True
-          continue
-      if add_line:
-          content_lines.append(line)
           continue
       if line == "</GPT_CODE_CHANGE>":
           yield content_lines
           add_line = False
           content_lines = []
+      if add_line:
+          content_lines.append(line)
+          continue
+          
 
 def change_file(context_documents, query, file_path, org_content, settings):
-    tasks = "\n".join(
+    tasks = "\n *".join(
           context_documents + [
           query,
-          "Add a line with <GPT_CODE_CHANGE> (six '<') to indicate the start of the new file content",
-          "Add a line with </GPT_CODE_CHANGE> (six '>') to indicate the end of the new file content"
+          "Add a line with <GPT_CODE_CHANGE> to indicate the start of the new file content",
+          "Add a line with </GPT_CODE_CHANGE> to indicate the end of the new file content",
         ]
     )
-    request = f"Please change this file:\n```{file_path}\n{org_content}\n```\nWith:\n{tasks}"
+    request = \
+    f"""Please produce a full version of this ##CONTENT applying the changes requested in the ##TASKS section.
+    The output will replace existing file so write all unchanged lines as well.
+    ##CONTENT:
+    {org_content}
+    ##TASKS:
+    {tasks}
+    """
     chat = Chat(name="", 
         messages=[
             Message(role="user", content=request)
@@ -240,32 +253,33 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     new_content = notify_mentions_in_progress(content)
     save_file(new_content=new_content)
     
-    org_content = strip_mentions(content=content, mentions=mentions)
-    try:
-        def mention_info(mention):
-          return f"Comment from line {mention.start_line}: {mention.mention}"
+    if mentions:
+        org_content = strip_mentions(content=content, mentions=mentions)
+        try:
+            def mention_info(mention):
+              return f"Comment from line {mention.start_line}: {mention.mention}"
 
-        query = "\n".join([mention_info(mention) for mention in mentions])
-        context_documents = []
-        if settings.use_knowledge:
-          ai = build_ai(settings)
-          dbs = build_dbs(settings)
-          documents, _ = select_afefcted_documents_from_knowledge(ai=ai,
-                                                        dbs=dbs,
-                                                        query=query,
-                                                        settings=settings,
-                                                        ignore_documents=[f"/{file_path}"])
-          if documents:
-              for doc in documents:
-                  doc_context = document_to_context(doc)
-                  context_documents.append(HumanMessage(content=doc_context))
+            query = "\n".join([mention_info(mention) for mention in mentions])
+            context_documents = []
+            if settings.use_knowledge:
+              ai = build_ai(settings)
+              dbs = build_dbs(settings)
+              documents, _ = select_afefcted_documents_from_knowledge(ai=ai,
+                                                            dbs=dbs,
+                                                            query=query,
+                                                            settings=settings,
+                                                            ignore_documents=[f"/{file_path}"])
+              if documents:
+                  for doc in documents:
+                      doc_context = document_to_context(doc)
+                      context_documents.append(HumanMessage(content=doc_context))
 
-        new_content = change_file(context_documents, query, file_path, org_content, settings)
-    except Exception as ex:
-        logging.error(str(ex), exc_info = ex)
-        
-    if content != new_content:
-        save_file(new_content=new_content)
+            new_content = change_file(context_documents, query, file_path, org_content, settings)
+        except Exception as ex:
+            logging.error(str(ex), exc_info = ex)
+            
+        if content != new_content:
+            save_file(new_content=new_content)
 
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None):
@@ -303,7 +317,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         logging.info(f"chat_with_project found {doc_length} relevant documents")
     
     file_list = chat.file_list if chat.file_list else []
-    if file_list:
+    if file_list and not use_knowledge:
         for doc in Knowledge.get_documents_from_sources(file_list):
             doc_context = document_to_context(doc)
             messages.append(HumanMessage(content=doc_context))

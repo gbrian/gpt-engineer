@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import json
 from slugify import slugify
 from datetime import datetime
 from functools import reduce
@@ -13,6 +14,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.llms import OpenAI
 from langchain.schema.document import Document
 
+from gpt_engineer.core.utils import extract_blocks
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.knowledge.knowledge_loader import KnowledgeLoader
@@ -174,8 +176,10 @@ class Knowledge:
         prompt, system = self.knowledge_prompts.extract_document_tags(doc)
         messages = self.get_ai().start(system, prompt, step_name="extract_document_tags")
         response = messages[-1].content.strip()
-        keywords = response.split(",")
-        doc.metadata["keywords"] = ",".join(keywords)
+        
+        blocks = extract_blocks(response)
+
+        doc.metadata["keywords"] = blocks[0]["content"] if blocks else respone
         source = doc.metadata['source']
         logger.info(f"Extracted keywords from {source}: {keywords}")
         self.knowledge_keywords.add_keywords(source, keywords)
@@ -209,13 +213,13 @@ class Knowledge:
           enriched_docs = self.parallel_enrich(doc_chunk, metadata=metadata)
           for enriched_doc in enriched_docs:
             try:
-                self.db = Chroma.from_documents([enriched_doc],
+                self.db = Chroma.from_documents([self.doc_and_summary(enriched_doc)],
                   self.embedding,
                   persist_directory=self.db_path,
                 )
                 logger.info(f"Stored document from {enriched_doc.metadata['source']}")
             except Exception as ex:
-                logger.error(f"Error indexing document {enriched_doc.metadata['source']}: {ex}")
+                logger.exception(f"Error indexing document {enriched_doc.metadata['source']}: {ex}")
                 if raiseIfError:
                     raise ex
 
@@ -291,6 +295,41 @@ class Knowledge:
           documents.append(Document(id=ids[ix], page_content=page_contents[ix], metadata=metadatas[ix]))
       
       return documents
+
+    def doc_and_summary(self, doc):
+      summary = self.build_doc_summary(doc)
+      doc.metadata = { **doc.metadata, **summary }
+      doc.page_content = f"## SUMMARY:\n{json.dumps(summary, indent=2)}\n## CONTENT:\n{doc.page_content}"
+      return doc
+
+    def build_doc_summary(self, doc):
+      prompt = \
+      f"""CREATE A SUMMARY LIKE THIS:
+
+      ```json
+      {{
+        "keywords": "<csv_keywords>",
+        "summary": "<brief summary about the document>"
+      }}
+      ```
+
+      FROM THIS CONTENT:
+
+        * FILE NAME: { doc.metadata['source'] }
+        * LANGUAGE: { doc.metadata['language'] }
+        * CONTENT: { doc.page_content }
+      """
+      messages = self.get_ai().start("", prompt, step_name="build_doc_summary")
+      response = messages[-1].content.strip()
+      blocks = list(extract_blocks(response))
+      summary = { 
+        "source": doc.metadata['source'],
+        "language": doc.metadata['language'],
+        "summary": response
+      }
+      if blocks:
+        summary = { **summary, **json.loads(blocks[0]["content"]) }
+      return summary
 
     def extract_query_keywords(self, query):
       try:

@@ -154,11 +154,12 @@ import MarkdownVue from '@/components/Markdown.vue'
       </div>
       <div class="text-xs">Change this list on settings</div>
     </div>
-    <dialog class="modal modal-bottom sm:modal-middle modal-open" v-if="showDoc">
-      <div class="modal-box flex flex-col gap-2">
+    <dialog class="modal modal-bottom sm:modal-middle modal-open" v-if="showDoc" @click="showDoc = null">
+      <div class="modal-box flex flex-col gap-2 w-full max-w-full">
         <div class="font-bold text-wrap">{{ showDoc.metadata.source }}</div>
         <div class="flex flex-col gap-2 grow">
-          <MarkdownVue class="prose h-60 overflow-auto" :text="showDocPreview" />
+          <MarkdownVue class="prose h-60 overflow-auto" :text="showDocPreview" v-if="false" />
+          <pre>{{ showDoc.page_content }}</pre>
           <div>
             <span class="badge badge-primary badge-xs mr-2" v-for="keyword in showDoc.metadata.keywords?.split(',')" :key="keyword">
               {{ keyword }}  

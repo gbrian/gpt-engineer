@@ -1,7 +1,7 @@
 
-SINGLE_LINE_MENTION_START = "@codx-processing:"
-MULTI_LINE_MENTION_START = "<codx-processing>"
-MULTI_LINE_MENTION_END = "</codx-processing>"
+SINGLE_LINE_MENTION_START = "@codx:"
+MULTI_LINE_MENTION_START = "<codx>"
+MULTI_LINE_MENTION_END = "</codx>"
 
 SINGLE_LINE_MENTION_START_PROGRESS = "@codx-processing:"
 MULTI_LINE_MENTION_START_PROGRESS = "<codx-processing>"
