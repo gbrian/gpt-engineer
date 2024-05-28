@@ -62,6 +62,7 @@ else
   
   CMD="docker run -d -it \
     -e DEBUG=${DEBUG:-1} \
+    -e PROJECT_PATHS=$PROJECT_PATHS \
     -p $PORT:8001 \
      \
     $VOLUME_PATHS \

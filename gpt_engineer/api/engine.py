@@ -1,6 +1,7 @@
 import os
 import logging
 from pathlib import Path
+from datetime import datetime
 
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain.schema.document import Document
@@ -12,6 +13,7 @@ from gpt_engineer.core import build_dbs, build_ai
 from gpt_engineer.core.utils import curr_fn, document_to_context
 from gpt_engineer.core.step.chat import ai_chat
 
+from gpt_engineer.core.chat_manager import ChatManager
 from gpt_engineer.tasks.task_manager import TaskManager
 
 from gpt_engineer.api.profile_manager import ProfileManager
@@ -34,6 +36,7 @@ from gpt_engineer.core.mention_manager import (
     extract_mentions,
     replace_mentions,
     notify_mentions_in_progress,
+    notify_mentions_error,
     strip_mentions
 )
 
@@ -89,7 +92,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
         docs = []
         file_list = []
 
-    if settings.sub_projects:
+    if hasattr(settings, "sub_projects") and settings.sub_projects:
         for sub_project in settings.sub_projects.split(","):
             sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
             sub_docs, sub_file_list = find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=sub_settings, ignore_documents=ignore_documents)
@@ -178,9 +181,7 @@ def run_edits(settings: GPTEngineerSettings, chat: Chat):
     return f"{len(total_edits)} edits, {len(errors)} errors", errors
 
 def save_chat(chat: Chat, settings: GPTEngineerSettings):
-    task_manager = TaskManager(settings)
-    task_id = len(task_manager.get_all_tasks()) + 1
-    task_manager.create_task(task_id, chat)
+    ChatManager(settings=settings).save_chat(chat)
 
 def check_project_changes(settings: GPTEngineerSettings):
     knowledge = Knowledge(settings=settings)
@@ -215,13 +216,14 @@ def split_blocks_by_gt_lt(content):
           continue
           
 
-def change_file(context_documents, query, file_path, org_content, settings):
+def change_file(context_documents, query, file_path, org_content, settings, save_changes=False, profile="software_developer"):
+    profile_manager = ProfileManager(settings=settings)
     tasks = "\n *".join(
-          context_documents + [
-          query,
-          "Add a line with <GPT_CODE_CHANGE> to indicate the start of the new file content",
-          "Add a line with </GPT_CODE_CHANGE> to indicate the end of the new file content",
-        ]
+            context_documents + [
+            query,
+            "Add a line with <GPT_CODE_CHANGE> to indicate the start of the new file content",
+            "Add a line with </GPT_CODE_CHANGE> to indicate the end of the new file content",
+          ]
     )
     request = \
     f"""Please produce a full version of this ##CONTENT applying the changes requested in the ##TASKS section.
@@ -231,14 +233,32 @@ def change_file(context_documents, query, file_path, org_content, settings):
     ##TASKS:
     {tasks}
     """
-    chat = Chat(name="", 
+
+    chat_name = '-'.join(file_path.split('/')[-2:])
+    chat_time = datetime.now().strftime('%H%M%S')
+    chat = Chat(name=f"{chat_name}_{chat_time}", 
         messages=[
             Message(role="user", content=request)
         ])
-    chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
-    new_content = chat.messages[-1].content
-    
-    return "\n".join(next(split_blocks_by_gt_lt(new_content)))
+    try:
+        if profile:
+            profile_content = profile_manager.read_profile(profile).content
+            if profile_content:
+                chat.messages = [
+                  Message(role="system", content=profile_content),
+                ] + chat.messages
+
+        chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
+        new_content = chat.messages[-1].content
+        
+        return "\n".join(next(split_blocks_by_gt_lt(new_content)))
+    except Exception as ex:
+        chat.messages.append(Message(role="error", content=str(ex)))
+        raise ex
+    finally:
+        if save_changes:
+            save_chat(chat=chat, settings=settings)
+
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     content = None
@@ -260,8 +280,11 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
               return f"Comment from line {mention.start_line}: {mention.mention}"
 
             query = "\n".join([mention_info(mention) for mention in mentions])
+            
+            
             context_documents = []
-            if settings.use_knowledge:
+            if "--codx-knowledge" in query:
+              query = query.replace("--codx-knowledge", "")
               ai = build_ai(settings)
               dbs = build_dbs(settings)
               documents, _ = select_afefcted_documents_from_knowledge(ai=ai,
@@ -272,11 +295,19 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
               if documents:
                   for doc in documents:
                       doc_context = document_to_context(doc)
-                      context_documents.append(HumanMessage(content=doc_context))
+                      context_documents.append(doc_context)
 
-            new_content = change_file(context_documents, query, file_path, org_content, settings)
+            save_changes = True if "--codx-save" in query else False
+            new_content = change_file(
+                context_documents=context_documents,
+                query=query,
+                file_path=file_path,
+                org_content=org_content,
+                settings=settings,
+                save_changes=save_changes)
         except Exception as ex:
             logging.error(str(ex), exc_info = ex)
+            new_content = notify_mentions_error(content=content, error=str(ex))fixes
             
         if content != new_content:
             save_file(new_content=new_content)

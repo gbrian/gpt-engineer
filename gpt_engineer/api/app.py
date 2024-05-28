@@ -4,6 +4,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+from pathlib import Path
 import traceback
 for logger_id in [
     'apscheduler.scheduler',
@@ -53,6 +54,23 @@ from gpt_engineer.api.engine import (
 
 WATCH_FOLDERS = []
 from gpt_engineer.core.scheduler import add_work
+
+def find_projects_to_watch ():
+    global WATCH_FOLDERS
+    project_paths = os.environ.get("PROJECT_PATHS", "").split(" ")
+    logger.info(f"find_projects_to_watch: Scanning project paths: {project_paths}")
+    for project_path in project_paths:
+        for project_settings in Path(project_path).glob("**/.gpteng"):
+            logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
+            try:
+                settings = GPTEngineerSettings.from_project(gpteng_path=str(project_settings))
+                if settings.watching and settings.gpteng_path not in WATCH_FOLDERS:
+                    WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
+                    logger.info(f"{settings.gpteng_path} ADDED TO WATCH")
+            except Exception as ex:
+                logger.exception(f"Error loading project {str(project_settings)}")
+                
+find_projects_to_watch()
 
 def process_projects_changes():
     for gpteng_path in WATCH_FOLDERS:
@@ -202,7 +220,7 @@ class GPTEngineerAPI:
             settings.watching = True if settings.gpteng_path in WATCH_FOLDERS else False
             return {
                 **settings.__dict__,
-                "sub_projects": settings.sub_projects if settings.sub_projects else settings.detect_sub_projects(),
+                "sub_projects": settings.sub_projects if hasattr(settings, "sub_projects") and settings.sub_projects else settings.detect_sub_projects(),
                 "parent_project": settings.get_parent_project()
             }
 
@@ -249,6 +267,8 @@ class GPTEngineerAPI:
         @app.get("/api/project/watch")
         def project_watch(request: Request):
             settings = request.state.settings
+            settings.watching = True
+            settings.save_project()
             global WATCH_FOLDERS
             if settings.gpteng_path not in WATCH_FOLDERS:
                 WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
@@ -257,6 +277,8 @@ class GPTEngineerAPI:
         @app.get("/api/project/unwatch")
         def project_unwatch(request: Request):
             settings = request.state.settings
+            settings.watching = False
+            settings.save_project()
             global WATCH_FOLDERS
             if settings.gpteng_path in WATCH_FOLDERS:
                 WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]

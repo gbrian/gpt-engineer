@@ -14,11 +14,11 @@ class ChatManager:
 
     def list_chats(self):
         path = self.chat_path
-        file_paths = [os.path.basename(str(file_path)) for file_path in pathlib.Path(path).rglob("*")]
+        file_paths = [os.path.basename(str(file_path)) for file_path in pathlib.Path(path).rglob("*.md")]
         return file_paths
 
     def save_chat(self, chat: Chat):
-        chat_file = f"{self.chat_path}/{chat.name}"
+        chat_file = f"{self.chat_path}/{chat.name}.md"
         with open(chat_file, 'w') as f:
             chat_content = self.serialize_chat(chat)
             f.write(chat_content)
@@ -31,12 +31,12 @@ class ChatManager:
     def serialize_chat(self, chat: Chat):
         chat_json = { **chat.__dict__ }
         del chat_json["messages"]  
-        header = f"[[{json.dumps(chat_json)}]]"
+        header = f"# [[{json.dumps(chat_json)}]]"
         def serialize_message(message):
             message_json = { **message.__dict__ }
             del message_json["content"]
             return "\n".join([
-                    f"[[{json.dumps(message_json)}]]",
+                    f"## [[{json.dumps(message_json)}]]",
                     message.content
                 ]
             )
@@ -46,13 +46,13 @@ class ChatManager:
 
     def deserialize_chat(self, content) -> Chat:
         lines = content.split("\n")
-        chat_json = json.loads(lines[0][2:-2])
+        chat_json = json.loads(lines[0][4:-2])
         chat = Chat(**chat_json)
         chat.messages = []
         chat_message = None
         for line in lines[1:]:
-            if line.startswith("[[{") and line.endswith("}]]"):
-                message_json = json.loads(line[2:-2])
+            if line.startswith("## [[{") and line.endswith("}]]"):
+                message_json = json.loads(line[5:-2])
                 chat_message = Message(role=message_json.get("role") or "error",
                                       hide=message_json.get("hide") or False,
                                       improvement=message_json.get("improvement") or False)

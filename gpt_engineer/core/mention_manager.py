@@ -74,7 +74,10 @@ def extract_mentions(content):
 def notify_mentions_in_progress(content):
     return content.replace(SINGLE_LINE_MENTION_START, SINGLE_LINE_MENTION_START_PROGRESS) \
               .replace(MULTI_LINE_MENTION_START, MULTI_LINE_MENTION_START_PROGRESS) \
-              .replace(MULTI_LINE_MENTION_END, MULTI_LINE_MENTION_END_PROGRESS)  
+              .replace(MULTI_LINE_MENTION_END, MULTI_LINE_MENTION_END_PROGRESS)
+
+def notify_mentions_error(content, error):
+    return content.replace("codx-processing", f"codx-error: {error}")  
 
 
 def strip_mentions(content, mentions):

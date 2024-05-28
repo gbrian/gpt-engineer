@@ -10,7 +10,8 @@ from langchain.text_splitter import CharacterTextSplitter
 
 from llama_index.core.node_parser import CodeSplitter
 from gpt_engineer.settings import (
-    LANGUAGE_FROM_EXTENSION
+    LANGUAGE_FROM_EXTENSION,
+    CODE_PARSER_FROM_EXTENSION
 )
 
 CURRENT_SPLITTER_LANGUAGES = [lang.lower() for lang in dir(Language)]
@@ -51,8 +52,9 @@ class KnowledgeCodeSplitter:
     def load_with_code_plitter(self, file_path):
         suffix = file_path.split(".")[-1] if "." in file_path else "txt"
         language = LANGUAGE_FROM_EXTENSION.get(suffix)
+        code_parser_language = CODE_PARSER_FROM_EXTENSION.get(suffix)
         code_parser = CodeSplitter(
-            language=language,
+            language=code_parser_language,
             # chunk_lines: int = DEFAULT_CHUNK_LINES,
             # chunk_lines_overlap: int = DEFAULT_LINES_OVERLAP,
             # max_chars: int = DEFAULT_MAX_CHARS,
