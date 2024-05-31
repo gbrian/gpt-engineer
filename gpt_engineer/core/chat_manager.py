@@ -18,7 +18,9 @@ class ChatManager:
         return file_paths
 
     def save_chat(self, chat: Chat):
-        chat_file = f"{self.chat_path}/{chat.name}.md"
+        chat_file = f"{self.chat_path}/{chat.name}"
+        if not chat_file.endswith(".md"):
+            chat_file = chat_file + ".md"
         with open(chat_file, 'w') as f:
             chat_content = self.serialize_chat(chat)
             f.write(chat_content)

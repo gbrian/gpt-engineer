@@ -275,6 +275,7 @@ class Knowledge:
 
     def search(self, query):
       if not self.settings.use_knowledge:
+        logging.error(f"Knowledge::search use_knowledge is DISABLED {self.settings.use_knowledge}")
         return []
 
       retriever = self.as_retriever()

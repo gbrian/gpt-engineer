@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 from pathlib import Path
 from datetime import datetime
 
@@ -91,7 +92,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
     if not docs:
         docs = []
         file_list = []
-
+    logging.info(f"select_afefcted_documents_from_knowledge doc length: {len(docs)}")
     if hasattr(settings, "sub_projects") and settings.sub_projects:
         for sub_project in settings.sub_projects.split(","):
             sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
@@ -214,7 +215,67 @@ def split_blocks_by_gt_lt(content):
       if add_line:
           content_lines.append(line)
           continue
+
+def get_line_changes(content):
+    line_change = None
+    for line in content.split("\n"):
+      if line.startswith("<GPT_"):
+          line_change = {
+            "type": re.match(r'<GPT_([^_]+)_LINE', line),
+            "start": line.split("start_line=")[1]
+          }
+          continue
+      if line.startswith("</GPT"):
+          yield content_lines
+          add_line = False
+          content_lines = []
+      if add_line:
+          content_lines.append(line)
+          continue
           
+def change_file_line(context_documents, query, file_path, org_content, settings, save_changes=False, profile="software_developer"):
+    profile_manager = ProfileManager(settings=settings)
+    tasks = "\n *".join(
+            context_documents + [
+            query,
+            'To ADD line(s) use: <GPT_ADD_LINE start_line="10"></GPT_ADD_LINE>',
+            'To REMOVE line(s) use: <GPT_REMOVE_LINE start_line="10" end_line="11"></GPT_ADD_LINE> Lines from 10 to 11 will be deleted, both included',
+            'To CHANGE line(s) use: <GPT_CHANGE_LINE start_line="10" end_line="11">New content</GPT_ADD_LINE> New content will replace lines 10 to 11',
+            'Make sure identantion for new content is consistent'
+          ]
+    )
+    request = \
+    f"""Given this CONTENT, generate line changes.
+    ##CONTENT:
+    {org_content}
+    ##TASKS:
+    {tasks}
+    """
+
+    chat_name = '-'.join(file_path.split('/')[-2:])
+    chat_time = datetime.now().strftime('%H%M%S')
+    chat = Chat(name=f"{chat_name}_{chat_time}", 
+        messages=[
+            Message(role="user", content=request)
+        ])
+    try:
+        if profile:
+            profile_content = profile_manager.read_profile(profile).content
+            if profile_content:
+                chat.messages = [
+                  Message(role="system", content=profile_content),
+                ] + chat.messages
+
+        chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
+        new_content = chat.messages[-1].content
+        
+        return "\n".join(next(split_blocks_by_gt_lt(new_content)))
+    except Exception as ex:
+        chat.messages.append(Message(role="error", content=str(ex)))
+        raise ex
+    finally:
+        if save_changes:
+            save_chat(chat=chat, settings=settings)
 
 def change_file(context_documents, query, file_path, org_content, settings, save_changes=False, profile="software_developer"):
     profile_manager = ProfileManager(settings=settings)
@@ -307,7 +368,7 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
                 save_changes=save_changes)
         except Exception as ex:
             logging.error(str(ex), exc_info = ex)
-            new_content = notify_mentions_error(content=content, error=str(ex))fixes
+            new_content = notify_mentions_error(content=content, error=str(ex))
             
         if content != new_content:
             save_file(new_content=new_content)

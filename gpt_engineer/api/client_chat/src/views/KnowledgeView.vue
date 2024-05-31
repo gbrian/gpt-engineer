@@ -6,7 +6,9 @@ import MarkdownVue from '@/components/Markdown.vue'
   <div class="gap-2 h-full justify-between">
     <div class="text-xl font-medium flex justify-between items-center gap-2">
       Knowledge
-      <div class="grow"></div>
+      <div class="grow">
+        <div class="text-error text-xs" v-if="!settings?.use_knowledge">Knowledge search is disabled!</div>
+      </div>
       <button class="btn btn-sm" @click="settings.watching = !settings?.watching">
         <span class="label-text mr-2">Watch changes</span> 
         <input type="checkbox" class="toggle toggle-sm toggle-primary" :checked="settings?.watching"
@@ -17,7 +19,7 @@ import MarkdownVue from '@/components/Markdown.vue'
         <i class="fa-solid fa-rotate-right"></i> Update
       </div>
     </div>
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-2" v-if="settings?.use_knowledge">
       <div class="text-xs flex gap-2 items-center">
         <i class="fa-solid fa-sliders"></i>
         <div class="flex gap-2 items-center">Search type: 
@@ -125,24 +127,22 @@ import MarkdownVue from '@/components/Markdown.vue'
       <div class="text-xs">Allows to index new floders or re-index existing ones</div>
       <label class="input input-bordered flex items-center gap-2">
         <input type="text" class="grow" :placeholder="projectPath" v-model="folderFilter" />
-        <i class="fa-solid fa-magnifying-glass"></i>
+        <span v-if="folderFilter" @click="reloadFolder(folderFilter)">
+          <i class="fa-solid fa-rotate-right"></i>
+        </span>
+        <span v-else>
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </span>
       </label>
-      <div class="dropdown dropdown-open" v-if="folderResulst && !folderToReload">
+      <div class="dropdown dropdown-open" v-if="folderResulst">
         <div class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-fit">
           <ul>
             <li class="" v-for="folder in folderResulst" :key="folder"
-              @click="folderToReload = folder"
+              @click="folderFilter = folder"
             >
               <a>{{ folder }}</a></li>
           </ul>
         </div>
-      </div>
-      <div class="pl-4 flex gap-2 items-center " v-if="folderToReload">
-        <i class="fa-2xl fa-solid fa-folder"></i>
-        <input type="text" v-model="folderToReload" class="grow input input-md input-bordered" />
-        <button class="btn btn-warning" v-if="folderToReload" @click="reloadFolder">
-          <i class="fa-solid fa-rotate-right"></i>
-      </button>
       </div>
     </div>
     <div class="text-xs font-bold py-2">
@@ -197,7 +197,6 @@ export default {
       documents: 0,
       embeddings: 0,
       status: null,
-      folderToReload: null,
       loading: false,
       folderFilter: null,
       searchTerm: null,
@@ -234,7 +233,7 @@ export default {
       const query = this.folderFilter.toLowerCase()
 
       const allFolders = [...this.status?.pending_files||[], ...this.status?.folders||[]]
-      return allFolders.filter((f, ix, arr) => arr.findIndex(f) === ix && f.toLowerCase().indexOf(query) !== -1)
+      return allFolders.filter((f, ix, arr) => arr.findIndex(e => e === f) === ix && f.toLowerCase().indexOf(query) !== -1)
         .slice(0, 20)
     },
     showDocPreview () {
@@ -244,24 +243,20 @@ export default {
     }
   },
   watch: {
-    folderFilter () {
-      this.folderToReload = null
-    }
   },
   methods: {
     async reloadStatus() {
       const { data } = await API.knowledge.status()
       this.status = data
     },
-    async reloadFolder () {
-      this.reloadPath(this.folderToReload)
+    async reloadFolder (folderToReload) {
+      this.reloadPath(folderToReload)
     },
     async reloadPath(path) {
       this.loading = true
       try {
         await API.knowledge.reloadFolder(path)
         await this.reloadStatus()
-        this.folderToReload = null
         this.folderFilter = null
       } catch{}
       this.loading = false
@@ -316,10 +311,10 @@ export default {
       if (!API.settings) {
         return
       }
-      if (API.settings.watching) {
-        await API.project.unwatch()
-      } else {
+      if (API.lastSettings.watching) {
         await API.project.watch()
+      } else {
+        await API.project.unwatch()
       }
       API.settings.read()
     }

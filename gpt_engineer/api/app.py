@@ -73,6 +73,7 @@ def find_projects_to_watch ():
 find_projects_to_watch()
 
 def process_projects_changes():
+    global WATCH_FOLDERS
     for gpteng_path in WATCH_FOLDERS:
         try:
             settings = GPTEngineerSettings.from_project(gpteng_path=gpteng_path)
@@ -216,8 +217,6 @@ class GPTEngineerAPI:
             logger.info("/api/settings")
             settings = request.state.settings
             check_project(settings=settings)
-            global WATCH_FOLDERS
-            settings.watching = True if settings.gpteng_path in WATCH_FOLDERS else False
             return {
                 **settings.__dict__,
                 "sub_projects": settings.sub_projects if hasattr(settings, "sub_projects") and settings.sub_projects else settings.detect_sub_projects(),
@@ -280,8 +279,7 @@ class GPTEngineerAPI:
             settings.watching = False
             settings.save_project()
             global WATCH_FOLDERS
-            if settings.gpteng_path in WATCH_FOLDERS:
-                WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]
+            WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]
             return { "OK": 1 }
 
         @app.get("/api/knowledge/keywords")

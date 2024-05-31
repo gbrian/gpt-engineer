@@ -67,8 +67,8 @@ def parallel_validate_contexts(dbs, prompt, documents, settings: GPTEngineerSett
           if doc and doc.metadata.get('relevance_score', 0) >= score]
       
 def get_response_score (response):
-    percent = response.strip().replace("%", "")
     try:
+      percent = re.search('([0-9]+)%', response.strip()).group(1)
       return float(1 / 100 * int(percent))
     except Exception as ex:
       logging.error(f"Error <{ex}> retrieving score from response: {percent} - '{response}'")
@@ -109,6 +109,7 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
 def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings, ignore_documents=[]):
   
   documents = Knowledge(settings=settings).search(query)
+  logging.info(f"find_relevant_documents: Knowledge.search doc length: {len(documents)}")
   def is_valid_document(doc):
     source = doc.metadata["source"]
     checks = [check for check in ignore_documents if check in source]
