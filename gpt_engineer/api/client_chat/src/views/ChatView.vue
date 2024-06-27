@@ -82,6 +82,9 @@ import Chat from '@/components/chat/Chat.vue'
           <i class="fa-solid fa-file"></i>
           {{ file.split("/").reverse()[0] }}
         </span>
+        <button class="btn btn-circle btn-xs" @click="addNewFile = true">
+          <i class="fa-solid fa-plus"></i>
+        </button>
       </div>
       <Chat :chat="chat"
         @refresh-chat="loadChat(chat.name)"
@@ -112,11 +115,14 @@ import Chat from '@/components/chat/Chat.vue'
         </div>
       </div>
     </div>
+    <add-file-dialog v-if="addNewFile" @open="onAddFile" @close="addNewFile = false" />
   </div>
 </template>
 <script>
 import { API } from '../api/api'
+import AddFileDialog from '../components/chat/AddFileDialog.vue'
 export default {
+  components: { AddFileDialog },
   data() {
     return {
       chat: null,
@@ -126,7 +132,8 @@ export default {
       addFile: null,
       showChatsTree: false,
       editName: false,
-      showSettings: false
+      showSettings: false,
+      addNewFile: null
     }
   },
   async created () {
@@ -173,8 +180,8 @@ export default {
       this.showChatsTree = false
     },
     async removeFileFromContext () {
-      this.chat.profiles = this.chat.profiles.filter(f => f !== this.showFile) 
-      this.chat.file_list = this.chat.file_list.filter(f => f !== this.showFile)
+      this.chat.profiles = this.chat.profiles?.filter(f => f !== this.showFile) 
+      this.chat.file_list = this.chat.file_list?.filter(f => f !== this.showFile)
       await this.saveChat()
       await this.loadChat(this.chat.name)
       this.showFile = null
@@ -187,7 +194,8 @@ export default {
       this.addFile = null
     },
     onAddFile (file) {
-      this.chat.file_list = [...this.chat.file_list, file]
+      this.chat.file_list = [...(this.chat.file_list||[]), file]
+      this.addNewFile = null
     },
     async addProfile (profile) {
       if (this.chat.profiles?.find(f => f.endsWith(profile))) {

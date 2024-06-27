@@ -35,6 +35,7 @@ class GPTEngineerSettings:
     knowledge_external_folders: str
     watching: bool
     use_knowledge: bool
+    log_ai: bool
 
     def __init__(self, **kwrgs):
         self.project_path = "."
@@ -52,6 +53,7 @@ class GPTEngineerSettings:
         self.knowledge_external_folders = ""
         self.watching = False
         self.use_knowledge = True
+        self.log_ai = False
         if kwrgs:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():

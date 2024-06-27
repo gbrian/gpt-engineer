@@ -58,6 +58,9 @@ import ChatEntry from '@/components/ChatEntry.vue'
         <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage">
           <i class="fa-solid fa-comment"></i>
         </button>
+        <button class="btn btn-neutral btn-sm btn-circle mb-1" @click="askKnowledge">
+          <i class="fa-solid fa-book"></i>
+        </button>
         <button class="btn btn-warning btn-sm mb-1" @click="improveCode">
           <i class="fa-solid fa-code"></i> Code
         </button>
@@ -178,7 +181,31 @@ export default {
         }
       )
     },
-    
+    getSendMessage() {
+      return this.editMessage ||
+                this.chat.messages[this.chat.messages.length - 1].content
+    },
+    async askKnowledge () {
+      const searchTerm = this.getSendMessage() 
+      const knowledgeSearch = {
+          searchTerm,
+          searchType: 'embeddings',
+          documentSearchType: API.lastSettings.knowledge_search_type,
+          cutoffScore: API.lastSettings.knowledge_context_cutoff_relevance_score,
+          documentCount: API.lastSettings.knowledge_search_document_count
+      }
+      this.postMyMessage()
+      const { data: { documents } } = await API.knowledge.search(knowledgeSearch)
+      documents.map(doc => this.addMessage({
+          role: 'assistant',
+          content: `#### File: ${doc.metadata.source.split("/").reverse()[0]}\n>${doc.metadata.source}\n\`\`\`${doc.metadata.language}\n${doc.page_content}\`\`\``
+        }) 
+      )
+      // const allSources = documents.map(doc => doc.metadata.source)
+      // this.chat.file_list = [...this.chat.file_list||[], ...allSources].filter((v,ix,arr) => arr.findIndex(e => e === v) === ix)
+      
+      this.saveChat()
+    },
     async sendApiRequest (apiCall, formater = defFormater) {
       try {
         this.waiting = true
@@ -197,7 +224,7 @@ export default {
       const message = this.chat.messages[this.editMessageId]
       message.content = this.editMessage
       this.onResetEdit()
-      this.$emit('save')
+      this.saveChat()
     },
     onResetEdit() {
       if (this.editMessageId !== null) {
@@ -259,6 +286,9 @@ export default {
       if (this.searchTermSelIx === -1) {
         this.searchTermSelIx = this.searchTerms?.length - 1
       }
+    },
+    saveChat () {
+      this.$emit('save')
     }
   }
 }

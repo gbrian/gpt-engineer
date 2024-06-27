@@ -68,6 +68,7 @@ class KnowledgeCodeSplitter:
             metadata = {
                 "source": file_path,
                 "language": language,
+                "code_parser_language": code_parser_language,
                 "parser": "CodeSplitter",
                 "loader_type": "code"
             }    

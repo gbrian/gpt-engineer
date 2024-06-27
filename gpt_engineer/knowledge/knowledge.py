@@ -172,7 +172,7 @@ class Knowledge:
       return doc
 
     def extract_doc_keywords(self, doc):
-      try:          
+      try:
         prompt, system = self.knowledge_prompts.extract_document_tags(doc)
         messages = self.get_ai().start(system, prompt, step_name="extract_document_tags")
         response = messages[-1].content.strip()
@@ -208,6 +208,8 @@ class Knowledge:
         metadata = {
           "index_date": f"{index_date}"
         }
+
+        """
         CHUNK_SIZE = 10
         for doc_chunk in [documents[i:i+CHUNK_SIZE] for i in range(len(documents))[::CHUNK_SIZE]]:
           enriched_docs = self.parallel_enrich(doc_chunk, metadata=metadata)
@@ -218,6 +220,18 @@ class Knowledge:
                   persist_directory=self.db_path,
                 )
                 logger.info(f"Stored document from {enriched_doc.metadata['source']}")
+            except Exception as ex:
+                logger.exception(f"Error indexing document {enriched_doc.metadata['source']}: {ex}")
+                if raiseIfError:
+                    raise ex
+        """
+        for enriched_doc in documents:
+            try:
+                enriched_doc.metadata["index_date"] = index_date
+                self.db = Chroma.from_documents([enriched_doc],
+                  self.embedding,
+                  persist_directory=self.db_path,
+                )
             except Exception as ex:
                 logger.exception(f"Error indexing document {enriched_doc.metadata['source']}: {ex}")
                 if raiseIfError:

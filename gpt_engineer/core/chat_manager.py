@@ -27,6 +27,8 @@ class ChatManager:
 
     def load_chat(self, chat_name):
         chat_file = f"{self.chat_path}/{chat_name}"
+        if not chat_file.endswith(".md"):
+            chat_file += ".md"
         with open(chat_file, 'r') as f:
             return self.deserialize_chat(content=f.read())
 

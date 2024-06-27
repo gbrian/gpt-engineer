@@ -71,7 +71,7 @@ def get_response_score (response):
       percent = re.search('([0-9]+)%', response.strip()).group(1)
       return float(1 / 100 * int(percent))
     except Exception as ex:
-      logging.error(f"Error <{ex}> retrieving score from response: {percent} - '{response}'")
+      logging.error(f"Error <{ex}> retrieving score from response: '{response}'")
     return None
   
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):

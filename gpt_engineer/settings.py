@@ -76,7 +76,7 @@ CODE_PARSER_FROM_EXTENSION = {
     "md": "markdown",
     "txt": "text",
     "html": "html",
-    "cs": "java",
+    "cs": "csharp",
     "cshtml": "html",
     "json": "js",
 }

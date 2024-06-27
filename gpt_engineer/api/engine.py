@@ -1,11 +1,14 @@
 import os
 import logging
 import re
+import json
 from pathlib import Path
 from datetime import datetime
 
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain.schema.document import Document
+
+from gpt_engineer.utils import extract_code_blocks, extract_json_blocks 
 
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.ai import AI
@@ -88,20 +91,46 @@ def create_project(settings=GPTEngineerSettings):
 
 
 def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings, ignore_documents=[]):
-    docs, file_list = find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=settings, ignore_documents=ignore_documents)
-    if not docs:
-        docs = []
-        file_list = []
-    logging.info(f"select_afefcted_documents_from_knowledge doc length: {len(docs)}")
-    if hasattr(settings, "sub_projects") and settings.sub_projects:
-        for sub_project in settings.sub_projects.split(","):
-            sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
-            sub_docs, sub_file_list = find_relevant_documents(ai=ai, dbs=dbs, query=query, settings=sub_settings, ignore_documents=ignore_documents)
-            if sub_docs:
-                docs = docs + sub_docs
-            if sub_file_list:
-                file_list = file_list + sub_file_list
-    return docs, file_list
+    def process_rag_query(rag_query):
+        docs, file_list = find_relevant_documents(ai=ai, dbs=dbs, query=rag_query, settings=settings, ignore_documents=ignore_documents)
+        if not docs:
+            docs = []
+            file_list = []
+        logging.info(f"select_afefcted_documents_from_knowledge doc length: {len(docs)}")
+        if hasattr(settings, "sub_projects") and settings.sub_projects:
+            for sub_project in settings.sub_projects.split(","):
+                sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
+                sub_docs, sub_file_list = find_relevant_documents(ai=ai, dbs=dbs, query=rag_query, settings=sub_settings, ignore_documents=ignore_documents)
+                if sub_docs:
+                    docs = docs + sub_docs
+                if sub_file_list:
+                    file_list = file_list + sub_file_list
+        return docs, file_list
+    # Temp disable multiple rag_query
+    return process_rag_query(rag_query=query)
+
+    rag_queries = "\n".join([
+        "Extract up to 3 search queries from the user request.",
+        "Each search query will be used to search relevant documents to enrich user's request.",
+        "It's important to be able able to find relevant documents to enrich user's request.",
+        "Return only the queries one by one on their on line",
+        "QUERY:",
+        query
+    ])
+    query_messages = ai.next(messages=[HumanMessage(content=rag_queries, role="user")], step_name="select_afefcted_documents_from_knowledge_split_query")
+    response = query_messages[-1].content
+    logging.info(f"select_afefcted_documents_from_knowledge RAG queries: {response}")
+    all_docs = {}
+    for rag_query in [query for query in response.split("\n") if query]:
+        docs, _ = process_rag_query(rag_query)
+        if docs:
+            for doc in docs:
+                key = f"{doc.metadata['source']}-{doc.metadata.get('index') or 0}"
+                all_docs[key] = doc
+    all_docs = [doc for doc in all_docs.values()]
+    all_files = list(set(([doc.metadata["source"] for doc in all_docs])))
+    return all_docs, all_files 
+      
 
 def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings):
     relevant_documents, file_list = select_afefcted_documents_from_knowledge(ai=ai, dbs=dbs, query=query, settings=settings)
@@ -113,6 +142,74 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
 
 
 def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
+    request = \
+    """Create a list of fin&replace intructions for each change needed:
+
+      ```JSON
+      [
+        {
+          "change": {
+            "type": "update",
+            "file": "/file/path/to/file,
+            "existingContent": "def myFunction(self):",
+            "newContent": "def myFunction(self, chat: Chat = None):",
+          }
+        },
+        {
+          "change": {
+            "type": "new",
+            "file": "/file/path/to/file,
+            "existingContent": null,
+            "newContent": "class MyClass:\n       def __init__(self):\n         pass",
+          }
+        },
+        {
+          "change": {
+            "type": "delete",
+            "file": "/file/path/to/file,
+            "existingContent": null,
+            "newContent": null,
+          }
+        }
+      ]
+      ```
+
+      INSTRUCTIONS:
+        * change structure:
+          - type: str. It can be "update", "delete" or "new"
+          - file: str. Absolute file path for the file to be changed
+          - existingContent: str. Anchor point in the existing content to start replacing with new code. New code will include it if anchor point still needed or not to replce it.
+          - newContent: str. New copntent to update "existingContent" or empty to remove "existingContent"
+        * Create one entry for each change
+        * Keep content identation; is crucial to find the content to replace and to make new content work
+    """
+    if not chat.messages[-1].improvement:
+        chat.messages.append(Message(role="user", content=request))
+        chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
+        chat.messages = [msg for msg in chat.messages if msg.content != request]
+        chat.messages[-1].improvement = True
+        return
+    
+    response = chat.messages[-1].content
+    apply_improve_code_changes(response=response)
+
+def apply_improve_code_changes(response: str):
+    changes = list(extract_changes(response))
+    logging.info(f"improve_existing_code total changes: {len(changes)}")
+    for change in changes:
+      logging.info(f"improve_existing_code change: {change}")
+      if change["type"] == "update":
+          file_path = change["file"]
+          existing_content = change["existingContent"]
+          new_content = change["newContent"]
+          with open(file_path, 'r') as f:
+              content = f.read()
+              new_content = content.replace(existing_content, new_content)
+          with open(file_path, 'w') as f:
+              f.write(new_content)
+    
+
+def improve_existing_code_gpt_blocks(settings: GPTEngineerSettings, chat: Chat):
     request = \
     """Create a list of files to be modified with this structure:
       <GPT_CODE_CHANGE>
@@ -200,7 +297,15 @@ def check_project_changes(settings: GPTEngineerSettings):
 
     logging.info(f"Reload knowledge files {new_files}")
     reload_knowledge(settings=settings)
-    
+
+def extract_changes(content):
+    for block in extract_json_blocks(content):
+        try:
+            for change in block:
+                yield change["change"]
+        except:
+            pass
+
 def split_blocks_by_gt_lt(content):
     add_line = False
     content_lines = []
@@ -233,7 +338,7 @@ def get_line_changes(content):
           content_lines.append(line)
           continue
           
-def change_file_line(context_documents, query, file_path, org_content, settings, save_changes=False, profile="software_developer"):
+def change_file_by_blocks(context_documents, query, file_path, org_content, settings, save_changes=False, profile=None):
     profile_manager = ProfileManager(settings=settings)
     tasks = "\n *".join(
             context_documents + [
@@ -277,13 +382,11 @@ def change_file_line(context_documents, query, file_path, org_content, settings,
         if save_changes:
             save_chat(chat=chat, settings=settings)
 
-def change_file(context_documents, query, file_path, org_content, settings, save_changes=False, profile="software_developer"):
+def change_file(context_documents, query, file_path, org_content, settings, save_changes=False):
     profile_manager = ProfileManager(settings=settings)
     tasks = "\n *".join(
             context_documents + [
-            query,
-            "Add a line with <GPT_CODE_CHANGE> to indicate the start of the new file content",
-            "Add a line with </GPT_CODE_CHANGE> to indicate the end of the new file content",
+            query
           ]
     )
     request = \
@@ -302,17 +405,10 @@ def change_file(context_documents, query, file_path, org_content, settings, save
             Message(role="user", content=request)
         ])
     try:
-        if profile:
-            profile_content = profile_manager.read_profile(profile).content
-            if profile_content:
-                chat.messages = [
-                  Message(role="system", content=profile_content),
-                ] + chat.messages
-
         chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
         new_content = chat.messages[-1].content
         
-        return "\n".join(next(split_blocks_by_gt_lt(new_content)))
+        return new_content
     except Exception as ex:
         chat.messages.append(Message(role="error", content=str(ex)))
         raise ex
@@ -320,6 +416,37 @@ def change_file(context_documents, query, file_path, org_content, settings, save
         if save_changes:
             save_chat(chat=chat, settings=settings)
 
+
+def check_file_for_mentions_test(settings: GPTEngineerSettings, file_path: str):
+    content = None
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    def save_file (new_content):
+        with open(file_path, 'w') as f:
+            f.write(new_content)
+
+    mentions = extract_mentions(content)
+    new_content = notify_mentions_in_progress(content)
+    save_file(new_content=new_content)
+    
+    if not mentions:
+        return
+    org_content = strip_mentions(content=content, mentions=mentions)
+    try:
+        def mention_info(mention):
+          return f"Comment from line {mention.start_line}: {mention.mention}"
+
+        query = "\n *".join([mention_info(mention) for mention in mentions])
+        chat = Chat(messages=[
+          HumanMessage(f"Change '{file_path}' from this user feedback:\n{query}")
+        ], file_list=[file_path])
+        improve_existing_code(settings=settings, chat=chat)
+        apply_improve_code_changes(response=chat.messages[-1].content)
+    except Exception as ex:
+        new_content = notify_mentions_error(content=content, error=str(ex))
+        logging.exception(f"Error {ex} processig mention {query}")
+        save_file(new_content=new_content)
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     content = None
@@ -344,7 +471,8 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
             
             
             context_documents = []
-            if "--codx-knowledge" in query:
+            use_knowledge = False if "--codx-no-knowledge" in query else True
+            if use_knowledge:
               query = query.replace("--codx-knowledge", "")
               ai = build_ai(settings)
               dbs = build_dbs(settings)
@@ -367,8 +495,9 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
                 settings=settings,
                 save_changes=save_changes)
         except Exception as ex:
-            logging.error(str(ex), exc_info = ex)
             new_content = notify_mentions_error(content=content, error=str(ex))
+            logging.exception(f"Error {ex} processig mention {query}")
+            
             
         if content != new_content:
             save_file(new_content=new_content)
@@ -378,52 +507,43 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     ai = build_ai(settings)
     dbs = build_dbs(settings)
     
-    query = chat.messages[-1].content
-    profile_manager = ProfileManager(settings=settings)
-    profiles = list(set(["gpt-engineer", "project"] + chat.profiles))
-    system_content = "\n".join([profile_manager.read_profile(profile).content for profile in profiles])
-    
     messages = []
-    if system_content:
-        messages.append(SystemMessage(content=system_content))
-    
+    query = chat.messages[-1].content
     for m in chat.messages[0:-1]:
         if m.hide or m.improvement:
             continue
         msg = HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
         messages.append(msg)
 
+    context = ""
     documents = []
-    file_list = []
     if use_knowledge:
-        documents, file_list = select_afefcted_documents_from_knowledge(ai=ai,
+        affected_documents, doc_file_list = select_afefcted_documents_from_knowledge(ai=ai,
                                                         dbs=dbs,
                                                         query=query,
                                                         settings=settings,
                                                         ignore_documents=[f"/{chat.name}"])
-        if documents:
+        if affected_documents:
+            documents = affected_documents
+            file_list = doc_file_list
+            documents = affected_documents
             for doc in documents:
                 doc_context = document_to_context(doc)
-                messages.append(HumanMessage(content=doc_context))
+                context = context + f"{doc_context}\n"
         doc_length = len(documents) if documents else 0
         logging.info(f"chat_with_project found {doc_length} relevant documents")
-    
-    file_list = chat.file_list if chat.file_list else []
-    if file_list and not use_knowledge:
-        for doc in Knowledge.get_documents_from_sources(file_list):
-            doc_context = document_to_context(doc)
-            messages.append(HumanMessage(content=doc_context))
 
+    
+    messages.append(AIMessage(content="THIS INFORMATION IS COMING FROM PROJECT'S FILES. HOPE IT HELPS TO ANSWER USER REQUEST.\n\n{content}"))
     messages.append(HumanMessage(content=query))
     messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
-    
     if documents:
-        doc_file_list = [doc.metadata["source"] for doc in documents]
-        chat.file_list = list(set(file_list + doc_file_list))
-        logging.info(f"chat_with_project file_list: {chat.file_list}")
-    
-    response_message = Message(role="assistant", hidden=False, content=response, documents=documents)
+        sources = list(set([f" * {doc.metadata['source']}" for doc in documents]))
+        sources = '\n'.join([f' * {source}' for source in sources])
+        response = f"{messages[-1].content}\n\nRESOURCES:\n\n{sources}"
+
+    response_message = Message(role="assistant", content=response)
     chat.messages.append(response_message)
     return chat
 

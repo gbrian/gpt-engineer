@@ -12,6 +12,7 @@ from langchain.text_splitter import CharacterTextSplitter
 
 from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.knowledge.knowledge_code_splitter import KnowledgeCodeSplitter
+from gpt_engineer.knowledge.knowledge_code_to_dcouments import KnowledgeCodeToDocuments
 
 logger = logging.getLogger(__name__)
 
@@ -61,16 +62,19 @@ class KnowledgeLoader:
     def load(self, last_update: datetime = None, path: str = None, current_sources=None):
         documents = []
         code_splitter = KnowledgeCodeSplitter()
+        # code_splitter = KnowledgeCodeToDocuments(settings=self.settings)
         files = self.list_repository_files(
             last_update=last_update, path=path, current_sources=current_sources
         )
         for file_path in files:
-            new_docs = code_splitter.load(file_path)
-            if not new_docs:
-                logging.error(f"No documents generated for: {file_path}")
-                continue
-            documents = documents + new_docs
-
+            try:
+                new_docs = code_splitter.load(file_path)
+                if not new_docs:
+                    logging.error(f"No documents generated for: {file_path}")
+                    continue
+                documents = documents + new_docs
+            except Exception as ex:
+                logging.exception(f"Error loading file {file_path}")  
         logger.debug(f"Loaded {len(documents)} documents from {len(files)} files")
         return documents
 

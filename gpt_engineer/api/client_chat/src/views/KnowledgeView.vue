@@ -54,7 +54,7 @@ import MarkdownVue from '@/components/Markdown.vue'
       <div class="grid grid-cols-3 gap-2">
         <span class="border p-2 border-info cursor-pointer rounded-md bg-base-300 indicator"
             v-for="doc,ix in searchResults?.documents" :key="ix"
-            @click="showDoc = doc"
+            @click="showDoc = { ...doc, docSelected: 0 }"
         >
           <span class="indicator-item badge badge-primary flex gap-2">
             <i class="fa-solid fa-gauge"></i>
@@ -156,16 +156,26 @@ import MarkdownVue from '@/components/Markdown.vue'
     </div>
     <dialog class="modal modal-bottom sm:modal-middle modal-open" v-if="showDoc" @click="showDoc = null">
       <div class="modal-box flex flex-col gap-2 w-full max-w-full">
-        <div class="font-bold text-wrap">{{ showDoc.metadata.source }}</div>
+        <div class="font-bold text-wrap">
+          {{ showDoc.metadata.source.split("/").reverse()[0] }}
+        </div>
         <div class="flex flex-col gap-2 grow">
-          <MarkdownVue class="prose h-60 overflow-auto" :text="showDocPreview" v-if="false" />
-          <pre>{{ showDoc.page_content }}</pre>
-          <div>
-            <span class="badge badge-primary badge-xs mr-2" v-for="keyword in showDoc.metadata.keywords?.split(',')" :key="keyword">
-              {{ keyword }}  
-            </span>
-          </div>
-          <pre class="h-1/4"><code class="language-json text-wrap text-xs">{{ JSON.stringify(showDoc.metadata, null, 2)  }}</code></pre>
+          <div class="flex gap-2 items-center">
+            <button class="btn btn-xs btn-info" @click.stop="showDoc.docSelected--"
+              :disabled="!showDoc.docSelected">
+              <i class="fa-solid fa-backward"></i>
+            </button>
+            Doc: {{ showDoc.docSelected||0 }} / {{ showDoc.docs.length - 1 }}
+            <button class="btn btn-xs btn-warning" @click.stop="showDoc.docSelected++"
+              :disabled="!((showDoc.docSelected||0) < (showDoc.docs.length-1))">
+              <i class="fa-solid fa-forward"></i>
+            </button>
+          </div>    
+          <MarkdownVue class="prose h-60 overflow-auto"
+            :text="'```json\n' + showDoc.docs[showDoc.docSelected||0].page_content + '\n```'" />
+        </div>
+        <div class="text-xs">
+          <pre>{{ showDoc.metadata }}</pre>
         </div>
         <div>
           <form class="flex gap-2" method="dialog">
@@ -237,9 +247,10 @@ export default {
         .slice(0, 20)
     },
     showDocPreview () {
-      const codePreview = this.showDoc.page_content.split("Code:")[1]
-      return codePreview || "```" + this.showDoc.metadata.language + 
-                            `\n${this.showDoc.page_content}\n` + "```"
+      const codePreview = this.showDoc.docs.sort((a, b) => a.metadata.index < b.metadata.index ? -1 : 1)
+                              .map(doc => `#### ${doc.metadata.index}: ${doc.metadata.keywords}\n${doc.page_content}\n`)
+                              .join("\n")
+      return codePreview
     }
   },
   watch: {
@@ -282,6 +293,13 @@ export default {
                                                     cutoffScore,
                                                     documentCount
                                                   })
+      data.documents = data.documents.reduce((acc, doc) => {
+        if (!acc[doc.metadata.source]) {
+          acc[doc.metadata.source] = { metadata: doc.metadata, docs: [] }
+        }
+        acc[doc.metadata.source].docs.push(doc)
+        return acc
+      }, {})
       this.searchResults = data 
     },
     async unIndexFile(doc) {

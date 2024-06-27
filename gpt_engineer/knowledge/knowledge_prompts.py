@@ -19,10 +19,21 @@ class KnowledgePrompts:
     template = self.db["enrich_document"]
     system = ""
     values = { 
-              "page_content": doc.page_content,
-              "language": doc.metadata.get('language', ''),
+                "page_content": doc.page_content,
+                "language": doc.metadata.get('language', ''),
               }
     return self.template_replace(template, values), system
+
+  def code_to_chunks_prompt(self, doc):
+    template = self.db["code_to_chunks"]
+    system = ""
+    values = { 
+              "page_content": doc.page_content,
+              "language": doc.metadata.get('language', ''),
+              "source": doc.metadata.get('source', ''),
+            }
+    return self.template_replace(template, values), system
+
   
   def extract_document_tags(self, doc):
     template = self.db["extract_document_tags"]

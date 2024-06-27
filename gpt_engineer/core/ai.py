@@ -195,7 +195,7 @@ class AI:
             response = AIMessage(content=json.loads(self.cache[md5Key])["content"])
 
         if not response:
-            callbacks = [LogginCallbackHandler()]
+            callbacks = [LogginCallbackHandler()] if self.settings.log_ai else []
             if callback:
                 callbacks.append(callback)
             response = self.backoff_inference(messages, callbacks)
@@ -213,7 +213,8 @@ class AI:
         #    messages=messages, answer=response.content, step_name=step_name
         #)
         messages.append(response)
-        logger.debug(f"Chat completion finished: {messages}")
+        if self.settings.log_ai:
+            logger.debug(f"Chat completion finished: {messages}")
 
         return messages
 

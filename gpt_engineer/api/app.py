@@ -9,7 +9,12 @@ import traceback
 for logger_id in [
     'apscheduler.scheduler',
     'apscheduler.executors.default',
-    'httpx'
+    'httpx',
+    'httpcore.http11',
+    'httpcore.connection',
+    'openai._base_client',
+    'chromadb.config',
+    'chromadb.auth.registry'
     ]:
     logging.getLogger(logger_id).setLevel(logging.WARNING)
 
