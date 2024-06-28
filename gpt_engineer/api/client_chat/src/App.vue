@@ -27,7 +27,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
             </div> 
           </div>
         </div>
-        <div class="flex gap-2" v-if="subProjects.length">
+        <div class="flex gap-2" v-if="subProjects">
           <div tabindex="0" class="click badge badge-info text-white flex gap-1 items-center"
             v-for="project in subProjects" :key="project"
               @click="openProject(project + '/.gpteng')"
@@ -145,7 +145,7 @@ export default {
     },
     subProjects () {
       if (!Array.isArray(this.lastSettings?.sub_projects)) {
-        return this.lastSettings?.sub_projects.split(",")
+        return this.lastSettings?.sub_projects?.split(",")
       }
       return this.lastSettings?.sub_projects
     }

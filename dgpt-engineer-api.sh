@@ -42,6 +42,7 @@ else
     VOLUME_PATHS+="-v $path:$path "
   done
   if [ "$DEBUG" != "" ]; then
+    echo "DEBUG VERSION: Mapping local /gpt-engineer"
     VOLUME_PATHS+="-v $PWD:/gpt-engineer"
   fi
 
