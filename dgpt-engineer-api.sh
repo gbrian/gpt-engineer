@@ -56,6 +56,7 @@ else
   IMAGE_EXISTS="$(docker image ls | grep gpt-engineer)"
   if [ "$IMAGE_EXISTS" == "" ] || [ "$BUILD" == "1" ];then
     docker build --progress=plain \
+          --no-cache \
           --build-arg="GPT_USER=$(id -u)" \
           --build-arg="GPT_USER_GROUP=$(id -g)" \
           -t gpt-engineer -f docker/Dockerfile .

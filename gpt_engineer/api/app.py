@@ -14,7 +14,8 @@ for logger_id in [
     'httpcore.connection',
     'openai._base_client',
     'chromadb.config',
-    'chromadb.auth.registry'
+    'chromadb.auth.registry',
+    'chromadb.api.segment'
     ]:
     logging.getLogger(logger_id).setLevel(logging.WARNING)
 
@@ -136,29 +137,31 @@ class GPTEngineerAPI:
 
 
         @app.get("/api/health")
-        def health_check():
+        def api_health_check():
             return "ok"
 
         @app.get("/api/knowledge/reload")
-        def knowledge_reload(request: Request):
+        def api_knowledge_reload(request: Request):
             settings = request.state.settings
             check_project_changes(settings=settings)
             reload_knowledge(settings=settings)
             return check_knowledge_status(settings=settings)
 
         @app.post("/api/knowledge/reload-path")
-        def knowledge_reload_path(knowledge_reload_path: KnowledgeReloadPath, request: Request):
+        def api_knowledge_reload_path(knowledge_reload_path: KnowledgeReloadPath, request: Request):
             settings = request.state.settings
+            logger.info(f"**** API:knowledge_reload_path {knowledge_reload_path}")
             reload_knowledge(settings=settings, path=knowledge_reload_path.path)
             return check_knowledge_status(settings=settings)
 
         @app.post("/api/knowledge/delete")
-        def knowledge_reload_path(knowledge_delete_sources: KnowledgeDeleteSources, request: Request):
+        def api_knowledge_reload_path(knowledge_delete_sources: KnowledgeDeleteSources, request: Request):
             settings = request.state.settings
             return delete_knowledge_source(settings=settings, sources=knowledge_delete_sources.sources)
 
         @app.post("/api/knowledge/reload-search")
-        def knowledge_search_endpoint(knowledge_search_params: KnowledgeSearch, request: Request):
+        def api_knowledge_search_endpoint(knowledge_search_params: KnowledgeSearch, request: Request):
+            logger.info("API:knowledge_search_endpoint")
             settings = request.state.settings
             return knowledge_search(settings=settings, knowledge_search=knowledge_search_params)
 
@@ -168,7 +171,7 @@ class GPTEngineerAPI:
             return check_knowledge_status(settings=settings)
 
         @app.get("/api/chats")
-        def list_chats(request: Request):
+        def api_list_chats(request: Request):
             settings = request.state.settings
             chat_name = request.query_params.get("chat_name")
             chat_manager = ChatManager(settings=settings)
@@ -177,7 +180,7 @@ class GPTEngineerAPI:
             return chat_manager.list_chats()
 
         @app.post("/api/chats")
-        def chat(chat: Chat, request: Request):
+        def api_chat(chat: Chat, request: Request):
             settings = request.state.settings
             streaming = request.query_params.get("streaming")
             if streaming:
@@ -192,13 +195,13 @@ class GPTEngineerAPI:
               return chat.messages[-1]
 
         @app.put("/api/chats")
-        def save_chat(chat: Chat, request: Request):
+        def api_save_chat(chat: Chat, request: Request):
             settings = request.state.settings
             ChatManager(settings=settings).save_chat(chat)
         
 
         @app.post("/api/run/improve")
-        def run_improve(chat: Chat, request: Request):
+        def api_run_improve(chat: Chat, request: Request):
             settings = request.state.settings
             # Perform search on Knowledge using the input
             # Return the search results as response
@@ -207,7 +210,7 @@ class GPTEngineerAPI:
             return chat
 
         @app.post("/api/run/edit")
-        def run_edit(chat: Chat, request: Request):
+        def api_run_edit(chat: Chat, request: Request):
             settings = request.state.settings
             # Perform search on Knowledge using the input
             # Return the search results as response
@@ -218,7 +221,7 @@ class GPTEngineerAPI:
             }
 
         @app.get("/api/settings")
-        def settings_check(request: Request):
+        def api_settings_check(request: Request):
             logger.info("/api/settings")
             settings = request.state.settings
             check_project(settings=settings)
@@ -229,14 +232,14 @@ class GPTEngineerAPI:
             }
 
         @app.put("/api/settings")
-        async def save_settings(request: Request):
+        async def api_save_settings(request: Request):
             settings = await request.json()
             GPTEngineerSettings.from_json(settings).save_project()
             
             return settings_check(request)
 
         @app.get("/api/project/create")
-        def project_create(request: Request):
+        def api_project_create(request: Request):
             project_path = request.query_params.get("project_path")
             if not project_path or not os.path.isdir(project_path):
                 return
@@ -248,28 +251,28 @@ class GPTEngineerAPI:
             return settings
 
         @app.get("/api/profiles")
-        def list_profile(request: Request):
+        def api_list_profile(request: Request):
             settings = request.state.settings
             return ProfileManager(settings=settings).list_profiles()
 
         @app.post("/api/profiles")
-        def create_profile(profile: Profile, request: Request):
+        def api_create_profile(profile: Profile, request: Request):
             settings = request.state.settings
             return ProfileManager(settings=settings).create_profile(profile)
             
         @app.get("/api/profiles/{profile_name}")
-        def read_profile(profile_name, request: Request):
+        def api_read_profile(profile_name, request: Request):
             settings = request.state.settings
             return  ProfileManager(settings=settings).read_profile(profile_name)
 
         @app.delete("/api/profiles/{profile_name}")
-        def delete_profile(profile_name, request: Request):
+        def api_delete_profile(profile_name, request: Request):
             settings = request.state.settings
             ProfileManager(settings=settings).delete_profile(profile_name)
             return
 
         @app.get("/api/project/watch")
-        def project_watch(request: Request):
+        def api_project_watch(request: Request):
             settings = request.state.settings
             settings.watching = True
             settings.save_project()
@@ -279,7 +282,7 @@ class GPTEngineerAPI:
             return { "OK": 1 }
         
         @app.get("/api/project/unwatch")
-        def project_unwatch(request: Request):
+        def api_project_unwatch(request: Request):
             settings = request.state.settings
             settings.watching = False
             settings.save_project()

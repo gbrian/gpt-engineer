@@ -48,7 +48,6 @@ class Knowledge:
         self.db_file = f"{self.db_path}/chroma.sqlite3"
         self.db_file_list = f"{self.db_path}/file_list"
         self.knowledge_keywords = KnowledgeKeywords(settings=settings)
-
         self.loader = KnowledgeLoader(settings=settings)
         self.embedding = OpenAIEmbeddings(
             openai_api_key=settings.openai_api_key,

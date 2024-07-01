@@ -112,3 +112,10 @@ class GPTEngineerSettings:
     def get_dbs(self):
       from gpt_engineer.core import build_dbs
       return build_dbs(settings=self)
+
+    def get_sub_projects(self):
+        try:
+          self.sub_projects.split(",")
+        except:
+          pass
+        return []

@@ -44,11 +44,14 @@ from gpt_engineer.core.mention_manager import (
     strip_mentions
 )
 
+logger = logging.getLogger(__name__)
 
 def reload_knowledge(settings: GPTEngineerSettings, path: str = None):
     knowledge = Knowledge(settings=settings)
+    logger.info(f"***** reload_knowledge: {path}")
     if path:
         documents = knowledge.reload_path(path)
+        logger.info(f"reload_knowledge: {path} - Docs: {len(documents)}")
         return { "doc_count": len(documents) if documents else 0 }
     
     knowledge.reload()
@@ -98,7 +101,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
             file_list = []
         logging.info(f"select_afefcted_documents_from_knowledge doc length: {len(docs)}")
         if hasattr(settings, "sub_projects") and settings.sub_projects:
-            for sub_project in settings.sub_projects.split(","):
+            for sub_project in settings.get_sub_projects():
                 sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
                 sub_docs, sub_file_list = find_relevant_documents(ai=ai, dbs=dbs, query=rag_query, settings=sub_settings, ignore_documents=ignore_documents)
                 if sub_docs:
@@ -285,7 +288,6 @@ def check_project_changes(settings: GPTEngineerSettings):
     knowledge = Knowledge(settings=settings)
     knowledge.clean_deleted_documents()
     new_files = knowledge.detect_changes()
-    
     if not new_files:
         return
     logging.info(f"check_file_for_mentions {new_files}")
