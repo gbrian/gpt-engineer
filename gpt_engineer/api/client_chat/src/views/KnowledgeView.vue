@@ -58,7 +58,7 @@ import MarkdownVue from '@/components/Markdown.vue'
         >
           <span class="indicator-item badge badge-primary flex gap-2">
             <i class="fa-solid fa-gauge"></i>
-            {{ doc.metadata.relevance_score }}
+            {{ doc.metadata.relevance_score }} - {{ doc.metadata.language  }}
           </span>
           {{ doc.metadata.source.split("/").reverse().slice(0, 2).join(" ") }}
         </span>
@@ -308,7 +308,7 @@ export default {
       this.onKnowledgeSearch()
     },
     async reIndexFile(doc) {
-      await API.knowledge.reloadFolder([doc.metadata.source])
+      await API.knowledge.reloadFolder(doc.metadata.source)
       this.onKnowledgeSearch()
     },
     async extractKeywords(doc) {

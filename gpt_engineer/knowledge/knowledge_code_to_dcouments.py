@@ -1,3 +1,4 @@
+import logging
 import json
 
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
@@ -13,6 +14,7 @@ from gpt_engineer.settings import (
     LANGUAGE_FROM_EXTENSION
 )
 
+logger = logging.getLogger(__name__)
 
 class KnowledgeCodeToDocuments:
     def __init__(self, settings: GPTEngineerSettings):
@@ -43,12 +45,23 @@ class KnowledgeCodeToDocuments:
       if system:
           messages.append(HumanMessage(content=system))
       messages = self.get_ai().next(messages=[], prompt=prompt, step_name="KnowledgeCodeToDocuments::load") 
-      chunks = list(extract_json_blocks(messages[-1].content))[0]
-      def doc_from_chunk(ix, chunk):
-          page_content = json.dumps(chunk, indent=2)
-          metadata = {
-            **doc.metadata,
-            "index": ix
-          }
-          return Document(page_content=page_content, metadata=metadata)
-      return [ doc_from_chunk(ix, chunk) for ix, chunk in enumerate(chunks) ]
+      chunks = []
+      try:
+          chunks = list(extract_json_blocks(messages[-1].content))[0]
+      except:
+          logger.exception(f"Error parsing document, trying continue for {file_path}")
+          # Try continue
+          messages = self.get_ai().next(messages=messages, prompt="Continue!", step_name="KnowledgeCodeToDocuments::load") 
+      try:
+          chunks = chunks if chunks else list(extract_json_blocks(messages[-1].content))[0]
+          def doc_from_chunk(ix, chunk):
+              page_content = json.dumps(chunk, indent=2)
+              metadata = {
+                **doc.metadata,
+                "keywords": ",".join(chunk.get("keywords", [])),
+                "index": ix
+              }
+              return Document(page_content=page_content, metadata=metadata)
+          return [ doc_from_chunk(ix, chunk) for ix, chunk in enumerate(chunks) ]
+      except:
+          logger.exception(f"Error parsing document {messages[-1].content}")

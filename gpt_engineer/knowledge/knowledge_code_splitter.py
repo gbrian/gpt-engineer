@@ -19,6 +19,8 @@ LANGUAGE_PARSER_MAPPING = {
     "ts": "js"
 }
 
+logger = logging.getLogger(__name__)
+
 class KnowledgeCodeSplitter:
     def __init__(self):
         self.text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
@@ -27,20 +29,23 @@ class KnowledgeCodeSplitter:
 
     def load(self, file_path):
         def file_to_documents():
+            suffix = file_path.split(".")[-1] if "." in file_path else "txt"
+            language = LANGUAGE_FROM_EXTENSION.get(suffix, suffix) or suffix
+            code_parser_language = CODE_PARSER_FROM_EXTENSION.get(suffix, language) or language 
             try:
-                return self.load_with_code_plitter(file_path=file_path)
+                return self.load_with_code_plitter(file_path=file_path, code_parser_language=code_parser_language)
             except Exception as ex:
-                logging.debug(f"[KnowledgeCodeSplitter] load_with_code_plitter load error: {ex} - {file_path}")
+                logger.exception(f"[KnowledgeCodeSplitter] load_with_code_plitter load error: {ex} - {file_path} language: {code_parser_language}")
 
             try:
-                return self.load_with_language_parser(file_path=file_path)
+                return self.load_with_language_parser(file_path=file_path, code_parser_language=code_parser_language)
             except Exception as ex:
-                logging.debug(f"[KnowledgeCodeSplitter] load_with_language_parser load error: {ex} - {file_path}")
+                logger.exception(f"[KnowledgeCodeSplitter] load_with_language_parser load error: {ex} - {file_path}")
                 
             try:
                 return self.load_as_text(file_path=file_path)
             except Exception as ex:
-                logging.debug(f"[KnowledgeCodeSplitter] load_as_text load error: {ex} - {file_path}")
+                logger.exception(f"[KnowledgeCodeSplitter] load_as_text load error: {ex} - {file_path}")
 
             return None
         docs = file_to_documents()
@@ -49,10 +54,7 @@ class KnowledgeCodeSplitter:
               doc.metadata["index"] = ix
         return docs
 
-    def load_with_code_plitter(self, file_path):
-        suffix = file_path.split(".")[-1] if "." in file_path else "txt"
-        language = LANGUAGE_FROM_EXTENSION.get(suffix)
-        code_parser_language = CODE_PARSER_FROM_EXTENSION.get(suffix)
+    def load_with_code_plitter(self, file_path, code_parser_language):
         code_parser = CodeSplitter(
             language=code_parser_language,
             # chunk_lines: int = DEFAULT_CHUNK_LINES,
@@ -78,12 +80,8 @@ class KnowledgeCodeSplitter:
             blocks = code_parser.split_text(file.read())
             return [build_document(block) for block in blocks]
 
-    def load_with_language_parser(self, file_path):
-        suffix = file_path.split(".")[-1] if "." in file_path else "txt"
-        
-        language = LANGUAGE_FROM_EXTENSION.get(suffix)
-        language_parser_language = LANGUAGE_PARSER_MAPPING.get(language) or language
-        language_parser = LanguageParser(language=language_parser_language)
+    def load_with_language_parser(self, file_path, code_parser_language):
+        language_parser = LanguageParser(language=code_parser_language)
         with open(file_path, mode='r', encoding='utf-8') as file:
             blob = Blob(data=file.read(), encoding='utf-8', metadata={ 
                 "source": file_path,

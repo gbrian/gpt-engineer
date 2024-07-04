@@ -13,12 +13,12 @@ class KnowledgeKeywords:
         self.path = self.settings.project_path
         self.index_name = slugify(str(self.path))
         self.db_path = f"{settings.gpteng_path}/db/{self.index_name}"
-        self.db_file = f"{self.db_path}/keywords.json"
+        self.db_keywords_file = f"{self.db_path}/keywords.json"
         
     def get_keywords(self, query: str = None):
         def load():
             try:
-                with open(self.db_file) as f:
+                with open(self.db_keywords_file) as f:
                     return json.loads(f.read())
             except:
                 pass
@@ -36,13 +36,14 @@ class KnowledgeKeywords:
 
     def add_keywords(self, file_path, file_keywords):
         keywords = self.get_keywords()
-        keywords[file_path] = [word.strip() for word in file_keywords]
-        with open(self.db_file, 'w') as f:
+        keywords[file_path] = [word.strip() for word in file_keywords.split(",")]
+        with open(self.db_keywords_file, 'w') as f:
             f.write(json.dumps(keywords, indent=2))
+        logger.info(f"Keywords updated for {file_path}")
 
     def remove_keywords(self, file_path):
         keywords = self.get_keywords()
         if file_path in keywords:
             del keywords[file_path]
-            with open(self.db_file, 'w') as f:
+            with open(self.db_keywords_file, 'w') as f:
                 f.write(json.dumps(keywords, indent=2))

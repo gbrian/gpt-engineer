@@ -171,14 +171,17 @@ class Knowledge:
       return doc
 
     def extract_doc_keywords(self, doc):
+      keywords = doc.metadata.get("keywords")
       try:
-        prompt, system = self.knowledge_prompts.extract_document_tags(doc)
-        messages = self.get_ai().start(system, prompt, step_name="extract_document_tags")
-        response = messages[-1].content.strip()
-        
-        blocks = extract_blocks(response)
+        if not keywords:
+            prompt, system = self.knowledge_prompts.extract_document_tags(doc)
+            messages = self.get_ai().start(system, prompt, step_name="extract_document_tags")
+            response = messages[-1].content.strip()
+            
+            blocks = list(extract_blocks(response))
+            keywords = blocks[0]["content"] if blocks else respone
 
-        doc.metadata["keywords"] = blocks[0]["content"] if blocks else respone
+            doc.metadata["keywords"] = keywords
         source = doc.metadata['source']
         logger.info(f"Extracted keywords from {source}: {keywords}")
         self.knowledge_keywords.add_keywords(source, keywords)
@@ -226,6 +229,9 @@ class Knowledge:
         """
         for enriched_doc in documents:
             try:
+                if self.settings.knowledge_extract_document_tags:
+                    self.extract_doc_keywords(enriched_doc)
+
                 enriched_doc.metadata["index_date"] = index_date
                 self.db = Chroma.from_documents([enriched_doc],
                   self.embedding,

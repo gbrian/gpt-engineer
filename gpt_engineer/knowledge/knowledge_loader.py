@@ -61,8 +61,8 @@ class KnowledgeLoader:
 
     def load(self, last_update: datetime = None, path: str = None, current_sources=None):
         documents = []
-        code_splitter = KnowledgeCodeSplitter()
-        # code_splitter = KnowledgeCodeToDocuments(settings=self.settings)
+        # code_splitter = KnowledgeCodeSplitter()
+        code_splitter = KnowledgeCodeToDocuments(settings=self.settings)
         files = self.list_repository_files(
             last_update=last_update, path=path, current_sources=current_sources
         )

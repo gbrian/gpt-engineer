@@ -236,7 +236,7 @@ class GPTEngineerAPI:
             settings = await request.json()
             GPTEngineerSettings.from_json(settings).save_project()
             
-            return settings_check(request)
+            return api_settings_check(request)
 
         @app.get("/api/project/create")
         def api_project_create(request: Request):
