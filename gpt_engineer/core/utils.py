@@ -5,12 +5,16 @@ def curr_fn() -> str:
     return inspect.stack()[1].function
 
 def document_to_context(doc):
-    return "\n".join([
-      f"```{doc.metadata.get('language')}",
-      f"{Path(doc.metadata['source']).absolute()}",
-      doc.page_content,
-      "```"
-    ])
+    analysis = doc.metadata.get('analysis') or ""
+    raw_lines = [
+                analysis,
+                f"```{doc.metadata.get('language')}",
+                f"{Path(doc.metadata['source']).absolute()}",
+                doc.page_content,
+                "```"
+              ]
+    lines = [line for line in raw_lines if line]
+    return "\n".join(lines)
 
 def extract_blocks(content):
     add_line = False

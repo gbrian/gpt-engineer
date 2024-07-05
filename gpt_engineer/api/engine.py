@@ -536,8 +536,8 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         logging.info(f"chat_with_project found {doc_length} relevant documents")
 
     
-    messages.append(AIMessage(content="THIS INFORMATION IS COMING FROM PROJECT'S FILES. HOPE IT HELPS TO ANSWER USER REQUEST.\n\n{content}"))
-    messages.append(HumanMessage(content=query))
+    messages.append(AIMessage(content=f"THIS INFORMATION IS COMING FROM PROJECT'S FILES. HOPE IT HELPS TO ANSWER USER REQUEST.\n\n{context}"))
+    messages.append(HumanMessage(content=f"{query}\n\nPlease when using references to methods or classes tell me the class and file where they are"))
     messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
     if documents:

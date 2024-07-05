@@ -23,7 +23,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
           <div class="badge my-2 flex gap-2 badge-primary badge-ouline p-2 flex gap-2 items-center">
             <i class="fa-regular fa-folder-open"></i>
             <div class="-mt-1">
-              {{ gptengPath.split("/").reverse()[1] }}
+              {{ projectName }}
             </div> 
           </div>
         </div>
@@ -148,6 +148,9 @@ export default {
         return this.lastSettings?.sub_projects?.split(",")
       }
       return this.lastSettings?.sub_projects
+    },
+    projectName () {
+      return this.lastSettings?.project_path.split("/").reverse()[0]
     }
   },
   methods: {

@@ -21,6 +21,8 @@ from gpt_engineer.settings import (
   KNOWLEDGE_MODEL
 )
 
+from gpt_engineer.utils import extract_json_blocks 
+
 KNOWLEDGE_CONTEXT_SCORE_MATCH = re.compile(r".*([0-9]+)%", re.MULTILINE)
 
 def validate_context(ai, dbs, prompt, doc, score):
@@ -65,26 +67,59 @@ def parallel_validate_contexts(dbs, prompt, documents, settings: GPTEngineerSett
         ]))
         return [doc for doc in valid_documents \
           if doc and doc.metadata.get('relevance_score', 0) >= score]
-      
-def get_response_score (response):
-    try:
-      percent = re.search('([0-9]+)%', response.strip()).group(1)
-      return float(1 / 100 * int(percent))
-    except Exception as ex:
-      logging.error(f"Error <{ex}> retrieving score from response: '{response}'")
-    return None
-  
+
+from langchain.output_parsers import PydanticOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field, validator
+class AIDocValidateResponse(BaseModel):
+    analysis_example = \
+    """
+    In this document we can see how to access to API methods getBookings with an example:
+    ```ts
+      this.API.getBookings({ "from": "now", "to: "now + 10d" })
+    ```
+    """
+    analysis_doc = \
+    """
+    Analyse the document and create an explanation with examples of the important parts that can help answering user's request.
+    Return a simple JSON object with your response like:
+    ```json
+    {{
+      "score": 0.8,
+      "analysis": {analysis_example}
+      "
+    }}
+    """
+    score: float = Field(description="Scores how important is this document from 0 to 1")
+    analysis: str = Field(description=analysis_doc)
+
+    # You can add custom validation logic easily with Pydantic.
+    @validator("score")
+    def score_is_valid(cls, field):
+        return field
+        
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     assert prompt
+    parser = PydanticOutputParser(pydantic_object=AIDocValidateResponse)
+    validation_prompt = \
+    f"""
+    Given this document:
+    {document_to_context(doc)}
+    
+    Explain how important it is for the user's request:
+    >>> "{prompt}" <<<
+
+    OUPUT INSTRUCTIONS:
+    {parser.get_format_instructions()}
+    ```
+    Where "score" is a value from 0 to 1 indicatting how important is this document, been 1 really important.
+    """
     messages = [
-      HumanMessage(content=document_to_context(doc)),
-      HumanMessage(content=f"Score from 0% to 100% how related is this search query with the current conversation (0% if you don't know):\n{prompt}")
+      HumanMessage(content=validation_prompt),
     ]
     messages = ai.next(messages=messages, step_name="ai_validate_context", max_response_length=3)
     
-    response = messages[-1].content.strip()
-    score = get_response_score(response)
-    
+    response = parser.invoke(messages[-1].content.strip())
+    score = response.score
     if score is None:
       if not retry_count:
         logging.error(colored(f"[validate_context] re-trying failed validation\n{prompt}\n{response}", "red"))
@@ -94,6 +129,7 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
       score = -1
     
     doc.metadata["relevance_score"] = score
+    doc.metadata["analysis"] = response.analysis
     logging.debug(f"[validate_context] {doc.metadata.get('source')}: {score}")
     
     #dbs.input.append(
