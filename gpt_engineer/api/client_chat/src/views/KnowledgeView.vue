@@ -107,17 +107,18 @@ import MarkdownVue from '@/components/Markdown.vue'
         <div class="max-h-60 overflow-auto" v-if="status?.pending_files?.length">
           <div class="text-xs" v-for="file in status?.pending_files" :key="file">
             <div class="flex gap-2">
+              <input type="checkbox" v-model="selectedFiles[file]" class="checkbox" />
               {{ file.replace(projectPath, "") }}
-              <button class="btn btn-xs" @click="reloadPath(file)" >
-                <i class="fa-regular fa-circle-play"></i>
-              </button>
             </div>
           </div>
         </div>
         <div class="text-xs text-info" v-else>All files indexed</div>
         <div class="flex gap-2">
-          <button class="btn btn-primary btn-sm" @click="reloadKnowledge">
-            <i class="fa-solid fa-circle-info"></i> Index files now
+          <button class="btn btn-primary btn-sm" @click="reloadKnowledge" v-if="selectedFileCount">
+            <i class="fa-solid fa-circle-info"></i> Index ({{ selectedFileCount }}) files now
+          </button>
+          <button class="btn btn-primary btn-sm btn-error text-white" @click="ignoreSelectedFiles" v-if="selectedFileCount">
+            <i class="fa-solid fa-circle-xmark"></i> Ignore ({{ selectedFileCount }}) files
           </button>
         </div>
       </div>
@@ -216,7 +217,8 @@ export default {
       documentSearchType: API.lastSettings.knowledge_search_type,
       cutoffScore: API.lastSettings.knowledge_context_cutoff_relevance_score,
       documentCount: API.lastSettings.knowledge_search_document_count,
-      enableKeywords: API.lastSettings.knowledge_extract_document_tags
+      enableKeywords: API.lastSettings.knowledge_extract_document_tags,
+      selectedFiles: {}
     }
   },
   created() {
@@ -251,6 +253,12 @@ export default {
                               .map(doc => `#### ${doc.metadata.index}: ${doc.metadata.keywords}\n${doc.page_content}\n`)
                               .join("\n")
       return codePreview
+    },
+    selectedFileCount () {
+      return this.selectedFilePaths.filter(k => !!this.selectedFiles[k]).length
+    },
+    selectedFilePaths () {
+      return Object.keys(this.selectedFiles)
     }
   },
   watch: {
@@ -275,10 +283,21 @@ export default {
     async reloadKnowledge () {
       this.loading = true
       try {
-        await API.knowledge.reload()
+        this.selectedFilePaths.forEach(async filePath => {
+          await this.reloadPath(filePath)
+          delete this.selectedFiles[filePath]
+        })
       } catch{}
       this.reloadStatus()
       this.loading = false
+    },
+    async ignoreSelectedFiles () {
+      const currIgnore = API.lastSettings?.knowledge_file_ignore.split(',') || []
+      const newIgnore = [...currIgnore, ...this.selectedFilePaths]
+      API.lastSettings.knowledge_file_ignore = newIgnore.join(",")
+      await API.settings.write(API.lastSettings)
+      await this.reloadStatus()
+      this.selectedFiles = {}
     },
     async onKnowledgeSearch () {
       const { searchTerm,
