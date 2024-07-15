@@ -9,6 +9,7 @@ from gpt_engineer.utils import extract_json_blocks
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.knowledge.knowledge_prompts import KnowledgePrompts
+from gpt_engineer.prompts import CodeToChunksPrompt
 
 from gpt_engineer.settings import (
     LANGUAGE_FROM_EXTENSION
@@ -40,28 +41,28 @@ class KnowledgeCodeToDocuments:
       with open(file_path) as f:
           page_content = f.read()
           doc = Document(page_content=page_content, metadata=metadata)
-      prompt, system = self.knowledge_prompts.code_to_chunks_prompt(doc=doc)
+      prompter = CodeToChunksPrompt()
+      prompt = prompter.get_prompt(source=file_path, language=language, page_content=page_content)
       messages = []
-      if system:
-          messages.append(HumanMessage(content=system))
       messages = self.get_ai().next(messages=[], prompt=prompt, step_name="KnowledgeCodeToDocuments::load") 
       chunks = []
       try:
-          chunks = list(extract_json_blocks(messages[-1].content))[0]
+          chunks = prompter.get_output(messages[-1].content).chunks
       except:
           logger.exception(f"Error parsing document, trying continue for {file_path}")
           # Try continue
           messages = self.get_ai().next(messages=messages, prompt="Continue!", step_name="KnowledgeCodeToDocuments::load") 
       try:
-          chunks = chunks if chunks else list(extract_json_blocks(messages[-1].content))[0]
+          chunks = chunks if chunks else prompter.get_output(messages[-1].content).chunks
           def doc_from_chunk(ix, chunk):
-              page_content = json.dumps(chunk, indent=2)
+              page_content = json.dumps(chunk)
+              del chunk["code"]
               metadata = {
                 **doc.metadata,
-                "keywords": ",".join(chunk.get("keywords", [])),
+                **chunk,
                 "index": ix
               }
               return Document(page_content=page_content, metadata=metadata)
-          return [ doc_from_chunk(ix, chunk) for ix, chunk in enumerate(chunks) ]
+          return [ doc_from_chunk(ix, chunk.__dict__) for ix, chunk in enumerate(chunks) ]
       except:
           logger.exception(f"Error parsing document {messages[-1].content}")

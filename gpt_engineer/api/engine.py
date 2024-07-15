@@ -28,7 +28,7 @@ from gpt_engineer.api.model import (
     KnowledgeSearch,
     Document
 )
-from gpt_engineer.core.context import find_relevant_documents
+from gpt_engineer.core.context import find_relevant_documents, AI_CODE_VALIDATE_RESPONSE_PARSER
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
@@ -391,13 +391,16 @@ def change_file(context_documents, query, file_path, org_content, settings, save
             query
           ]
     )
-    request = \
-    f"""Please produce a full version of this ##CONTENT applying the changes requested in the ##TASKS section.
+    request = f"""Please produce a full version of this ##CONTENT applying the changes requested in the ##TASKS section.
     The output will replace existing file so write all unchanged lines as well.
     ##CONTENT:
     {org_content}
+    
     ##TASKS:
     {tasks}
+
+    OUPUT INSTRUCTIONS:
+    {AI_CODE_VALIDATE_RESPONSE_PARSER.get_format_instructions()}
     """
 
     chat_name = '-'.join(file_path.split('/')[-2:])
@@ -408,9 +411,9 @@ def change_file(context_documents, query, file_path, org_content, settings, save
         ])
     try:
         chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
-        new_content = chat.messages[-1].content
-        
-        return new_content
+        response = chat.messages[-1].content.strip()
+        parsed_response = AI_CODE_VALIDATE_RESPONSE_PARSER.invoke(response)
+        return parsed_response.new_content
     except Exception as ex:
         chat.messages.append(Message(role="error", content=str(ex)))
         raise ex
@@ -418,37 +421,6 @@ def change_file(context_documents, query, file_path, org_content, settings, save
         if save_changes:
             save_chat(chat=chat, settings=settings)
 
-
-def check_file_for_mentions_test(settings: GPTEngineerSettings, file_path: str):
-    content = None
-    with open(file_path, 'r') as f:
-        content = f.read()
-
-    def save_file (new_content):
-        with open(file_path, 'w') as f:
-            f.write(new_content)
-
-    mentions = extract_mentions(content)
-    new_content = notify_mentions_in_progress(content)
-    save_file(new_content=new_content)
-    
-    if not mentions:
-        return
-    org_content = strip_mentions(content=content, mentions=mentions)
-    try:
-        def mention_info(mention):
-          return f"Comment from line {mention.start_line}: {mention.mention}"
-
-        query = "\n *".join([mention_info(mention) for mention in mentions])
-        chat = Chat(messages=[
-          HumanMessage(f"Change '{file_path}' from this user feedback:\n{query}")
-        ], file_list=[file_path])
-        improve_existing_code(settings=settings, chat=chat)
-        apply_improve_code_changes(response=chat.messages[-1].content)
-    except Exception as ex:
-        new_content = notify_mentions_error(content=content, error=str(ex))
-        logging.exception(f"Error {ex} processig mention {query}")
-        save_file(new_content=new_content)
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     content = None
@@ -460,6 +432,8 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
             f.write(new_content)
 
     mentions = extract_mentions(content)
+    if not mentions:
+        return
     new_content = notify_mentions_in_progress(content)
     save_file(new_content=new_content)
     
@@ -508,8 +482,11 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None):
     ai = build_ai(settings)
     dbs = build_dbs(settings)
-    
-    messages = []
+    profile_manager = ProfileManager(settings=settings)
+
+    messages = [
+      HumanMessage(content=profile_manager.read_profile("project").content)
+    ]
     query = chat.messages[-1].content
     for m in chat.messages[0:-1]:
         if m.hide or m.improvement:
@@ -564,3 +541,18 @@ def extract_tags(settings: GPTEngineerSettings, doc):
 
 def get_keywords(settings: GPTEngineerSettings, query):
     return KnowledgeKeywords(settings=settings).get_keywords(query)
+
+def find_all_projects():
+    all_projects = []
+    project_paths = os.environ.get("PROJECT_PATHS", "").split(" ")
+    logger.info(f"find_projects_to_watch: Scanning project paths: {project_paths}")
+    for project_path in project_paths:
+        for project_settings in Path(project_path).glob("**/.gpteng"):
+            logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
+            try:
+                settings = GPTEngineerSettings.from_project(gpteng_path=str(project_settings))
+                if settings.gpteng_path not in all_projects:
+                    all_projects = all_projects + [settings]
+            except Exception as ex:
+                logger.exception(f"Error loading project {str(project_settings)}")
+    return all_projects

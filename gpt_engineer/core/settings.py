@@ -5,6 +5,7 @@ import pathlib
 from gpt_engineer import settings
 
 class GPTEngineerSettings:
+    project_name: str
     project_path: str
     model: str
     temperature: float
@@ -38,6 +39,7 @@ class GPTEngineerSettings:
     log_ai: bool
 
     def __init__(self, **kwrgs):
+        self.project_name = None
         self.project_path = "."
         self.openai_api_key = settings.OPENAI_API_KEY
         self.openai_api_base = settings.OPENAI_API_BASE
@@ -75,7 +77,10 @@ class GPTEngineerSettings:
         base.project_path = gpteng_path
         with open(f"{gpteng_path}/project.json", 'r') as f:
           settings = json.loads(f.read())
-          return GPTEngineerSettings(**{ **base.__dict__, **settings })
+          gpt_settings = GPTEngineerSettings(**{ **base.__dict__, **settings })
+          if not gpt_settings.project_name:
+              gpt_settings.project_name = gpt_settings.project_path.split("/")[-1]
+          return gpt_settings
     
     @classmethod
     def from_json(cls, settings: dict):
@@ -102,12 +107,6 @@ class GPTEngineerSettings:
         log.debug(f"Error {ex}")
 
       return []
-
-    def get_parent_project(self):
-      parent_project = self.project_path + "/.."
-      if os.path.isfile(f"{parent_project}/.gpteng/project.json"):
-        return os.path.abspath(parent_project)
-      return None
 
     def get_dbs(self):
       from gpt_engineer.core import build_dbs

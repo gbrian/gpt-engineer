@@ -39,7 +39,6 @@ class KnowledgeKeywords:
         keywords[file_path] = [word.strip() for word in file_keywords.split(",")]
         with open(self.db_keywords_file, 'w') as f:
             f.write(json.dumps(keywords, indent=2))
-        logger.info(f"Keywords updated for {file_path}")
 
     def remove_keywords(self, file_path):
         keywords = self.get_keywords()

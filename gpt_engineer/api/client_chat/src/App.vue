@@ -15,9 +15,9 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <div v-if="validProject">
         <div class="flex gap-2 items-center">
           <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
-            @click="openProject(lastSettings.parent_project + '/.gpteng')"
+            @click="openSubProject(lastSettings.parent_project)"
             v-if="lastSettings.parent_project">
-            <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project.split("/").reverse()[0] }} 
+            <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project }} 
           </div>
           <div>CODX</div>
           <div class="badge my-2 flex gap-2 badge-primary badge-ouline p-2 flex gap-2 items-center">
@@ -29,17 +29,17 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         </div>
         <div class="flex gap-2" v-if="subProjects">
           <div tabindex="0" class="click badge badge-info text-white flex gap-1 items-center"
-            v-for="project in subProjects" :key="project"
-              @click="openProject(project + '/.gpteng')"
+            v-for="projectName in subProjects" :key="projectName"
+              @click="openSubProject(projectName)"
           >
             <i class="fa-solid fa-folder"></i>
-            {{ project.split("/").reverse()[0] }} 
+            {{ projectName }} 
           </div>
         </div>
       </div>
       <div class="flex gap-2 items-center">
         <div>
-          <label for="my_modal_6" class="btn btn-sm btn-warning" @click="showOpenProjectModal = true">
+          <label for="my_modal_6" class="btn btn-sm btn-warning" @click="onShowOpenProjectModal">
             <i class="fa-regular fa-folder-open"></i>
           </label>
         </div>
@@ -51,7 +51,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <button class="btn btn-sm" v-if="gptengPath" @click="createNewProject">
         <i class="fa-solid fa-plus"></i> New
       </button>
-      <button class="btn btn-sm" @click="showOpenProjectModal = true">
+      <button class="btn btn-sm" @click="onShowOpenProjectModal">
         <i class="fa-regular fa-folder-open"></i> Open
       </button>
     </div>
@@ -70,18 +70,19 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-solid fa-book"></i>
         Knowledge
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 2 ? tabActive: tabInactive]"
-        @click="tabIx = 2"
-      >
-        <i class="fa-solid fa-brain"></i>
-        Setting
-      </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 3 ? tabActive: tabInactive]"
         @click="tabIx = 3"
       >
       <i class="fa-solid fa-id-card-clip"></i>
         Profiles
       </a>
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 2 ? tabActive: tabInactive]"
+        @click="tabIx = 2"
+      >
+        <i class="fa-solid fa-brain"></i>
+        Setting
+      </a>
+      
     </div>
     <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="validProject">
       <ChatViewVue v-if="tabIx === 0" />
@@ -92,8 +93,16 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Open project</h3>
-        <input type="text" class="input input-bordered w-full"
+        <input type="text" class="input input-bordered w-full hidden"
           :placeholder="gptengPath || 'Project\'s absolute path'" v-model="newProject" />
+        <div class="flex gap-2 items-center">
+          Existing projects:
+          <select class="select" v-model="newProject">
+            <option v-for="project in allProjects" :value="project.gpteng_path" :key="project.project_name">
+              {{ project.project_name }}
+            </option>
+          </select>
+        </div>
         <div class="modal-action">
           <label for="my_modal_6" class="btn" @click="onOpenProject">
             Open
@@ -122,7 +131,8 @@ export default {
       lastSettings: null,
       tabActive: 'text-info bg-base-100',
       tabInactive: 'text-warning bg-base-300 opacity-50 hover:opacity-100',
-      lastError: null
+      lastError: null,
+      allProjects: null
     }
   },
   async created () {
@@ -146,11 +156,12 @@ export default {
     subProjects () {
       if (!Array.isArray(this.lastSettings?.sub_projects)) {
         return this.lastSettings?.sub_projects?.split(",")
+                  .filter(p => p.trim().length)
       }
       return this.lastSettings?.sub_projects
     },
     projectName () {
-      return this.lastSettings?.project_path.split("/").reverse()[0]
+      return this.lastSettings?.project_name
     }
   },
   methods: {
@@ -170,10 +181,11 @@ export default {
       return API.lastSettings?.gpteng_path
     },
     onOpenProject () {
-      if (!this.newProject.endsWith("/.gpteng")) {
-        this.newProject += "/.gpteng"
-      }
       this.openProject(this.newProject)
+    },
+    async openSubProject (projectName) {
+      await this.getAllProjects()
+      this.openProject(this.allProjects.find(p => p.project_name === projectName).gpteng_path)
     },
     openProject (path) {
       window.location = `${window.location.origin}?gpteng_path=${encodeURIComponent(path)}`
@@ -181,6 +193,14 @@ export default {
     async createNewProject () {
       const { data: { gpteng_path } } = await API.project.create(this.getProjectPath())
       this.openProject(gpteng_path)
+    },
+    async getAllProjects () {
+      const { data } = await API.project.list()
+      this.allProjects = data
+    },
+    async onShowOpenProjectModal () {
+      this.getAllProjects()
+      this.showOpenProjectModal = true
     }
   }
 

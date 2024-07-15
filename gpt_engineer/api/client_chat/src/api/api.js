@@ -49,6 +49,9 @@ export const API = {
   lastSettings: readLastSettings(),
   chatManager,
   project: {
+    list () {
+      return API.get('/api/projects')
+    },
     create(projectPath) {
       return API.get('/api/project/create?project_path=' + projectPath)
     },

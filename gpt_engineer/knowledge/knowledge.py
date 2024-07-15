@@ -186,7 +186,7 @@ class Knowledge:
         logger.info(f"Extracted keywords from {source}: {keywords}")
         self.knowledge_keywords.add_keywords(source, keywords)
       except Exception as ex:
-        logger.info(f"Error extracting document keywords {doc.metadata}: {ex}")
+        logger.exception(f"Error extracting document keywords {doc.metadata}: {ex}")
         pass
 
     def parallel_enrich(self, documents, metadata):
@@ -359,7 +359,7 @@ class Knowledge:
         keywords = [f"TAG_{k}" for k in response.split(",")]
         return keywords
       except Exception as ex:
-        logger.info(f"Error extracting document keywords {source}: {ex}")
+        logger.exception(f"Error extracting document keywords {source}: {ex}")
 
     def index_document(self, text, metadata):
         documents = [Document(page_content=text, metadata=metadata)]

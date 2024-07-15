@@ -55,7 +55,8 @@ from gpt_engineer.api.engine import (
     chat_with_project,
     check_project,
     extract_tags,
-    get_keywords
+    get_keywords,
+    find_all_projects
 )
 
 WATCH_FOLDERS = []
@@ -63,18 +64,10 @@ from gpt_engineer.core.scheduler import add_work
 
 def find_projects_to_watch ():
     global WATCH_FOLDERS
-    project_paths = os.environ.get("PROJECT_PATHS", "").split(" ")
-    logger.info(f"find_projects_to_watch: Scanning project paths: {project_paths}")
-    for project_path in project_paths:
-        for project_settings in Path(project_path).glob("**/.gpteng"):
-            logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
-            try:
-                settings = GPTEngineerSettings.from_project(gpteng_path=str(project_settings))
-                if settings.watching and settings.gpteng_path not in WATCH_FOLDERS:
-                    WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
-                    logger.info(f"{settings.gpteng_path} ADDED TO WATCH")
-            except Exception as ex:
-                logger.exception(f"Error loading project {str(project_settings)}")
+    for settings in find_all_projects():
+        if settings.watching and settings.gpteng_path not in WATCH_FOLDERS:
+            WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
+            logger.info(f"{settings.gpteng_path} ADDED TO WATCH")
                 
 find_projects_to_watch()
 
@@ -139,6 +132,10 @@ class GPTEngineerAPI:
         @app.get("/api/health")
         def api_health_check():
             return "ok"
+
+        @app.get("/api/projects")
+        def api_find_all_projects():
+            return find_all_projects()
 
         @app.get("/api/knowledge/reload")
         def api_knowledge_reload(request: Request):
@@ -225,11 +222,7 @@ class GPTEngineerAPI:
             logger.info("/api/settings")
             settings = request.state.settings
             check_project(settings=settings)
-            return {
-                **settings.__dict__,
-                "sub_projects": settings.sub_projects if hasattr(settings, "sub_projects") and settings.sub_projects else settings.detect_sub_projects(),
-                "parent_project": settings.get_parent_project()
-            }
+            return settings
 
         @app.put("/api/settings")
         async def api_save_settings(request: Request):

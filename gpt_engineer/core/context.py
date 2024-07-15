@@ -23,6 +23,8 @@ from gpt_engineer.settings import (
 
 from gpt_engineer.utils import extract_json_blocks 
 
+logger = logging.getLogger(__name__)
+
 KNOWLEDGE_CONTEXT_SCORE_MATCH = re.compile(r".*([0-9]+)%", re.MULTILINE)
 
 def validate_context(ai, dbs, prompt, doc, score):
@@ -31,7 +33,7 @@ def validate_context(ai, dbs, prompt, doc, score):
         return ai_validate_context(ai, dbs, prompt, doc)
     score = float(doc.metadata.get('user_input'))
     doc.metadata["relevance_score"] = score
-    logging.debug(f"[validate_context] {doc.metadata['source']}: {score}")
+    logger.debug(f"[validate_context] {doc.metadata['source']}: {score}")
     if score < score:
         return None
     return doc
@@ -96,7 +98,12 @@ class AIDocValidateResponse(BaseModel):
     @validator("score")
     def score_is_valid(cls, field):
         return field
-        
+
+class AICodeValidateResponse(BaseModel):
+  new_content: float = Field(description="Full generated content that will overwrite source file.")
+
+AI_CODE_VALIDATE_RESPONSE_PARSER = PydanticOutputParser(pydantic_object=AIDocValidateResponse)
+
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     assert prompt
     parser = PydanticOutputParser(pydantic_object=AIDocValidateResponse)
@@ -116,36 +123,32 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     messages = [
       HumanMessage(content=validation_prompt),
     ]
-    messages = ai.next(messages=messages, step_name="ai_validate_context", max_response_length=3)
-    
-    response = parser.invoke(messages[-1].content.strip())
-    score = response.score
-    if score is None:
+    score = None
+    response = None
+    doc.metadata["relevance_score"] = -1
+    try:
+        messages = ai.next(messages=messages, step_name="ai_validate_context")
+        response = parser.invoke(messages[-1].content.strip())
+        score = response.score
+    except:
+        pass
+    if score:
+        doc.metadata["relevance_score"] = score
+        doc.metadata["analysis"] = response.analysis
+        logger.debug(f"[validate_context] {doc.metadata.get('source')}: {score}")
+    else:
       if not retry_count:
-        logging.error(colored(f"[validate_context] re-trying failed validation\n{prompt}\n{response}", "red"))
+        logger.exception(colored(f"[validate_context] re-trying failed validation\n{prompt}\n{response}", "red"))
         return ai_validate_context(ai, dbs, prompt, doc, retry_count=1)
 
-      logging.error(colored(f"[validate_context] failed to validate. prompt: {prompt}\nMessages: {messages}", "red"))
-      score = -1
-    
-    doc.metadata["relevance_score"] = score
-    doc.metadata["analysis"] = response.analysis
-    logging.debug(f"[validate_context] {doc.metadata.get('source')}: {score}")
-    
-    #dbs.input.append(
-    #  HISTORY_PROMPT_FILE, "\n".join([
-    #    str(doc.metadata),
-    #    response,
-    #    str(score),
-    #    ""   
-    #  ])
-    #)
+      logger.error(colored(f"[validate_context] failed to validate. prompt: {prompt}\nMessages: {messages}", "red"))
+
     return doc
 
 def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings, ignore_documents=[]):
   
   documents = Knowledge(settings=settings).search(query)
-  logging.info(f"find_relevant_documents: Knowledge.search doc length: {len(documents)}")
+  logger.info(f"find_relevant_documents: Knowledge.search doc length: {len(documents)}")
   def is_valid_document(doc):
     source = doc.metadata["source"]
     checks = [check for check in ignore_documents if check in source]
