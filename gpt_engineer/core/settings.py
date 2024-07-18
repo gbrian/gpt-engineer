@@ -37,6 +37,7 @@ class GPTEngineerSettings:
     watching: bool
     use_knowledge: bool
     log_ai: bool
+    knowledge_hnsw_M: int
 
     def __init__(self, **kwrgs):
         self.project_name = None
@@ -56,6 +57,7 @@ class GPTEngineerSettings:
         self.watching = False
         self.use_knowledge = True
         self.log_ai = False
+        self.knowledge_hnsw_M = 1024
         if kwrgs:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():

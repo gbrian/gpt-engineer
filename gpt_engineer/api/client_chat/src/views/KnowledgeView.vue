@@ -102,23 +102,50 @@ import MarkdownVue from '@/components/Markdown.vue'
     </div>
 
     <div class="p-4 flex flex-col gap-2 grow">
-      <div class="border p-4 rounded-md">
-        <div class="text-xl font-medium">Pending files</div>
-        <div class="max-h-60 overflow-auto" v-if="status?.pending_files?.length">
-          <div class="text-xs" v-for="file in status?.pending_files" :key="file">
+      <div role="tablist" class="tabs tabs-lifted">
+        <a role="tab" :class="['tab', showIndexFiles === 0 && 'tab-active text-primary']" @click="setTab(0)">
+          <div class="text-xl font-medium">({{ status?.pending_files?.length }}) Pending files</div>
+        </a>
+        <a role="tab" :class="['tab', showIndexFiles === 1 && 'tab-active text-primary']" @click="setTab(1)">
+          <div class="text-xl font-medium">({{ status?.files?.length }}) Indexed files</div>
+        </a>
+        <a role="tab" :class="['tab', showIndexFiles === 2 && 'tab-active text-primary']" @click="setTab(2)">
+          <div class="text-xl font-medium">({{ ignoredFolders?.length }}) Ignored folders</div>
+        </a>
+      </div>
+      <div>
+        <div class="flex gap-2 my-2">
+          <button class="btn btn-sm" @click="toggleAllNoneSelection">
+            Select all/none
+          </button>
+          <label class="input input-sm input-bordered flex items-center gap-2">
+            <input type="text" class="grow" placeholder="Search" v-model="fileFilter" />
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span class="-mt-1" v-if="fileFilter">({{ showFiles.length }})</span>
+          </label>
+        </div>
+        <div class="max-h-60 overflow-auto" v-if="showFiles?.length">
+          <div class="text-xs" v-for="file in showFiles" :key="file">
             <div class="flex gap-2">
               <input type="checkbox" v-model="selectedFiles[file]" class="checkbox" />
               {{ file.replace(projectPath, "") }}
             </div>
           </div>
         </div>
-        <div class="text-xs text-info" v-else>All files indexed</div>
         <div class="flex gap-2">
           <button class="btn btn-primary btn-sm" @click="reloadKnowledge" v-if="selectedFileCount">
             <i class="fa-solid fa-circle-info"></i> Index ({{ selectedFileCount }}) files now
           </button>
-          <button class="btn btn-primary btn-sm btn-error text-white" @click="ignoreSelectedFiles" v-if="selectedFileCount">
+          <button class="btn btn-primary btn-sm btn-error text-white"
+            @click="ignoreSelectedFiles" v-if="selectedFileCount && showIndexFiles !== 2">
             <i class="fa-solid fa-circle-xmark"></i> Ignore ({{ selectedFileCount }}) files
+          </button>
+          <button class="btn btn-primary btn-sm btn-success text-white"
+            @click="ignoreSelectedFiles" v-if="selectedFileCount && showIndexFiles === 2">
+            <i class="fa-solid fa-plus"></i> Add ({{ selectedFileCount }}) files
+          </button>
+          <button class="btn btn-primary btn-sm btn-warning text-white" @click="dropSelectedFiles" v-if="selectedFileCount">
+            <i class="fa-solid fa-trash-can"></i> Drop ({{ selectedFileCount }}) files
           </button>
         </div>
       </div>
@@ -218,10 +245,12 @@ export default {
       cutoffScore: API.lastSettings.knowledge_context_cutoff_relevance_score,
       documentCount: API.lastSettings.knowledge_search_document_count,
       enableKeywords: API.lastSettings.knowledge_extract_document_tags,
-      selectedFiles: {}
+      selectedFiles: {},
+      showIndexFiles: 0,
+      fileFilter: null
     }
   },
-  created() {
+  async created() {
     this.reloadStatus()
   },
   computed: {
@@ -259,7 +288,25 @@ export default {
     },
     selectedFilePaths () {
       return Object.keys(this.selectedFiles)
+    },
+    ignoredFolders () {
+      return API.lastSettings?.knowledge_file_ignore.split(',')
+    },
+    showFilesSelected () {
+      switch(this.showIndexFiles) {
+        case 0:
+          return this.status?.pending_files
+        case 1:
+          return this.status?.files
+        default:
+          return this.ignoredFolders
+      }
+    },
+    showFiles () {
+      const { fileFilter } = this
+      return this.showFilesSelected?.filter(f => !fileFilter || f.indexOf(fileFilter) !== -1)
     }
+
   },
   watch: {
   },
@@ -298,6 +345,11 @@ export default {
       await API.settings.write(API.lastSettings)
       await this.reloadStatus()
       this.selectedFiles = {}
+    },
+    async dropSelectedFiles () {
+      await API.knowledge.delete(this.selectedFilePaths)
+      this.selectedFiles = {}
+      await this.reloadStatus()
     },
     async onKnowledgeSearch () {
       const { searchTerm,
@@ -354,6 +406,20 @@ export default {
         await API.project.unwatch()
       }
       API.settings.read()
+    },
+    setTab (ix) {
+      this.showIndexFiles = ix
+      this.selectedFiles = {}
+    },
+    toggleAllNoneSelection () {
+      if (this.selectedFileCount) {
+        this.selectedFiles = {}
+      } else {
+        this.selectedFiles = this.showFiles.reduce((acc, f) => ({
+          ...acc,
+          [f]: true
+        }), {})
+      }
     }
   }
 }

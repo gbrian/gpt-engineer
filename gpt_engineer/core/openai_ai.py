@@ -1,4 +1,6 @@
 import logging
+import json
+
 from typing import Union
 from openai import OpenAI
 from openai.types.chat.chat_completion_system_message_param import ChatCompletionSystemMessageParam
@@ -12,6 +14,26 @@ from langchain.schema import (
 
 logger = logging.getLogger(__name__)
 
+tools = [
+  {
+    "type": "function",
+    "function": {
+      "name": "read_file",
+      "description": "use to read the full content of a file reference.",
+      "parameters": {
+        "type": "string",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Absolute file path",
+          }
+        },
+        "required": ["file_path"],
+      },
+    }
+  }
+]
+
 class OpenAI_AI:
     def __init__(self, settings: GPTEngineerSettings):
         self.settings = settings
@@ -19,6 +41,10 @@ class OpenAI_AI:
             api_key=settings.openai_api_key,
             base_url=settings.openai_api_base
         )
+
+    def log(self, msg):
+        if self.settings.log_ai:
+            logger.info(msg)
 
     def convert_message(self, gpt_message: Union[AIMessage, HumanMessage]): 
         if gpt_message.type == "ia":
@@ -35,7 +61,14 @@ class OpenAI_AI:
         )
         callbacks = config.get("callbacks", None)
         content_parts = []
+        self.log(f"AI response: {response_stream}")
         for chunk in response_stream:
+            # Check for tools
+            #tool_calls = self.process_tool_calls(chunk.choices[0].message)
+            #if tool_calls:
+            #    messages.append(HumanMessage(content=tool_calls))
+            #    return self.chat_completions(messages=messages, config=config)
+
             chunk_content = chunk.choices[0].delta.content
             if not chunk_content:
                 continue
@@ -53,3 +86,22 @@ class OpenAI_AI:
             ))
         return AIMessage(content=response_content)
 
+    def process_tool_calls(self, message):
+        tool_responses = []
+        for tool_call in message.tool_calls or []:
+            self.log(f"process_tool_calls: {tool_call}")
+            func = json.loads(tool_call.function)
+            name = func["name"]
+            params = func["arguments"]
+
+            if name == "read_file":
+              file_path = params["file_path"]
+              content = self.tool_read_file(file_path)
+              tool_responses.append(f"Content for {file_path}:\n{content}")
+
+        return "\n".join(tool_responses)
+
+    def tool_read_file(self, file_path):
+        with open(file_path, 'r') as f:
+            return f.read()
+            

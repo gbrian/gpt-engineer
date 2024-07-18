@@ -14,6 +14,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.llms import OpenAI
 from langchain.schema.document import Document
 
+from gpt_engineer.utils import calculate_md5
 from gpt_engineer.core.utils import extract_blocks
 from gpt_engineer.core.ai import AI
 from gpt_engineer.core.settings import GPTEngineerSettings
@@ -66,7 +67,8 @@ class Knowledge:
 
     def get_db(self):
       if not self.db:
-        self.db = Chroma(persist_directory=self.db_path, 
+        self.db = Chroma(
+                  persist_directory=self.db_path, 
                   embedding_function=self.embedding)
       return self.db
 
@@ -207,6 +209,9 @@ class Knowledge:
     def index_documents (self, documents, raiseIfError=False):
         self.delete_documents(documents)
         index_date = datetime.now().strftime("%m/%d/%YT%H:%M:%S")
+        all_sources = list(set([doc.metadata["source"] for doc in documents]))
+        all_sources_with_md5 = dict([(source, calculate_md5(source)) for source in all_sources])
+        
         metadata = {
           "index_date": f"{index_date}"
         }
@@ -228,11 +233,12 @@ class Knowledge:
                     raise ex
         """
         for enriched_doc in documents:
+            source = enriched_doc.metadata["source"]
             try:
-                if self.settings.knowledge_extract_document_tags:
-                    self.extract_doc_keywords(enriched_doc)
-
+                #if self.settings.knowledge_extract_document_tags:
+                #    self.extract_doc_keywords(enriched_doc)
                 enriched_doc.metadata["index_date"] = index_date
+                enriched_doc.metadata["file_md5"] = all_sources_with_md5[source]
                 self.db = Chroma.from_documents([enriched_doc],
                   self.embedding,
                   persist_directory=self.db_path,
@@ -289,7 +295,9 @@ class Knowledge:
     def as_retriever(self):
         return self.get_db().as_retriever(
             search_type=self.settings.knowledge_search_type,
-            search_kwargs={"k": int(self.settings.knowledge_search_document_count) },
+            search_kwargs={
+              "k": int(self.settings.knowledge_search_document_count)
+            },
         )
 
     def search(self, query):
@@ -298,7 +306,8 @@ class Knowledge:
         return []
 
       retriever = self.as_retriever()
-      documents = retriever.get_relevant_documents(query)
+      HNSW_M = self.settings.knowledge_hnsw_M
+      documents = retriever.get_relevant_documents(query, **{ "M": HNSW_M })
       logger.debug(f"[Knowledge::search] {query} docs: {len(documents)}")
       return documents
 
@@ -371,8 +380,10 @@ class Knowledge:
         collection_docs = collection.get(include=['metadatas'])
         
         metadatas = collection_docs["metadatas"]
-        doc_sources = list(dict.fromkeys([metadata["source"] for metadata in metadatas]))
+        doc_sources = dict([(metadata["source"], metadata) for metadata in metadatas])
         return doc_sources
+      
+    
 
     def status (self):
         collection = self.get_db()._collection
@@ -400,7 +411,8 @@ class Knowledge:
           "file_count": file_count,
           "folders": folders,
           "empty": len(documents) - len(metadatas),
-          "keyword_count": keyword_count
+          "keyword_count": keyword_count,
+          "files": doc_sources
         }
         logger.info(f"Knowledge self.last_update: {self.last_update} {status_info}")
         return status_info
@@ -415,4 +427,3 @@ class Knowledge:
                     "source": file_path 
                 })
         return [create_document(file_path) for file_path in file_paths]
-            

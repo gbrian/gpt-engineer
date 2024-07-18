@@ -102,7 +102,7 @@ class AIDocValidateResponse(BaseModel):
 class AICodeValidateResponse(BaseModel):
   new_content: float = Field(description="Full generated content that will overwrite source file.")
 
-AI_CODE_VALIDATE_RESPONSE_PARSER = PydanticOutputParser(pydantic_object=AIDocValidateResponse)
+AI_CODE_VALIDATE_RESPONSE_PARSER = PydanticOutputParser(pydantic_object=AICodeValidateResponse)
 
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     assert prompt

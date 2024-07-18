@@ -23,6 +23,9 @@ import Chat from '@/components/chat/Chat.vue'
     <div class="grow flex flex-col gap-2">
       <div class="text-xl flex gap-2 items-center">
         <div class="flex gap-2 items-center">
+          <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']" @click="showChatsTree = !showChatsTree">
+            <i class="fa-solid fa-folder-tree"></i>
+          </button>
           <input v-if="editName"
             type="text" class="input input-md input-bordered"
             @keydown.enter.stop="saveChat"
@@ -41,9 +44,6 @@ import Chat from '@/components/chat/Chat.vue'
         <button class="btn btn-primary btn-xs" @click="newChat">
           <i class="fa-solid fa-plus"></i>
           New chat
-        </button>
-        <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']" @click="showChatsTree = !showChatsTree">
-          <i class="fa-solid fa-folder-tree"></i>
         </button>
         <button :class="['btn btn-sm hover:btn-info hover:text-white', showSettings && 'btn-info text-white']" @click="showSettings = !showSettings">
           <i class="fa-solid fa-gear"></i>

@@ -10,7 +10,7 @@
     </div>
     <div class="grow relative overflow-auto">
       <div class="absolute top-0 left-0 right-0 bottom-0">
-        <div class="flex justify-between mb-2" v-for="(value, key) in settings" :key="key">
+        <div class="flex justify-between mb-2" v-for="(value, key) in projectSettings" :key="key">
           <div class="label-text">{{ key }}</div>
           <div class="w-1/2">
             <input v-if="typeof value === 'boolean'" type="checkbox" v-model="settings[key]" class="toggle" />
@@ -32,6 +32,14 @@ export default {
   },
   async created () {
     this.reloadSettings()
+  },
+  computed: {
+    projectSettings () {
+      return this.settings ? Object.keys(this.settings).sort().reduce((acc, key) => ({
+        ...acc,
+        [key]: this.settings[key]
+      }), {}) : null
+    }
   },
   methods: {
     async reloadSettings() {

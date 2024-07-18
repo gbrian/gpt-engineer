@@ -10,6 +10,7 @@ from langchain.document_loaders.generic import GenericLoader
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 
+from gpt_engineer.utils import calculate_md5
 from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.knowledge.knowledge_code_splitter import KnowledgeCodeSplitter
 from gpt_engineer.knowledge.knowledge_code_to_dcouments import KnowledgeCodeToDocuments
@@ -32,13 +33,19 @@ class KnowledgeLoader:
         if file_stats.st_size == 0:
             return False
 
+        if current_sources: 
+            if file_path not in current_sources:
+                # New file
+                return True
+            
+            file_md5 = calculate_md5(file_path)
+            current_file_md5 = current_sources[file_path].get("file_md5")
+            if file_md5 == current_file_md5:
+                return False
+
         last_doc_update = os.path.getmtime(file_path)
         if last_doc_update > last_update:
           return True
-    
-        if current_sources and file_path not in current_sources:
-            # New file
-            return True
 
         return False
 
@@ -61,8 +68,8 @@ class KnowledgeLoader:
 
     def load(self, last_update: datetime = None, path: str = None, current_sources=None):
         documents = []
-        # code_splitter = KnowledgeCodeSplitter()
-        code_splitter = KnowledgeCodeToDocuments(settings=self.settings)
+        code_splitter = KnowledgeCodeSplitter()
+        #code_splitter = KnowledgeCodeToDocuments(settings=self.settings)
         files = self.list_repository_files(
             last_update=last_update, path=path, current_sources=current_sources
         )
@@ -104,9 +111,10 @@ class KnowledgeLoader:
                 for ext_path in self.settings.knowledge_external_folders.split(","):
                     external_file_paths = [str(file_path) for file_path in pathlib.Path(ext_path).rglob("*")]
                     full_file_paths = full_file_paths + external_file_paths
-        full_file_paths = [file for file in full_file_paths if self.is_valid_file(file, last_update=last_update, path=path, current_sources=current_sources) ]
+        changed_file_paths = [file for file in full_file_paths \
+                            if self.is_valid_file(file, last_update=last_update, path=path, current_sources=current_sources) ]
         
-        return full_file_paths
+        return changed_file_paths
 
     def list_repository_folders(self):
         all_files = self.list_repository_files()

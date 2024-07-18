@@ -85,10 +85,10 @@ def delete_knowledge_source(settings: GPTEngineerSettings, sources: [str]):
     return { "ok": 1 }
 
 def on_project_changed(project_path: str, file_path: str):
-    logging.info(f"Project changed {project_path} - {file_path}")
+    logger.info(f"Project changed {project_path} - {file_path}")
 
 def create_project(settings=GPTEngineerSettings):
-    logging.info(f"Create new project {settings.gpteng_path}")
+    logger.info(f"Create new project {settings.gpteng_path}")
     os.makedirs(settings.gpteng_path, exist_ok=True)
     settings.save_project()
 
@@ -99,7 +99,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
         if not docs:
             docs = []
             file_list = []
-        logging.info(f"select_afefcted_documents_from_knowledge doc length: {len(docs)}")
+        logger.info(f"select_afefcted_documents_from_knowledge doc length: {len(docs)}")
         if hasattr(settings, "sub_projects") and settings.sub_projects:
             for sub_project in settings.get_sub_projects():
                 sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
@@ -122,7 +122,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
     ])
     query_messages = ai.next(messages=[HumanMessage(content=rag_queries, role="user")], step_name="select_afefcted_documents_from_knowledge_split_query")
     response = query_messages[-1].content
-    logging.info(f"select_afefcted_documents_from_knowledge RAG queries: {response}")
+    logger.info(f"select_afefcted_documents_from_knowledge RAG queries: {response}")
     all_docs = {}
     for rag_query in [query for query in response.split("\n") if query]:
         docs, _ = process_rag_query(rag_query)
@@ -195,21 +195,35 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
     
     response = chat.messages[-1].content
     apply_improve_code_changes(response=response)
+    chat.messages.append(Message(role="assistant", content="Changes applied"))
 
 def apply_improve_code_changes(response: str):
     changes = list(extract_changes(response))
-    logging.info(f"improve_existing_code total changes: {len(changes)}")
+    logger.info(f"improve_existing_code total changes: {len(changes)}")
+    open_files = {}
     for change in changes:
-      logging.info(f"improve_existing_code change: {change}")
-      if change["type"] == "update":
-          file_path = change["file"]
-          existing_content = change["existingContent"]
-          new_content = change["newContent"]
+      logger.info(f"improve_existing_code change: {change}")
+      file_path = change["file"]
+      change_type = change["type"]
+      content = open_files.get(file_path)
+      if not content:
           with open(file_path, 'r') as f:
               content = f.read()
-              new_content = content.replace(existing_content, new_content)
-          with open(file_path, 'w') as f:
-              f.write(new_content)
+              open_files[file_path] = content
+      
+      if change_type == "update":
+          existing_content = change["existingContent"]
+          new_content = change["newContent"]
+          open_files[file_path] = content.replace(existing_content, new_content)
+
+      if change_type == "delete":
+          existing_content = change["existingContent"]
+          new_content = ""
+          open_files[file_path] = content.replace(existing_content, new_content)
+
+    for file_path, new_content in open_files.items():
+        with open(file_path, 'w') as f:
+            f.write(new_content)
     
 
 def improve_existing_code_gpt_blocks(settings: GPTEngineerSettings, chat: Chat):
@@ -235,14 +249,14 @@ def improve_existing_code_gpt_blocks(settings: GPTEngineerSettings, chat: Chat):
         return
     response = chat.messages[-1].content
     instructions = list(split_blocks_by_gt_lt(response))
-    logging.info(f"improve_existing_code: {instructions}")
+    logger.info(f"improve_existing_code: {instructions}")
     if not instructions:
-        logging.error(f"improve_existing_code ERROR no instrucctions at: {response} {chat.messages[-1]}")
+        logger.error(f"improve_existing_code ERROR no instrucctions at: {response} {chat.messages[-1]}")
     for instruction in instructions:
         file_path = instruction[0].split(":")[1].strip()
         changes = "\n".join(instruction[1:])
-        logging.info(f"improve_existing_code instruction file: {file_path}")
-        logging.info(f"improve_existing_code instruction changes: {changes}")
+        logger.info(f"improve_existing_code instruction file: {file_path}")
+        logger.info(f"improve_existing_code instruction changes: {changes}")
         chat.messages.append(Message(role="assistant", content="\n".join(instruction)))
         with open(file_path) as f:
           content = f.read()
@@ -290,14 +304,14 @@ def check_project_changes(settings: GPTEngineerSettings):
     new_files = knowledge.detect_changes()
     if not new_files:
         return
-    logging.info(f"check_file_for_mentions {new_files}")
-    for file_path in new_files:
-        try:
-            check_file_for_mentions(settings=settings, file_path=file_path)
-        except:
-            logging.exception(f"Error checking changes in file {file_path}")
+    logger.info(f"check_file_for_mentions {new_files}")
+    file_path = new_files[0]
+    try:
+        check_file_for_mentions(settings=settings, file_path=file_path)
+    except:
+        logger.exception(f"Error checking changes in file {file_path}")
 
-    logging.info(f"Reload knowledge files {new_files}")
+    logger.info(f"Reload knowledge files {new_files}")
     reload_knowledge(settings=settings)
 
 def extract_changes(content):
@@ -407,7 +421,8 @@ def change_file(context_documents, query, file_path, org_content, settings, save
     chat_time = datetime.now().strftime('%H%M%S')
     chat = Chat(name=f"{chat_name}_{chat_time}", 
         messages=[
-            Message(role="user", content=request)
+          Message(role="user", content=profile_manager.read_profile("software_developer").content),
+          Message(role="user", content=request)
         ])
     try:
         chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
@@ -472,7 +487,7 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
                 save_changes=save_changes)
         except Exception as ex:
             new_content = notify_mentions_error(content=content, error=str(ex))
-            logging.exception(f"Error {ex} processig mention {query}")
+            logger.exception(f"Error {ex} processig mention {query}")
             
             
         if content != new_content:
@@ -510,7 +525,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
                 doc_context = document_to_context(doc)
                 context = context + f"{doc_context}\n"
         doc_length = len(documents) if documents else 0
-        logging.info(f"chat_with_project found {doc_length} relevant documents")
+        logger.info(f"chat_with_project found {doc_length} relevant documents")
 
     
     messages.append(AIMessage(content=f"THIS INFORMATION IS COMING FROM PROJECT'S FILES. HOPE IT HELPS TO ANSWER USER REQUEST.\n\n{context}"))
@@ -528,11 +543,11 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
 
 def check_project(settings: GPTEngineerSettings):
     try:
-        logging.info(f"check_project")
+        logger.info(f"check_project")
         loader = KnowledgeLoader(settings=settings)
         loader.fix_repo()
     except Exception as ex:
-        logging.exception(str(ex))
+        logger.exception(str(ex))
 
 def extract_tags(settings: GPTEngineerSettings, doc):
     knowledge = Knowledge(settings=settings)
