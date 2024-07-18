@@ -100,7 +100,7 @@ class AIDocValidateResponse(BaseModel):
         return field
 
 class AICodeValidateResponse(BaseModel):
-  new_content: float = Field(description="Full generated content that will overwrite source file.")
+  new_content: str = Field(description="Full generated content that will overwrite source file.")
 
 AI_CODE_VALIDATE_RESPONSE_PARSER = PydanticOutputParser(pydantic_object=AICodeValidateResponse)
 
