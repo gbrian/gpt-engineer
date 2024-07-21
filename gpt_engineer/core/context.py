@@ -2,7 +2,7 @@ import logging
 import re
 from termcolor import colored
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Optional
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from langchain.schema import (
@@ -104,6 +104,18 @@ class AICodeValidateResponse(BaseModel):
   new_content: str = Field(description="Full generated content that will overwrite source file.")
 
 AI_CODE_VALIDATE_RESPONSE_PARSER = PydanticOutputParser(pydantic_object=AICodeValidateResponse)
+
+
+class AICodeChange(BaseModel):
+    change_type: str = Field(description="Enumeration: new, update, delete, delete_file")
+    file_path: str = Field(description="/file/path/to/file")
+    existing_content: Optional[str] = Field(description="Existing content to be changed if applies", default="")
+    new_content: Optional[str] = Field(description="New content if applies", default="")
+
+class AICodeGerator(BaseModel):
+    code_changes: List[AICodeChange] = Field(description="Conde changes")
+
+AI_CODE_GENERATOR_PARSER = PydanticOutputParser(pydantic_object=AICodeGerator)
 
 def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
     assert prompt

@@ -31,7 +31,8 @@ from gpt_engineer.api.model import (
 from gpt_engineer.core.context import (
   find_relevant_documents,
   AI_CODE_VALIDATE_RESPONSE_PARSER,
-  generate_markdown_tree
+  generate_markdown_tree,
+  AI_CODE_GENERATOR_PARSER
 )
 
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
@@ -161,36 +162,6 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
 
 
 def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
-    json_example = """
-    ```JSON
-    [
-      {
-        "change": {
-          "type": "update",
-          "file": "/file/path/to/file,
-          "existingContent": "def myFunction(self):",
-          "newContent": "def myFunction(self, chat: Chat = None):",
-        }
-      },
-      {
-        "change": {
-          "type": "new",
-          "file": "/file/path/to/file,
-          "existingContent": null,
-          "newContent": "class MyClass:\n       def __init__(self):\n         pass",
-        }
-      },
-      {
-        "change": {
-          "type": "delete",
-          "file": "/file/path/to/file,
-          "existingContent": null,
-          "newContent": null,
-        }
-      }
-    ]
-    ```
-    """
     knowledge = Knowledge(settings=settings)
     request = \
     f"""
@@ -198,37 +169,46 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
     Files are located at: {settings.project_path}
     This is a view of the files tree: {generate_markdown_tree(knowledge.get_all_sources())}
     Create a list of find&replace intructions for each change needed:
-      {json_example}
-
-      INSTRUCTIONS:
-        * change structure:
-          - type: str. It can be "update", "delete" or "new"
-          - file: str. Absolute file path for the file to be changed
-          - existingContent: str. Anchor point in the existing content to start replacing with new code. New code will include it if anchor point still needed or not to replce it.
-          - newContent: str. New copntent to update "existingContent" or empty to remove "existingContent"
-        * Create one entry for each change
-        * For new files create a file name following best practices of the project coding language
-        * Keep content identation; is crucial to find the content to replace and to make new content work
+    INSTRUCTIONS:
+      { AI_CODE_GENERATOR_PARSER.get_format_instructions() }
+      
+      * For new files create a file name following best practices of the project coding language
+      * Keep content identation; is crucial to find the content to replace and to make new content work
     """
     logger.info(f"improve_existing_code prompt: {request}")
     if not chat.messages[-1].improvement:
-        chat.messages.append(Message(role="user", content=request))
-        chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
-        chat.messages = [msg for msg in chat.messages if msg.content != request]
-        chat.messages[-1].improvement = True
-        return
+        retry_count = 1
+        request_msg = Message(role="user", content=request)
+        chat.messages.append(request_msg)
+        def try_chat_code_changes(attempt: int):
+            chat_with_project(settings=settings, chat=chat, use_knowledge=False)
+            chat.messages = [msg for msg in chat.messages if msg != request_msg]
+            chat.messages[-1].improvement = True
+            response = chat.messages[-1].content.strip()
+            try:
+                AI_CODE_GENERATOR_PARSER.invoke(response)
+            except Exception as ex:
+                logger.error(f"Error parsing response: {response}")
+                attempt = attempt - 1
+                if attempt:
+                    chat.messages.pop()
+                    return try_chat_code_changes(attempt)
+                raise ex
+        return try_chat_code_changes(retry_count)
     
     response = chat.messages[-1].content
     apply_improve_code_changes(response=response)
     chat.messages.append(Message(role="assistant", content="Changes applied"))
 
 def apply_improve_code_changes(response: str):
-    changes = list(extract_changes(response))
+    changes = AI_CODE_VALIDATE_RESPONSE_PARSER.invoke(response).code_changes
     logger.info(f"improve_existing_code total changes: {len(changes)}")
     open_files = {}
     for change in changes:
-      file_path = change["file"]
-      change_type = change["type"]
+      file_path = change.file_path
+      change_type = change.change_type
+      existing_content = change.existing_content
+      new_content = change.new_content
       logger.info(f"improve_existing_code change: {change_type} - {file_path}")
 
       content = open_files.get(file_path)
@@ -240,18 +220,17 @@ def apply_improve_code_changes(response: str):
           open_files[file_path] = content
       
       if change_type == "update":
-          existing_content = change["existingContent"]
-          new_content = change["newContent"]
           open_files[file_path] = content.replace(existing_content, new_content)
 
       if change_type == "delete":
-          existing_content = change["existingContent"]
-          new_content = ""
-          open_files[file_path] = content.replace(existing_content, new_content)
+          open_files[file_path] = content.replace(existing_content, "")
       
       if change_type == "new":
-          new_content = change["newContent"]
           open_files[file_path] = new_content
+
+      if change_type == "delete_file":
+          del open_files[file_path]
+          os.remove(file_path)
 
     for file_path, new_content in open_files.items():
         logger.info(f"improve_existing_code change: save {file_path}")
