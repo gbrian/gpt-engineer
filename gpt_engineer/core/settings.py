@@ -4,6 +4,9 @@ import logging
 import pathlib
 from gpt_engineer import settings
 
+
+logger = logging.getLogger(__name__)
+
 class GPTEngineerSettings:
     project_name: str
     project_path: str
@@ -34,6 +37,7 @@ class GPTEngineerSettings:
     knowledge_search_document_count: int
     knowledge_context_cutoff_relevance_score: float
     knowledge_external_folders: str
+    knowledge_query_subprojects: bool
     watching: bool
     use_knowledge: bool
     log_ai: bool
@@ -54,6 +58,7 @@ class GPTEngineerSettings:
         self.knowledge_enrich_documents = settings.KNOWLEDGE_ENRICH_DOCUMENTS
         self.knowledge_context_cutoff_relevance_score = settings.KNOWLEDGE_CONTEXT_CUTOFF_RELEVANCE_SCORE
         self.knowledge_external_folders = ""
+        self.knowledge_query_subprojects = True
         self.watching = False
         self.use_knowledge = True
         self.log_ai = False
@@ -116,7 +121,8 @@ class GPTEngineerSettings:
 
     def get_sub_projects(self):
         try:
-          self.sub_projects.split(",")
+            return self.sub_projects.split(",") if self.sub_projects else []
         except:
-          pass
+            # logger.exception(f"Error loading subproijects for {self.project_name} - {self.sub_projects}")
+            pass
         return []

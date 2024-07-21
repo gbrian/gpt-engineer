@@ -85,12 +85,12 @@ class KnowledgeCodeSplitter:
         with open(file_path, mode='r', encoding='utf-8') as file:
             blob = Blob(data=file.read(), encoding='utf-8', metadata={ 
                 "source": file_path,
-                "language": language,
+                "language": code_parser_language,
                 "parser": "LanguageParser"
             })
             docs = language_parser.parse(blob)
             for doc in docs: # Dirty hack for json
-                doc.metadata["language"] = doc.metadata.get("language") or language or suffix
+                doc.metadata["language"] = doc.metadata.get("language") or code_parser_language or suffix
                 doc.metadata["loader_type"] = "code"
             return docs
 

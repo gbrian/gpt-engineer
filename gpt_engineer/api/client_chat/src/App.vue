@@ -11,8 +11,20 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
     <div class="alert alert-error text-xs font-bold text-white" v-if="!lastSettings?.openai_api_key">
       Please fix your settings. No AI key present
     </div>
-    <div class="flex gap-2 items-center justify-between">
-      <div v-if="validProject">
+    <div class="flex gap-2 items-center">
+      <div class="dropdown">
+        <div tabindex="0" role="button" class="btn m-1" @click="getAllProjects">
+          <i class="fa-regular fa-folder-open"></i>
+        </div>
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+          <li v-for="project in allProjects" :key="project.gpteng_path"
+            @click="onOpenProject(project.gpteng_path)"
+          >
+            <a>{{ project.project_name  }}</a>
+          </li>
+        </ul>
+      </div>
+      <div class="grow" v-if="validProject">
         <div class="flex gap-2 items-center">
           <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
             @click="openSubProject(lastSettings.parent_project)"
@@ -35,13 +47,6 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
             <i class="fa-solid fa-folder"></i>
             {{ projectName }} 
           </div>
-        </div>
-      </div>
-      <div class="flex gap-2 items-center">
-        <div>
-          <label for="my_modal_6" class="btn btn-sm btn-warning" @click="onShowOpenProjectModal">
-            <i class="fa-regular fa-folder-open"></i>
-          </label>
         </div>
       </div>
     </div>
@@ -180,8 +185,8 @@ export default {
     getProjectPath () {
       return API.lastSettings?.gpteng_path
     },
-    onOpenProject () {
-      this.openProject(this.newProject)
+    onOpenProject (path) {
+      this.openProject(path || this.newProject)
     },
     async openSubProject (projectName) {
       await this.getAllProjects()

@@ -28,7 +28,12 @@ from gpt_engineer.api.model import (
     KnowledgeSearch,
     Document
 )
-from gpt_engineer.core.context import find_relevant_documents, AI_CODE_VALIDATE_RESPONSE_PARSER
+from gpt_engineer.core.context import (
+  find_relevant_documents,
+  AI_CODE_VALIDATE_RESPONSE_PARSER,
+  generate_markdown_tree
+)
+
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
 from gpt_engineer.core.chat_to_files import parse_edits, apply_edit
 
@@ -94,22 +99,33 @@ def create_project(settings=GPTEngineerSettings):
 
 
 def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, settings: GPTEngineerSettings, ignore_documents=[]):
+    # Extract mentions from the query
+    mentions = re.findall(r'@\S+', query)
+    logger.info(f"Extracted mentions: {mentions}")
+    sub_projects = [mention[1:].lower() for mention in mentions]
+    all_projects = find_all_projects()
+    search_projects = [settings for settings in all_projects if settings.project_name.lower() in sub_projects]
+    logger.info(f"select_afefcted_documents_from_knowledge query subprojects {sub_projects} - {search_projects}")
+    for search_project in search_projects:
+        mention = [mention[1:] for mention in mentions if mention.lower() == search_project.project_name.lower()]
+        query = query.replace(f"@{mention}", "")
+    logger.info(f"select_afefcted_documents_from_knowledge query without mentions {query}")
     def process_rag_query(rag_query):
-        docs, file_list = find_relevant_documents(ai=ai, dbs=dbs, query=rag_query, settings=settings, ignore_documents=ignore_documents)
+        docs, file_list = find_relevant_documents(query=rag_query, settings=settings, ignore_documents=ignore_documents)
         if not docs:
             docs = []
             file_list = []
         logger.info(f"select_afefcted_documents_from_knowledge doc length: {len(docs)}")
-        if hasattr(settings, "sub_projects") and settings.sub_projects:
-            for sub_project in settings.get_sub_projects():
-                sub_settings = GPTEngineerSettings.from_project(f"{sub_project}/.gpteng")
-                sub_docs, sub_file_list = find_relevant_documents(ai=ai, dbs=dbs, query=rag_query, settings=sub_settings, ignore_documents=ignore_documents)
+        if search_projects and settings.knowledge_query_subprojects:
+            logger.info(f"select_afefcted_documents_from_knowledge search subprojects: {rag_query} in {[p.project_name for p in search_projects]}")
+            for sub_settings in search_projects:
+                sub_docs, sub_file_list = find_relevant_documents(query=rag_query, settings=sub_settings, ignore_documents=ignore_documents)
                 if sub_docs:
                     docs = docs + sub_docs
                 if sub_file_list:
                     file_list = file_list + sub_file_list
         return docs, file_list
-    # Temp disable multiple rag_query
+    # Disable query improvement
     return process_rag_query(rag_query=query)
 
     rag_queries = "\n".join([
@@ -145,37 +161,44 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
 
 
 def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
-    request = \
-    """Create a list of fin&replace intructions for each change needed:
-
-      ```JSON
-      [
-        {
-          "change": {
-            "type": "update",
-            "file": "/file/path/to/file,
-            "existingContent": "def myFunction(self):",
-            "newContent": "def myFunction(self, chat: Chat = None):",
-          }
-        },
-        {
-          "change": {
-            "type": "new",
-            "file": "/file/path/to/file,
-            "existingContent": null,
-            "newContent": "class MyClass:\n       def __init__(self):\n         pass",
-          }
-        },
-        {
-          "change": {
-            "type": "delete",
-            "file": "/file/path/to/file,
-            "existingContent": null,
-            "newContent": null,
-          }
+    json_example = """
+    ```JSON
+    [
+      {
+        "change": {
+          "type": "update",
+          "file": "/file/path/to/file,
+          "existingContent": "def myFunction(self):",
+          "newContent": "def myFunction(self, chat: Chat = None):",
         }
-      ]
-      ```
+      },
+      {
+        "change": {
+          "type": "new",
+          "file": "/file/path/to/file,
+          "existingContent": null,
+          "newContent": "class MyClass:\n       def __init__(self):\n         pass",
+        }
+      },
+      {
+        "change": {
+          "type": "delete",
+          "file": "/file/path/to/file,
+          "existingContent": null,
+          "newContent": null,
+        }
+      }
+    ]
+    ```
+    """
+    knowledge = Knowledge(settings=settings)
+    request = \
+    f"""
+    You maintainig the code base for project {settings.project_name}
+    Files are located at: {settings.project_path}
+    This is a view of the files tree: {generate_markdown_tree(knowledge.get_all_sources())}
+    Create a list of find&replace intructions for each change needed:
+      {json_example}
 
       INSTRUCTIONS:
         * change structure:
@@ -184,8 +207,10 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
           - existingContent: str. Anchor point in the existing content to start replacing with new code. New code will include it if anchor point still needed or not to replce it.
           - newContent: str. New copntent to update "existingContent" or empty to remove "existingContent"
         * Create one entry for each change
+        * For new files create a file name following best practices of the project coding language
         * Keep content identation; is crucial to find the content to replace and to make new content work
     """
+    logger.info(f"improve_existing_code prompt: {request}")
     if not chat.messages[-1].improvement:
         chat.messages.append(Message(role="user", content=request))
         chat = chat_with_project(settings=settings, chat=chat, use_knowledge=False)
@@ -202,14 +227,17 @@ def apply_improve_code_changes(response: str):
     logger.info(f"improve_existing_code total changes: {len(changes)}")
     open_files = {}
     for change in changes:
-      logger.info(f"improve_existing_code change: {change}")
       file_path = change["file"]
       change_type = change["type"]
+      logger.info(f"improve_existing_code change: {change_type} - {file_path}")
+
       content = open_files.get(file_path)
       if not content:
-          with open(file_path, 'r') as f:
-              content = f.read()
-              open_files[file_path] = content
+          content = ""
+          if os.path.isfile(file_path):
+              with open(file_path, 'r') as f:
+                  content = f.read()
+          open_files[file_path] = content
       
       if change_type == "update":
           existing_content = change["existingContent"]
@@ -220,8 +248,14 @@ def apply_improve_code_changes(response: str):
           existing_content = change["existingContent"]
           new_content = ""
           open_files[file_path] = content.replace(existing_content, new_content)
+      
+      if change_type == "new":
+          new_content = change["newContent"]
+          open_files[file_path] = new_content
 
     for file_path, new_content in open_files.items():
+        logger.info(f"improve_existing_code change: save {file_path}")
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w') as f:
             f.write(new_content)
     

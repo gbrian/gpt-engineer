@@ -120,6 +120,7 @@ export default {
     },
     onMessageChange (ev) {
       this.editMessage = ev.target.innerText
+      return
       if (this.editMessage[this.editMessage.length-1] === '@') {
         this.showTermSearch = true
         requestAnimationFrame(() => 

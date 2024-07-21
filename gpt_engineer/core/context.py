@@ -2,6 +2,7 @@ import logging
 import re
 from termcolor import colored
 from pathlib import Path
+from typing import Union, List
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from langchain.schema import (
@@ -145,10 +146,13 @@ def ai_validate_context(ai, dbs, prompt, doc, retry_count=0):
 
     return doc
 
-def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings, ignore_documents=[]):
-  
+def find_relevant_documents (query: str, settings, ignore_documents=[]):
+  from gpt_engineer.core import build_dbs, build_ai
+
+  ai = build_ai(settings)
+  dbs = build_dbs(settings)
   documents = Knowledge(settings=settings).search(query)
-  logger.info(f"find_relevant_documents: Knowledge.search doc length: {len(documents)}")
+  logger.info(f"find_relevant_documents: [{settings.project_name}] Knowledge.search doc length: {len(documents)}")
   def is_valid_document(doc):
     source = doc.metadata["source"]
     checks = [check for check in ignore_documents if check in source]
@@ -166,3 +170,116 @@ def find_relevant_documents (ai:AI, dbs: DBs, query: str, settings, ignore_docum
       file_list = list(dict.fromkeys(file_list))  # Remove duplicates
       return relevant_documents, file_list
   return [], []
+
+
+
+class DisplayablePath:
+    display_filename_prefix_middle = "├── "
+    display_filename_prefix_last = "└── "
+    display_parent_prefix_middle = "    "
+    display_parent_prefix_last = "│   "
+
+    def __init__(self, path: Path, parent=None, is_last=False):
+        self.path = Path(str(path))
+        self.parent = parent
+        self.is_last = is_last
+        self.depth = self.parent.depth + 1 if self.parent else 0
+
+    @property
+    def display_name(self):
+        return self.path.name + '/' if self.path.is_dir() else self.path.name
+
+    @classmethod
+    def make_tree(cls, root: Union[str, Path], parent=None, is_last=False, criteria=None):
+        root = Path(str(root))
+        criteria = criteria or cls._default_criteria
+
+        displayable_root = cls(root, parent, is_last)
+        yield displayable_root
+
+        children = sorted(
+            list(path for path in root.iterdir() if criteria(path)),
+            key=lambda s: str(s).lower(),
+        )
+        count = 1
+        for path in children:
+            is_last = count == len(children)
+            if path.is_dir():
+                yield from cls.make_tree(
+                    path, parent=displayable_root, is_last=is_last, criteria=criteria
+                )
+            count += 1
+
+    @classmethod
+    def _default_criteria(cls, path: Path) -> bool:
+        return path.is_dir()
+
+    @classmethod
+    def make_tree_from_folders(cls, folders: List[Path], parent=None, is_last=False):
+        if not folders:
+            return
+
+        # Sort folders to ensure consistent order
+        folders = sorted(folders, key=lambda s: str(s).lower())
+
+        # Create a dictionary to hold the folder structure
+        folder_dict = {}
+        for folder in folders:
+            parts = folder.parts
+            current_level = folder_dict
+            for part in parts:
+                if part not in current_level:
+                    current_level[part] = {}
+                current_level = current_level[part]
+
+        # Helper function to recursively create DisplayablePath objects
+        def create_displayable_paths(current_level, parent, is_last):
+            items = sorted(current_level.items(), key=lambda s: str(s[0]).lower())
+            count = 1
+            for name, sub_level in items:
+                path = Path(name)
+                displayable_path = cls(path, parent, is_last=(count == len(items)))
+                yield displayable_path
+                if sub_level:
+                    yield from create_displayable_paths(sub_level, displayable_path, is_last)
+                count += 1
+
+        # Start creating DisplayablePath objects from the root level
+        yield from create_displayable_paths(folder_dict, parent, is_last)
+
+    def displayable(self) -> str:
+        if self.parent is None:
+            return self.display_name
+
+        _filename_prefix = (
+            self.display_filename_prefix_last
+            if self.is_last
+            else self.display_filename_prefix_middle
+        )
+
+        parts = ["{!s} {!s}".format(_filename_prefix, self.display_name)]
+
+        parent = self.parent
+        while parent and parent.parent is not None:
+            parts.append(
+                self.display_parent_prefix_middle
+                if parent.is_last
+                else self.display_parent_prefix_last
+            )
+            parent = parent.parent
+
+        return "".join(reversed(parts))
+
+def extract_folders_from_files(files: List[Union[str, Path]]) -> List[Path]:
+    folders = set()
+    for file in files:
+        file_path = Path(file)
+        if file_path.is_file():
+            folders.add(file_path.parent)
+    return sorted(folders)
+
+def generate_markdown_tree(files: List[Union[str, Path]]) -> str:
+    folders = extract_folders_from_files(files)
+    tree_generator = DisplayablePath.make_tree_from_folders(folders)
+    markdown_lines = [node.displayable() for node in tree_generator]
+    return "\n".join(markdown_lines)
