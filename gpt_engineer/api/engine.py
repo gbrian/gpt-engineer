@@ -2,6 +2,7 @@ import os
 import logging
 import re
 import json
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -161,7 +162,7 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
     return file_list
 
 
-def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
+def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_changes: bool=False):
     knowledge = Knowledge(settings=settings)
     request = \
     f"""
@@ -194,14 +195,16 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat):
                     chat.messages.pop()
                     return try_chat_code_changes(attempt)
                 raise ex
-        return try_chat_code_changes(retry_count)
+        try_chat_code_changes(retry_count)
+        if not apply_changes:
+            return
     
     response = chat.messages[-1].content
     apply_improve_code_changes(response=response)
     chat.messages.append(Message(role="assistant", content="Changes applied"))
 
 def apply_improve_code_changes(response: str):
-    changes = AI_CODE_VALIDATE_RESPONSE_PARSER.invoke(response).code_changes
+    changes = AI_CODE_GENERATOR_PARSER.invoke(response).code_changes
     logger.info(f"improve_existing_code total changes: {len(changes)}")
     open_files = {}
     for change in changes:
@@ -233,7 +236,7 @@ def apply_improve_code_changes(response: str):
           os.remove(file_path)
 
     for file_path, new_content in open_files.items():
-        logger.info(f"improve_existing_code change: save {file_path}")
+        logger.info(f"improve_existing_code change: save {file_path}: {new_content}")
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w') as f:
             f.write(new_content)
@@ -464,47 +467,61 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
         return
     new_content = notify_mentions_in_progress(content)
     save_file(new_content=new_content)
+
+    org_content = strip_mentions(content=content, mentions=mentions)
     
-    if mentions:
-        org_content = strip_mentions(content=content, mentions=mentions)
-        try:
-            def mention_info(mention):
-              return f"Comment from line {mention.start_line}: {mention.mention}"
+    def mention_info(mention):
+      return f"Comment from line {mention.start_line}: {mention.mention}"
 
-            query = "\n".join([mention_info(mention) for mention in mentions])
-            
-            
-            context_documents = []
-            use_knowledge = False if "--codx-no-knowledge" in query else True
-            if use_knowledge:
-              query = query.replace("--codx-knowledge", "")
-              ai = build_ai(settings)
-              dbs = build_dbs(settings)
-              documents, _ = select_afefcted_documents_from_knowledge(ai=ai,
-                                                            dbs=dbs,
-                                                            query=query,
-                                                            settings=settings,
-                                                            ignore_documents=[f"/{file_path}"])
-              if documents:
-                  for doc in documents:
-                      doc_context = document_to_context(doc)
-                      context_documents.append(doc_context)
+    query = "\n  *".join([mention_info(mention) for mention in mentions])
 
-            save_changes = True if "--codx-save" in query else False
-            new_content = change_file(
-                context_documents=context_documents,
-                query=query,
-                file_path=file_path,
-                org_content=org_content,
-                settings=settings,
-                save_changes=save_changes)
-        except Exception as ex:
-            new_content = notify_mentions_error(content=content, error=str(ex))
-            logger.exception(f"Error {ex} processig mention {query}")
-            
-            
-        if content != new_content:
-            save_file(new_content=new_content)
+    chat = Chat(name=f"changes_at_{file_path}",messages=[
+      Message(role="user", content=f"""
+      Find all information needed to apply all changes to file: {file_path}
+      Changes:
+        {query}
+
+      File content:
+      {org_content}
+      """)
+    ])
+
+    chat_with_project(settings=settings, chat=chat, use_knowledge=False)
+    chat.messages.append(Message(role="user", content=f"Make changes only to {file_path}"))
+    improve_existing_code(settings=settings, chat=chat)
+    save_file(new_content=org_content)
+    improve_existing_code(settings=settings, chat=chat)
+    
+    """
+    context_documents = []
+    use_knowledge = False if "--codx-no-knowledge" in query else True
+    if use_knowledge:
+      query = query.replace("--codx-knowledge", "")
+      ai = build_ai(settings)
+      dbs = build_dbs(settings)
+      documents, _ = select_afefcted_documents_from_knowledge(ai=ai,
+                                                    dbs=dbs,
+                                                    query=query,
+                                                    settings=settings,
+                                                    ignore_documents=[f"/{file_path}"])
+      if documents:
+          for doc in documents:
+              doc_context = document_to_context(doc)
+              context_documents.append(doc_context)
+
+    save_changes = True if "--codx-save" in query else False
+    new_content = change_file(
+        context_documents=context_documents,
+        query=query,
+        file_path=file_path,
+        org_content=org_content,
+        settings=settings,
+        save_changes=save_changes)
+    
+    if content != new_content:
+        save_file(new_content=new_content)        
+    """
+
 
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None):
