@@ -16,7 +16,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <div tabindex="0" role="button" class="btn m-1" @click="getAllProjects">
           <i class="fa-regular fa-folder-open"></i>
         </div>
-        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-fit p-2 shadow">
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-80 p-2 shadow">
           <li v-for="project in allProjects" :key="project.gpteng_path"
             @click="onOpenProject(project.gpteng_path)"
           >
