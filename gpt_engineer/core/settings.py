@@ -42,6 +42,7 @@ class GPTEngineerSettings:
     use_knowledge: bool
     log_ai: bool
     knowledge_hnsw_M: int
+    project_icon: str
 
     def __init__(self, **kwrgs):
         self.project_name = None
@@ -63,6 +64,7 @@ class GPTEngineerSettings:
         self.use_knowledge = True
         self.log_ai = False
         self.knowledge_hnsw_M = 1024
+        self.project_icon = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRhLNgwkP06cH3_D3Unp8DqL9eFCyhI8lHwQ&s"
         if kwrgs:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():

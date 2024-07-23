@@ -20,7 +20,11 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
           <li v-for="project in allProjects" :key="project.gpteng_path"
             @click="onOpenProject(project.gpteng_path)"
           >
-            <a>{{ project.project_name  }}</a>
+            <div class="flex gap-2">
+              <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
+                :style="`background-image:url('${project.project_icon}')`"></div>
+              {{ project.project_name  }}
+            </div>
           </li>
         </ul>
       </div>
@@ -33,7 +37,8 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
           </div>
           <div>CODX</div>
           <div class="badge my-2 flex gap-2 badge-primary badge-ouline p-2 flex gap-2 items-center">
-            <i class="fa-regular fa-folder-open"></i>
+            <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
+                :style="`background-image:url('${lastSettings.project_icon}')`"></div>
             <div class="-mt-1">
               {{ projectName }}
             </div> 
