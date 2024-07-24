@@ -13,10 +13,10 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
     </div>
     <div class="flex gap-2 items-center">
       <div class="dropdown">
-        <div tabindex="0" role="button" class="btn m-1" @click="getAllProjects">
-          <i class="fa-regular fa-folder-open"></i>
-        </div>
-        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-80 p-2 shadow">
+        <button tabindex="0" class="btn m-1" @click="getAllProjects">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <ul class="dropdown-content menu bg-base-100 rounded-box z-[1] w-80 p-2 shadow">
           <li v-for="project in allProjects" :key="project.gpteng_path"
             @click="onOpenProject(project.gpteng_path)"
           >
@@ -35,8 +35,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
             v-if="lastSettings.parent_project">
             <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project }} 
           </div>
-          <div>CODX</div>
-          <div class="badge my-2 flex gap-2 badge-primary badge-ouline p-2 flex gap-2 items-center">
+          <div class="rounded-full font-bold my-2 flex gap-2 flex gap-2 items-center">
             <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
                 :style="`background-image:url('${lastSettings.project_icon}')`"></div>
             <div class="-mt-1">
@@ -49,7 +48,6 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
             v-for="projectName in subProjects" :key="projectName"
               @click="openSubProject(projectName)"
           >
-            <i class="fa-solid fa-folder"></i>
             {{ projectName }} 
           </div>
         </div>
@@ -65,7 +63,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-regular fa-folder-open"></i> Open
       </button>
     </div>
-    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="validProject">
+    <div role="tablist" class="mt-2 tabs tabs-lifted bg-base-100 rounded-md" v-if="validProject">
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 0 ? tabActive: tabInactive]"
         @click="tabIx = 0"
       >
@@ -157,6 +155,7 @@ export default {
       this.liveRequests = API.liveRequests
       this.lastSettings = API.lastSettings
     }, 200)
+    this.getAllProjects()
   },
   computed: {
     validProject () {
