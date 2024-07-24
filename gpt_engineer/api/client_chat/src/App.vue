@@ -68,8 +68,8 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         @click="tabIx = 0"
       >
         <div class="font-medium flex gap-2 items-center">
-          <i class="fa-solid fa-comments"></i>
-          Chat
+          <i class="fa-solid fa-clipboard-list"></i>
+          Tasks
         </div>
       </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 ? tabActive: tabInactive]"

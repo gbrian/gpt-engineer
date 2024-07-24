@@ -6,7 +6,7 @@ import Chat from '@/components/chat/Chat.vue'
     <div class="flex flex-col" v-if="showChatsTree">
       <div>
         <div class="flex gap-2 items-center">
-          CHATS
+          TASKS
         </div>
         <ul tabindex="0" class=" p-2 w-52">
           <li class="p-2 click hover:underline"
@@ -43,7 +43,7 @@ import Chat from '@/components/chat/Chat.vue'
         <div class="grow"></div>
         <button class="btn btn-primary btn-xs" @click="newChat">
           <i class="fa-solid fa-plus"></i>
-          New chat
+          New task
         </button>
         <button :class="['btn btn-sm hover:btn-info hover:text-white', showSettings && 'btn-info text-white']" @click="showSettings = !showSettings">
           <i class="fa-solid fa-gear"></i>
