@@ -67,7 +67,7 @@ import Chat from '@/components/chat/Chat.vue'
           </button>
         </div>
       </div>
-      <div>
+      <div v-if="false">
         <span class="cursor-pointer mr-2 hover:underline group text-primary"
           v-for="file in chat.profiles" :key="file" :title="file"
           @click="showFile = file"
@@ -87,6 +87,7 @@ import Chat from '@/components/chat/Chat.vue'
         </button>
       </div>
       <Chat :chat="chat"
+        
         @refresh-chat="loadChat(chat.name)"
         @add-file="onAddFile"
         @delete-message="onRemoveMessage"
