@@ -482,15 +482,20 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
         {query}
 
       File content:
-      {org_content}
+      {new_content}
       """)
     ])
 
-    chat_with_project(settings=settings, chat=chat, use_knowledge=False)
-    chat.messages.append(Message(role="user", content=f"Make changes only to {file_path}"))
-    improve_existing_code(settings=settings, chat=chat)
-    save_file(new_content=org_content)
-    improve_existing_code(settings=settings, chat=chat)
+    chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+    chat.messages.append(Message(role="user", content=f""""
+    Rewrite full file content replacing codx instructions by requiered changes.
+    Return only the file content without any further decoration or comments.
+    Do not sorround response with '```' marks, just content:
+    {new_content}
+    """))
+    chat_with_project(settings=settings, chat=chat, use_knowledge=False, append_references=False)
+    response = chat.messages[-1].content
+    save_file(new_content=response)
     
     """
     context_documents = []
@@ -524,7 +529,11 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 
 
 
-def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None):
+def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None, append_references: bool=True):
+    query = chat.messages[-1].content
+    if "@codx-code" in query:
+        return improve_existing_code(chat=chat, settings=settings)
+
     ai = build_ai(settings)
     dbs = build_dbs(settings)
     profile_manager = ProfileManager(settings=settings)
@@ -532,7 +541,6 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     messages = [
       HumanMessage(content=profile_manager.read_profile("project").content)
     ]
-    query = chat.messages[-1].content
     for m in chat.messages[0:-1]:
         if m.hide or m.improvement:
             continue
@@ -559,10 +567,10 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
 
     
     messages.append(AIMessage(content=f"THIS INFORMATION IS COMING FROM PROJECT'S FILES. HOPE IT HELPS TO ANSWER USER REQUEST.\n\n{context}"))
-    messages.append(HumanMessage(content=f"{query}\n\nPlease when using references to methods or classes tell me the class and file where they are"))
+    messages.append(HumanMessage(content=query))
     messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
-    if documents:
+    if documents and append_references:
         sources = list(set([f" * {doc.metadata['source']}" for doc in documents]))
         sources = '\n'.join([f' * {source}' for source in sources])
         response = f"{messages[-1].content}\n\nRESOURCES:\n\n{sources}"

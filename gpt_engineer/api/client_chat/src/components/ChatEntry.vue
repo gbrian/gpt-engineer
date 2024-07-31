@@ -52,10 +52,16 @@
         <div class="text-md text-wrap -my-2" v-html="html"></div>
       </div>
     </div>
-    <button class="btn btn-sm btn-warning abolsute right-2 top-2"
-        v-for="code in codeBlocks" :key="code.id" ref="runButton" @click="onRunEdit(code)">
-      Run
-    </button>
+    <div class="flex gap-2 justify-end absolute right-2 top-2"
+        v-for="code in codeBlocks" :key="code.id" ref="runButton">
+        <button class="btn btn-sm" @click.stop="toggleExpand(code)">
+          <span v-if="code._collapsed"><i class="fa-solid fa-chevron-up"></i></span>
+          <span v-else><i class="fa-solid fa-chevron-down"></i></span>
+        </button>
+        <button class="btn btn-sm" @click.stop="copyToClipboard(code)">
+          <i class="fa-solid fa-copy"></i>
+        </button>
+    </div>
   </div>
 </template>
 <script>
@@ -76,7 +82,17 @@ export default {
     }
   },
   mounted () {
-    this.updateCodeBlocks()
+    const codeBlocks = [...this.$el.querySelectorAll('code[class^="language"]')]
+    this.codeBlocks = codeBlocks
+    setTimeout(() => {
+      console.log("Run buttons", this.$refs.runButton)
+      this.$refs.runButton?.forEach((b, ix) => {
+        const codeBlock = codeBlocks[ix]
+        const { parentNode } = codeBlock
+        parentNode.classList.add("relative")
+        parentNode.appendChild(b)
+      })
+    }, 300)
   },
   computed: {
     html () {
@@ -106,19 +122,28 @@ export default {
       const codeSnipped = "```" + codeLang.split("language-")[1] + "\n" + codeText + "\n```"
       this.$emit('run-edit', codeSnipped)
     },
-    updateCodeBlocks () {
-      this.codeBlocks.forEach(b => b.remove())
-      const codeBlocks = [...this.$el.querySelectorAll("pre")]
-      this.codeBlocks = codeBlocks.filter(c => c.innerText.indexOf("<<<<<<< HEAD") !== -1)
-      setTimeout(() => {
-        console.log("Run buttons", this.$refs.runButton)
-        this.$refs.runButton?.forEach((b, ix) => {
-          const codeBlock = codeBlocks[ix]
-          codeBlock.classList.add("relative")
-          codeBlock.appendChild(b)
-        })
-      }, 300)
+    copyToClipboard(codeBlock){
+      const text = codeBlock.childNodes[0].nodeValue
+      const textArea = document.createElement("textarea")
+      textArea.value = text
 
+      document.body.appendChild(textArea)
+
+      textArea.focus()
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      console.log("Code copied", text)
+    },
+    toggleExpand(code) {
+      const { parentNode } = code
+      code._collapsed = !code._collapsed
+      const classes = ["h-20", "overflow-hidden"]
+      if (code._collapsed) {
+        parentNode.classList.add(...classes)
+      } else {
+        parentNode.classList.remove(...classes)
+      }
     }
   }
 }

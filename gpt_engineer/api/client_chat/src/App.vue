@@ -12,15 +12,13 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       Please fix your settings. No AI key present
     </div>
     <div class="flex gap-2 items-center">
-      <div class="dropdown">
-        <button tabindex="0" class="btn m-1" @click="getAllProjects">
+      <div :class="['dropdown', showProjects && 'dropdown-open' ]" @blur="showProjects = false">
+        <div tabindex="0" class="btn m-1" @click="showProjects = !showProjects">
           <i class="fa-solid fa-bars"></i>
-        </button>
-        <ul class="dropdown-content menu bg-base-100 rounded-box z-[1] w-80 p-2 shadow">
-          <li v-for="project in allProjects" :key="project.gpteng_path"
-            @click="onOpenProject(project.gpteng_path)"
-          >
-            <div class="flex gap-2">
+        </div>
+        <ul class="dropdown-content menu bg-base-100 rounded-box z-[10] w-80 p-2 shadow">
+          <li v-for="project in allProjects" :key="project.gpteng_path">
+            <div class="flex gap-2" @click="onOpenProject(project.gpteng_path)">
               <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
                 :style="`background-image:url('${project.project_icon}')`"></div>
               {{ project.project_name  }}
@@ -140,7 +138,8 @@ export default {
       tabActive: 'text-info bg-base-100',
       tabInactive: 'text-warning bg-base-300 opacity-50 hover:opacity-100',
       lastError: null,
-      allProjects: null
+      allProjects: null,
+      showProjects: false
     }
   },
   async created () {
