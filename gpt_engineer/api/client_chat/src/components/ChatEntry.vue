@@ -1,5 +1,5 @@
 <template>
-  <div :class="['mb-4 relative w-full relative px-2 hover:bg-base-300 hover:rounded-md',
+  <div :class="['mb-4 relative w-full relative px-2 hover:bg-base-300/20 hover:rounded-md',
       message.role === 'user' ? 'chat-start': 'chat-end',
     ]" >
     <div :class="['px-2 max-w-full group w-full prose -mx-2',
@@ -76,16 +76,7 @@ export default {
     }
   },
   mounted () {
-    const codeBlocks = [...this.$el.querySelectorAll("pre")]
-    this.codeBlocks = codeBlocks.filter(c => c.innerText.indexOf("<<<<<<< HEAD") !== -1)
-    setTimeout(() => {
-      console.log("Run buttons", this.$refs.runButton)
-      this.$refs.runButton?.forEach((b, ix) => {
-        const codeBlock = codeBlocks[ix]
-        codeBlock.classList.add("relative")
-        codeBlock.appendChild(b)
-      })
-    }, 300)
+    this.updateCodeBlocks()
   },
   computed: {
     html () {
@@ -102,6 +93,11 @@ export default {
       return md.render("```json\n" + JSON.stringify(this.message, null, 2) + "\n```")
     }
   },
+  watch: {
+    message () {
+      this.updateCodeBlocks()
+    }
+  },
   methods: {
     onRunEdit (preNone) {
       const codeNode = preNone.querySelector('code')
@@ -109,6 +105,20 @@ export default {
       const codeLang = [...codeNode.classList.values()].find(c => c.startsWith("language-"))||"language-code"
       const codeSnipped = "```" + codeLang.split("language-")[1] + "\n" + codeText + "\n```"
       this.$emit('run-edit', codeSnipped)
+    },
+    updateCodeBlocks () {
+      this.codeBlocks.forEach(b => b.remove())
+      const codeBlocks = [...this.$el.querySelectorAll("pre")]
+      this.codeBlocks = codeBlocks.filter(c => c.innerText.indexOf("<<<<<<< HEAD") !== -1)
+      setTimeout(() => {
+        console.log("Run buttons", this.$refs.runButton)
+        this.$refs.runButton?.forEach((b, ix) => {
+          const codeBlock = codeBlocks[ix]
+          codeBlock.classList.add("relative")
+          codeBlock.appendChild(b)
+        })
+      }, 300)
+
     }
   }
 }
