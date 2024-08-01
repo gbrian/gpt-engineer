@@ -1,7 +1,7 @@
 JUPYTER_CONFIG_DIR=$(dirname "$0")
 
-mkdir -p ~/.local/share/jupyter/lab/settings
-cat > ~/.local/share/jupyter/lab/settings/overrides.json<< EOF
+
+cat > ~/.jupyter/lab/user-settings/overrides.json<< EOF
 {
   "@jupyterlab/apputils-extension:themes": {
     "theme": "JupyterLab Dark"
