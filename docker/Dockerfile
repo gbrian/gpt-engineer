@@ -25,6 +25,7 @@ USER gpt
 WORKDIR /gpt-engineer
 
 COPY --chown=gpt ./gpt_engineer /gpt-engineer/gpt_engineer
+COPY --chown=gpt ./notebooks /gpt-engineer/notebooks
 COPY --chown=gpt ./pyproject.toml /gpt-engineer/pyproject.toml
 COPY --chown=gpt ./gpt-web.sh /gpt-engineer/gpt-web.sh
 COPY --chown=gpt ./main.py /gpt-engineer/main.py
