@@ -109,6 +109,11 @@ export default {
       return md.render("```json\n" + JSON.stringify(this.message, null, 2) + "\n```")
     }
   },
+  watch: {
+    message () {
+      this.updateCodeBlocks()
+    }
+  },
   methods: {
     onRunEdit (preNone) {
       const codeNode = preNone.querySelector('code')

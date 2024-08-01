@@ -296,5 +296,9 @@ class GPTEngineerAPI:
             doc = extract_tags(settings=settings, doc=doc)
             return doc.__dict__
 
+        @app.get("/code-server/file/open/:file_name")
+        def api_list_chats(file_name: str):
+            os.system(f"code-server -r {file_name}")
+
         return app
             

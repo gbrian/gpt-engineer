@@ -1,4 +1,6 @@
 <script setup>
+import { API } from '../api/api'
+import AddFileDialog from '../components/chat/AddFileDialog.vue'
 import Chat from '@/components/chat/Chat.vue'
 </script>
 <template>
@@ -21,7 +23,7 @@ import Chat from '@/components/chat/Chat.vue'
       </div>
     </div>
     <div class="grow flex flex-col gap-2">
-      <div class="text-xl flex gap-2 items-center">
+      <div class="text-xl flex gap-2 items-center" v-if="!chatMode">
         <div class="flex gap-2 items-center">
           <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']" @click="showChatsTree = !showChatsTree">
             <i class="fa-solid fa-folder-tree"></i>
@@ -45,7 +47,7 @@ import Chat from '@/components/chat/Chat.vue'
           <i class="fa-solid fa-plus"></i>
           New task
         </button>
-        <button :class="['btn btn-sm hover:btn-info hover:text-white', showSettings && 'btn-info text-white']" @click="showSettings = !showSettings">
+        <button :class="['btn btn-sm hover:btn-info hover:text-white hidden', showSettings && 'btn-info text-white']" @click="showSettings = !showSettings">
           <i class="fa-solid fa-gear"></i>
         </button>
       </div>
@@ -120,10 +122,8 @@ import Chat from '@/components/chat/Chat.vue'
   </div>
 </template>
 <script>
-import { API } from '../api/api'
-import AddFileDialog from '../components/chat/AddFileDialog.vue'
 export default {
-  components: { AddFileDialog },
+  props: ['chatMode'],
   data() {
     return {
       chat: null,
