@@ -6,7 +6,7 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 
 import vuePugPlugin from 'vue-pug-plugin'
 
-const API_URL = process.env.API_URL
+const { API_URL, NOTEBOOKS_URL } = process.env
 console.log("API_URL", API_URL)
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -15,6 +15,11 @@ export default defineConfig({
       '/api': {
         target: API_URL,
         changeOrigin: true,
+      },
+      '/notebooks': {
+        target: NOTEBOOKS_URL,
+        changeOrigin: false,
+        ws: true,
       },
     }
   },

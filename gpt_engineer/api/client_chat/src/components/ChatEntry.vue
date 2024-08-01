@@ -1,5 +1,5 @@
 <template>
-  <div :class="['mb-4 relative w-full relative px-2 hover:bg-base-300 hover:rounded-md',
+  <div :class="['relative w-full relative p-2 hover:bg-base-300 hover:rounded-md',
       message.role === 'user' ? 'chat-start': 'chat-end',
     ]" >
     <div :class="['px-2 max-w-full group w-full prose -mx-2',
@@ -11,7 +11,7 @@
     >
       <div>
         <div class="flex gap-2">
-          <div class="py-2 px-1 font-bold text-xs bg-base-300 rounded-md">
+          <div class="py-2 px-1 font-bold text-xs bg-base-300 group-hover:bg-info group-hover:text-info-content rounded-md">
             <span v-if="message.hide">
               <i class="fa-solid fa-eye-slash"></i>
             </span>

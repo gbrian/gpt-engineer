@@ -88,13 +88,19 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-solid fa-brain"></i>
         Setting
       </a>
-      
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 4 ? tabActive: tabInactive]"
+        @click="tabIx = 4"
+      >
+        <i class="fa-solid fa-book-open"></i>
+        Notebooks
+      </a>
     </div>
     <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="validProject">
       <ChatViewVue v-if="tabIx === 0" />
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 3" />
+      <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
     </div>
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">
@@ -211,6 +217,5 @@ export default {
       this.showOpenProjectModal = true
     }
   }
-
 }
 </script>

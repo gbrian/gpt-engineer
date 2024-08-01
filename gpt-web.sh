@@ -1,7 +1,8 @@
 #!/bin/bash
 export WEB_PORT=${WEB_PORT:-8001}
 export API_PORT=${API_PORT:-8000}
-export API_URL="http://localhost:$API_PORT"
+export API_URL="http://0.0.0.0:$API_PORT"
+export NOTEBOOKS_URL="http://0.0.0.0:8888"
 
 function clean () {
   echo "Cleaning..."
@@ -18,6 +19,9 @@ if [ "$VENV_PATH" != "" ]; then
   source $VENV_PATH/bin/activate
   pip install -e .
 fi
+
+echo "Running gpt-engineer notebooks"
+bash notebooks/run_notebooks.sh &
 
 echo "Running gpt-engineer at $VENV_PATH - Home: $HOME"
 # run api
