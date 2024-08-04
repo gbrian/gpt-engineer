@@ -2,6 +2,7 @@
 import { API } from '../api/api'
 import AddFileDialog from '../components/chat/AddFileDialog.vue'
 import Chat from '@/components/chat/Chat.vue'
+import moment from 'moment'
 </script>
 <template>
   <div class="flex gap-2 h-full justify-between" v-if="chat">
@@ -11,10 +12,11 @@ import Chat from '@/components/chat/Chat.vue'
           TASKS
         </div>
         <ul tabindex="0" class=" p-2 w-52">
-          <li class="p-2 click hover:underline"
+          <li class="p-2 click hover:underline flex flex-col"
             v-for="openChat in chats" :key="openChat"
-            @click="loadChat(openChat)" >
-            <a>{{ openChat }}</a>
+            @click="loadChat(openChat.name)" >
+            <div class="text-xs">{{ moment(openChat.stats.updated_at).fromNow() }}</div>
+            <a>{{ openChat.name }}</a>
           </li>
         </ul>
       </div>
@@ -140,7 +142,7 @@ export default {
   async created () {
     this.chats = await API.chats.list()
     if (this.chats.length) {
-      this.chat = await API.chats.loadChat(this.chats.reverse()[0])
+      this.chat = await API.chats.loadChat(this.chats.reverse()[0].name)
     } else {
       this.chat = await API.chats.newChat()
       this.chats.push(this.chat.name)

@@ -2,6 +2,7 @@ import logging
 import pathlib
 import os
 import json
+from datetime import datetime, timezone
 from gpt_engineer.core.settings import GPTEngineerSettings
 
 from gpt_engineer.api.model import Chat, Message
@@ -14,8 +15,21 @@ class ChatManager:
 
     def list_chats(self):
         path = self.chat_path
-        file_paths = [os.path.basename(str(file_path)) for file_path in pathlib.Path(path).rglob("*.md")]
-        return file_paths
+        file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*.md")]
+        def chat_info(file_path):
+          stats = os.stat(file_path)
+          stats_info = {
+            "created_at": datetime.fromtimestamp(stats.st_ctime, tz=timezone.utc),
+            "updated_at": datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc),
+          }
+          return {
+            "name": os.path.basename(file_path).split(".")[0],
+            "file_path": file_path,
+            "stats": stats_info
+          }
+        return sorted([chat_info(file_path) for file_path in file_paths],
+            key=lambda x: x["stats"]["updated_at"],
+            reverse=True)
 
     def save_chat(self, chat: Chat):
         chat_file = f"{self.chat_path}/{chat.name}"
