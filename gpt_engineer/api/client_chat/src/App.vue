@@ -7,49 +7,9 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 </script>
 
 <template>
-  <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 p-2 dark relative" data-theme="dark">
+  <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 dark relative" data-theme="dark">
     <div class="alert alert-error text-xs font-bold text-white" v-if="!lastSettings?.openai_api_key">
       Please fix your settings. No AI key present
-    </div>
-    <div class="flex gap-2 items-center">
-      <div :class="['dropdown', showProjects && 'dropdown-open' ]" @blur="showProjects = false">
-        <div tabindex="0" class="btn m-1" @click="showProjects = !showProjects">
-          <i class="fa-solid fa-bars"></i>
-        </div>
-        <ul class="dropdown-content menu bg-base-100 rounded-box z-[10] w-80 p-2 shadow">
-          <li v-for="project in allProjects" :key="project.gpteng_path">
-            <div class="flex gap-2" @click="onOpenProject(project.gpteng_path)">
-              <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
-                :style="`background-image:url('${project.project_icon}')`"></div>
-              {{ project.project_name  }}
-            </div>
-          </li>
-        </ul>
-      </div>
-      <div class="grow" v-if="validProject">
-        <div class="flex gap-2 items-center">
-          <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
-            @click="openSubProject(lastSettings.parent_project)"
-            v-if="lastSettings.parent_project">
-            <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project }} 
-          </div>
-          <div class="rounded-full font-bold my-2 flex gap-2 flex gap-2 items-center">
-            <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
-                :style="`background-image:url('${lastSettings.project_icon}')`"></div>
-            <div class="-mt-1">
-              {{ projectName }}
-            </div> 
-          </div>
-        </div>
-        <div class="flex gap-2" v-if="subProjects">
-          <div tabindex="0" class="click badge badge-info text-white flex gap-1 items-center"
-            v-for="projectName in subProjects" :key="projectName"
-              @click="openSubProject(projectName)"
-          >
-            {{ projectName }} 
-          </div>
-        </div>
-      </div>
     </div>
     <progress :class="['progress progress-success w-full', liveRequests ? '': 'opacity-0']"></progress>
     <div class="alert alert-warning flex gap-2 justify-center" v-if="!validProject">
@@ -61,7 +21,18 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-regular fa-folder-open"></i> Open
       </button>
     </div>
-    <div role="tablist" class="mt-2 tabs tabs-lifted bg-base-100 rounded-md" v-if="validProject">
+    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="validProject">
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'home' ? tabActive: tabInactive]"
+        @click="tabIx = 'home'"
+      >
+        <div class="rounded-full font-bold my-2 flex gap-2 flex gap-2 items-center">
+          <div class="w-4 h-4 bg-cover bg-center rounded-full bg-primay"
+              :style="`background-image:url('${lastSettings.project_icon}')`"></div>
+          <div class="-mt-1">
+            {{ projectName }}
+          </div> 
+        </div>
+      </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 0 ? tabActive: tabInactive]"
         @click="tabIx = 0"
       >
@@ -101,6 +72,38 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 3" />
       <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
+      <div v-if="tabIx === 'home'">
+        <div class="flex gap-2 items-center">
+          <div class="grow" v-if="validProject">
+            <div class="flex gap-2 items-center">
+              <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
+                @click="openSubProject(lastSettings.parent_project)"
+                v-if="lastSettings.parent_project">
+                <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project }} 
+              </div>
+            </div>
+            <div class="flex gap-2" v-if="subProjects">
+              <div tabindex="0" class="click badge badge-info text-white flex gap-1 items-center"
+                v-for="projectName in subProjects" :key="projectName"
+                  @click="openSubProject(projectName)"
+              >
+                {{ projectName }} 
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="text-xl my-4">Other projects</div>
+        <div class="mb-4 grid grid-cols-4 gap-4">
+          <div class="my-2 flex flex-col items-center flex p-4 gap-2 click rounded-md bg-base-300" 
+            v-for="project in allProjects" :key="project.gpteng_path"
+              @click="onOpenProject(project.gpteng_path)"
+            >
+              <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
+                :style="`background-image:url('${project.project_icon}')`"></div>
+              <div class="max-w-full overflow-hidden">{{ project.project_name }}</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">
@@ -144,8 +147,7 @@ export default {
       tabActive: 'text-info bg-base-100',
       tabInactive: 'text-warning bg-base-300 opacity-50 hover:opacity-100',
       lastError: null,
-      allProjects: null,
-      showProjects: false
+      allProjects: null
     }
   },
   async created () {
