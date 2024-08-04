@@ -82,17 +82,7 @@ export default {
     }
   },
   mounted () {
-    const codeBlocks = [...this.$el.querySelectorAll('code[class^="language"]')]
-    this.codeBlocks = codeBlocks
-    setTimeout(() => {
-      console.log("Run buttons", this.$refs.runButton)
-      this.$refs.runButton?.forEach((b, ix) => {
-        const codeBlock = codeBlocks[ix]
-        const { parentNode } = codeBlock
-        parentNode.classList.add("relative")
-        parentNode.appendChild(b)
-      })
-    }, 300)
+    this.updateCodeBlocks()
   },
   computed: {
     html () {
@@ -144,6 +134,19 @@ export default {
       } else {
         parentNode.classList.remove(...classes)
       }
+    },
+    updateCodeBlocks () {
+      const codeBlocks = [...this.$el.querySelectorAll('code[class^="language"]')]
+      this.codeBlocks = codeBlocks
+      setTimeout(() => {
+        console.log("Run buttons", this.$refs.runButton)
+        this.$refs.runButton?.forEach((b, ix) => {
+          const codeBlock = codeBlocks[ix]
+          const { parentNode } = codeBlock
+          parentNode.classList.add("relative")
+          parentNode.appendChild(b)
+        })
+      }, 300)
     }
   }
 }
