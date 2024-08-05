@@ -49,7 +49,8 @@ import ChatEntry from '@/components/ChatEntry.vue'
       </div>
       <div class="flex gap-2 items-end mt-2">
         <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
-          editMessageId !== null ? 'border-error': ''
+          editMessageId !== null ? 'border-error': '',
+          editMessageId !== null ? 'border-warning': '',
         ]" contenteditable="true"
           ref="editor" @input="onMessageChange"
           @paste="onContentPaste"
@@ -63,6 +64,19 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </button>
         <button class="btn btn-warning btn-sm mb-1" @click="improveCode">
           <i class="fa-solid fa-code"></i> Code
+        </button>
+      </div>
+      <div class="flex mt-2 w-full p-1 rounded-md bg-warning text-neutral" v-if="editMessageId != null">
+        <div class="font-bold">
+          <span v-if="editMessage.role === 'user'">Edit message: </span>
+          <span v-else>Request corrections: </span>
+        </div>
+        <span class="italic">
+          {{ chat.messages[editMessageId].content.slice(0, 50)  }}...
+        </span>
+        <div class="grow"></div>
+        <button class="click hover:shadow" @click="editMessageId = null">
+          <i class="fa-regular fa-circle-xmark"></i>
         </button>
       </div>
     </div>
@@ -100,10 +114,14 @@ export default {
   },
   methods: {
     onEditMessage (ix) {
-      const message = this.chat.messages[ix]
-      this.editMessage = message.content
-      this.editor.innerText = this.editMessage
+      this.editMessage = this.chat.messages[ix]
       this.editMessageId = ix
+
+      if (this.editMessage.role == 'user') {
+        this.editor.innerText = this.editMessage.content
+      } else {
+        this.editor.innerText = "Please apply this corrections to your message:\n- "
+      }
     },
     toggleHide(ix) {
       const message = this.chat.messages[ix]
@@ -117,15 +135,6 @@ export default {
           }
       })
       .catch(console.error);
-    },
-    onMessageChange (ev) {
-      this.editMessage = ev.target.innerText
-      return
-      if (this.editMessage[this.editMessage.length-1] === '@') {
-        this.showTermSearch = true
-        requestAnimationFrame(() => 
-        this.$refs.termSearcher.focus())
-      }
     },
     improveCode () {
       this.postMyMessage()
@@ -159,12 +168,12 @@ export default {
       ]
     },
     postMyMessage () {
-      if (this.editMessage) {
+      const message = this.editor.innerText
+      if (message) {
         this.addMessage({
           role: 'user',
-          content: this.editMessage
+          content: message
         })
-        this.editMessage = null
         this.editor.innerText = ""
         this.$refs.anchor.scrollIntoView()
       }
@@ -222,8 +231,9 @@ export default {
       this.waiting = false
     },
     onUpdateMessage () {
-      const message = this.chat.messages[this.editMessageId]
-      message.content = this.editMessage
+      if (this.editMessage.role === 'user') {
+        this.editMessage.content = this.editor.innerText
+      }
       this.onResetEdit()
       this.saveChat()
     },

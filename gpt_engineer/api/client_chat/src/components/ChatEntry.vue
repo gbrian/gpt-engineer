@@ -10,15 +10,20 @@
     ]"
     >
       <div>
-        <div class="flex gap-2">
-          <div class="py-2 px-1 font-bold text-xs bg-base-300 group-hover:bg-info group-hover:text-info-content rounded-md">
-            <span v-if="message.hide">
-              <i class="fa-solid fa-eye-slash"></i>
-            </span>
+        <div class="flex gap-2 items-center">
+          <div class="btn btn-xs flex gap-2 items-center font-bold text-xs bg-base-300 group-hover:bg-base-100 rounded-md">
+            <button class="btn btn-xs" @click="$emit('hide')">
+              <span v-if="message.hide">
+                <i class="fa-solid fa-eye"></i>
+              </span>
+              <span v-else>
+                <i class="fa-solid fa-eye-slash"></i>
+              </span>
+            </button>
             <div v-if="message.role ==='user'">You ({{ message.role }})</div>
             <div v-else>gpt-engineer ({{ message.role }})</div>
           </div>
-          <div class="hidden group-hover:block">
+          <div class="hidden group-hover:flex gap-2">
             <button class="btn btn-xs" @click="message.collapse = !message.collapse">
               <span v-if="message.collapse">
                 <i class="fa-solid fa-chevron-up"></i>
@@ -27,29 +32,22 @@
                 <i class="fa-solid fa-chevron-down"></i>
               </span>
             </button>
-            <button class="btn btn-xs" @click="$emit('copy')">
+            <button class="btn btn-xs bg-base-100" @click="copyMessageToClipboard">
               <i class="fa-solid fa-copy"></i>
             </button>      
-            <button class="btn btn-error btn-xs" @click="$emit('remove')">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-            <button class="btn btn-xs" @click="$emit('edit')">
+            <button class="btn btn-xs bg-success" @click="$emit('edit')">
               <i class="fa-solid fa-pencil"></i>
             </button>
-            <button class="btn btn-info btn-xs" @click="showDoc = !showDoc">
-              <i class="fa-solid fa-code"></i>
+            <button class="btn bg-purple-600 text-white btn-xs" @click="$emit('enhance')">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
             </button>
-            <button class="btn btn-xs" @click="$emit('hide')">
-              <span v-if="message.hide">
-                <i class="fa-solid fa-eye"></i>
-              </span>
-              <span v-else>
-                <i class="fa-solid fa-eye-slash"></i>
-              </span>
-            </button>      
+            <button class="ml-4 btn btn-error btn-xs" @click="$emit('remove')">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+            
           </div>
         </div>
-        <div class="text-md text-wrap -my-2" v-html="html"></div>
+        <div class="text-md text-wrap -my-2 overflow-y-auto" v-html="html"></div>
       </div>
     </div>
     <div class="flex gap-2 justify-end absolute right-2 top-2"
@@ -112,8 +110,15 @@ export default {
       const codeSnipped = "```" + codeLang.split("language-")[1] + "\n" + codeText + "\n```"
       this.$emit('run-edit', codeSnipped)
     },
-    copyToClipboard(codeBlock){
+    copyCodeToClipboard(codeBlock){
       const text = codeBlock.childNodes[0].nodeValue
+      this.copyTextToClipboard(text)
+    },
+    copyMessageToClipboard(){
+      const text = this.message.content
+      this.copyTextToClipboard(text)
+    },
+    copyTextToClipboard (text) {
       const textArea = document.createElement("textarea")
       textArea.value = text
 

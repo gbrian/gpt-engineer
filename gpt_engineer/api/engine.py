@@ -571,9 +571,10 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
     if documents and append_references:
-        sources = list(set([f" * {doc.metadata['source']}" for doc in documents]))
-        sources = '\n'.join([f' * {source}' for source in sources])
-        response = f"{messages[-1].content}\n\nRESOURCES:\n\n{sources}"
+        sources = list(set([doc.metadata['source'].replace(settings.project_path, "") \
+                        for doc in documents]))
+        sources = '\n'.join([f'- {source}' for source in sources])
+        response = f"{messages[-1].content}\n\nRESOURCES:\n{sources}"
 
     response_message = Message(role="assistant", content=response)
     chat.messages.append(response_message)

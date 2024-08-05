@@ -17,24 +17,24 @@ class ChatManager:
         path = self.chat_path
         file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*.md")]
         def chat_info(file_path):
-          stats = os.stat(file_path)
-          stats_info = {
-            "created_at": datetime.fromtimestamp(stats.st_ctime, tz=timezone.utc),
-            "updated_at": datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc),
-          }
+          name = os.path.basename(file_path).split(".")[0]
+          chat = self.load_chat(chat_name=name)
+          chat.messages = chat.messages[0:1]
           return {
-            "name": os.path.basename(file_path).split(".")[0],
-            "file_path": file_path,
-            "stats": stats_info
+            **chat.__dict__,
+            "file_path": file_path
           }
         return sorted([chat_info(file_path) for file_path in file_paths],
-            key=lambda x: x["stats"]["updated_at"],
+            key=lambda x: x["updated_at"],
             reverse=True)
 
     def save_chat(self, chat: Chat):
         chat_file = f"{self.chat_path}/{chat.name}"
         if not chat_file.endswith(".md"):
             chat_file = chat_file + ".md"
+        chat.updated_at = datetime.now().isoformat()
+        if not chat.created_at:
+            chat.created_at = chat.updated_at
         with open(chat_file, 'w') as f:
             chat_content = self.serialize_chat(chat)
             f.write(chat_content)
@@ -44,7 +44,12 @@ class ChatManager:
         if not chat_file.endswith(".md"):
             chat_file += ".md"
         with open(chat_file, 'r') as f:
-            return self.deserialize_chat(content=f.read())
+            chat = self.deserialize_chat(content=f.read())
+            if not chat.created_at:
+                stats = os.stat(chat_file)
+                chat.created_at = str(datetime.fromtimestamp(stats.st_ctime, tz=timezone.utc))
+                chat.updated_at = str(datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc))
+            return chat
 
     def serialize_chat(self, chat: Chat):
         chat_json = { **chat.__dict__ }

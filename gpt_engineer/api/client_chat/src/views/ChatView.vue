@@ -6,27 +6,22 @@ import moment from 'moment'
 </script>
 <template>
   <div class="flex gap-2 h-full justify-between" v-if="chat">
-    <div class="flex flex-col" v-if="showChatsTree">
-      <div>
-        <div class="flex gap-2 items-center">
-          TASKS
-        </div>
-        <ul tabindex="0" class=" p-2 w-52">
-          <li class="p-2 click hover:underline flex flex-col"
-            v-for="openChat in chats" :key="openChat"
-            @click="loadChat(openChat.name)" >
-            <div class="text-xs">{{ moment(openChat.stats.updated_at).fromNow() }}</div>
-            <a>{{ openChat.name }}</a>
-          </li>
-        </ul>
-      </div>
-      <div class="grow"></div>
+    <div class="flex flex-col  bg-base-300 p-2 overflow-auto" v-if="showChatsTree">
+      <ul tabindex="0" class=" p-2 w-52">
+        <li class="p-2 click hover:underline flex flex-col"
+          v-for="openChat in chats" :key="openChat"
+          @click="loadChat(openChat.name)" >
+          <div class="text-xs">{{ moment.utc(openChat.updated_at).fromNow() }}</div>
+          <a>{{ openChat.name }}</a>
+        </li>
+      </ul>
+    <div class="grow"></div>
       <div class="px-2">
       </div>
     </div>
     <div class="grow flex flex-col gap-2">
       <div class="text-xl flex gap-2 items-center" v-if="!chatMode">
-        <div class="flex gap-2 items-center">
+        <div class="flex gap-2 items-end">
           <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']" @click="showChatsTree = !showChatsTree">
             <i class="fa-solid fa-folder-tree"></i>
           </button>
@@ -35,7 +30,10 @@ import moment from 'moment'
             @keydown.enter.stop="saveChat"
             @keydown.esc="editName = false"
             v-model="chat.name" />
-          <div class="click font-bold" @click="editName = true" v-else> {{ chat.name }}</div>
+          <div class="click font-bold flex flex-col" @click="editName = true" v-else> 
+            {{ chat.name }}
+            <div class="text-xs">{{ moment.utc(chat.updated_at).fromNow() }}</div>
+          </div>
         
           <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
             <i class="fa-solid fa-floppy-disk"></i>
@@ -142,7 +140,7 @@ export default {
   async created () {
     this.chats = await API.chats.list()
     if (this.chats.length) {
-      this.chat = await API.chats.loadChat(this.chats.reverse()[0].name)
+      this.chat = await API.chats.loadChat(this.chats[0].name)
     } else {
       this.chat = await API.chats.newChat()
       this.chats.push(this.chat.name)

@@ -13,10 +13,15 @@ class Message(BaseModel):
 
 class Chat(BaseModel):
     id: str = Field(default='')
+    parent_id: str = Field(default='')
+    status: str = Field(default='')
+    tags: List[str] = Field(default=[])
     file_list: List[str] = Field(default=[])
     profiles: List[str] = Field(default=[])
     name: str = Field(default='')
     messages: List[Message] = Field(default=[])
+    created_at: str = Field(default='')
+    updated_at: str = Field(default='')
 
 class Logprobs(BaseModel):
     tokens: List[str]

@@ -25,10 +25,10 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'home' ? tabActive: tabInactive]"
         @click="tabIx = 'home'"
       >
-        <div class="rounded-full font-bold my-2 flex gap-2 flex gap-2 items-center">
+        <div class="rounded-full font-bold flex gap-2 flex gap-2 items-center">
           <div class="w-4 h-4 bg-cover bg-center rounded-full bg-primay"
               :style="`background-image:url('${lastSettings.project_icon}')`"></div>
-          <div class="-mt-1">
+          <div class="">
             {{ projectName }}
           </div> 
         </div>
@@ -76,6 +76,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <div class="flex gap-2 items-center">
           <div class="grow" v-if="validProject">
             <div class="flex gap-2 items-center">
+              Parent 
               <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
                 @click="openSubProject(lastSettings.parent_project)"
                 v-if="lastSettings.parent_project">
@@ -83,6 +84,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
               </div>
             </div>
             <div class="flex gap-2" v-if="subProjects">
+              Depends on
               <div tabindex="0" class="click badge badge-info text-white flex gap-1 items-center"
                 v-for="projectName in subProjects" :key="projectName"
                   @click="openSubProject(projectName)"
@@ -92,9 +94,9 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
             </div>
           </div>
         </div>
-        <div class="text-xl my-4">Other projects</div>
-        <div class="mb-4 grid grid-cols-4 gap-4">
-          <div class="my-2 flex flex-col items-center flex p-4 gap-2 click rounded-md bg-base-300" 
+        <div class="text-xl my-4">Jump to</div>
+        <div class="mb-4 grid grid-cols-3 gap-4">
+          <div class="my-2 flex flex-col items-center flex px-4 py-6 gap-2 click rounded-md bg-base-300" 
             v-for="project in allProjects" :key="project.gpteng_path"
               @click="onOpenProject(project.gpteng_path)"
             >
