@@ -200,47 +200,59 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
             return
     
     response = chat.messages[-1].content
-    apply_improve_code_changes(response=response)
+    apply_improve_code_changes(settings=settings, response=response)
     chat.messages.append(Message(role="assistant", content="Changes applied"))
 
-def apply_improve_code_changes(response: str):
+def apply_improve_code_changes(settings: GPTEngineerSettings, response: str):
     changes = AI_CODE_GENERATOR_PARSER.invoke(response).code_changes
     logger.info(f"improve_existing_code total changes: {len(changes)}")
-    open_files = {}
+    changes_by_file_path = {}
     for change in changes:
       file_path = change.file_path
+      if file_path not in changes_by_file_path:
+          changes_by_file_path[file_path] = []
+      changes_by_file_path[file_path].append(change)
+    
+    for file_path, changes in changes_by_file_path.items(): 
       change_type = change.change_type
       existing_content = change.existing_content
       new_content = change.new_content
       logger.info(f"improve_existing_code change: {change_type} - {file_path}")
-
-      content = open_files.get(file_path)
-      if not content:
-          content = ""
-          if os.path.isfile(file_path):
-              with open(file_path, 'r') as f:
-                  content = f.read()
-          open_files[file_path] = content
       
-      if change_type == "update":
-          open_files[file_path] = content.replace(existing_content, new_content)
-
-      if change_type == "delete":
-          open_files[file_path] = content.replace(existing_content, "")
-      
-      if change_type == "new":
-          open_files[file_path] = new_content
-
       if change_type == "delete_file":
           del open_files[file_path]
           os.remove(file_path)
+      else:
+        content = ""
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as f:
+                content = f.read()
+        instruction_list = [json.dumps(change.__dict__) for change in changes]
+        logger.info(f"Applying {len(changes)} changes to {file_path}")
+        new_content = change_file_with_instructions(settings=settings, instruction_list=instruction_list, file_path=file_path, content=content)
+        if new_content and new_content != content:
+            with open(file_path, 'w') as f:
+                f.write(new_content)
+        else:
+            logger.error(f"Error applying changes to {file_path}. New content: {new_content}")
 
-    for file_path, new_content in open_files.items():
-        logger.info(f"improve_existing_code change: save {file_path}: {new_content}")
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, 'w') as f:
-            f.write(new_content)
-    
+def change_file_with_instructions(settings: GPTEngineerSettings, instruction_list: [str], file_path: str, content: str):
+    chat = Chat(name=f"changes_at_{file_path}",messages=[])
+
+    chat.messages.append(Message(role="user", content=f""""
+    Rewrite full file content replacing codx instructions by requiered changes.
+    Return only the file content without any further decoration or comments.
+    Do not sorround response with '```' marks, just content.
+    Always respect current file content formatting.
+
+    INSTRUCTIONS:
+    { "- ".join(instruction_list) }
+
+    FILE CONTENT:
+    {content}
+    """))
+    chat_with_project(settings=settings, chat=chat, use_knowledge=False, append_references=False)
+    return chat.messages[-1].content
 
 def improve_existing_code_gpt_blocks(settings: GPTEngineerSettings, chat: Chat):
     request = \

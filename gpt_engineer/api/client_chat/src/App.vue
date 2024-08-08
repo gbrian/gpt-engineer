@@ -103,6 +103,12 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
               <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
                 :style="`background-image:url('${project.project_icon}')`"></div>
               <div class="max-w-full overflow-hidden">{{ project.project_name }}</div>
+              <div class="flex gap-2 text-xs items-center justify-center">
+                <span class="animate-pulse" v-if="project.watching">
+                  <i class="fa-solid fa-eye"></i>
+                </span>
+                {{ project.model }}
+              </div>
           </div>
         </div>
       </div>

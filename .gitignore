@@ -85,3 +85,4 @@ poetry.lock
 tests/knowledge/db
 tests/knowledge/.venv
 .venv
+node_modules/

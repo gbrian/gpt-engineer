@@ -1,3 +1,6 @@
+<script setup>
+import Code from './Code.vue'
+</script>
 <template>
   <div :class="['relative w-full relative p-2 hover:bg-base-300 hover:rounded-md',
       message.role === 'user' ? 'chat-start': 'chat-end',
@@ -50,7 +53,11 @@
         <div class="text-md text-wrap -my-2 overflow-y-auto" v-html="html"></div>
       </div>
     </div>
-    <div class="flex gap-2 justify-end absolute right-2 top-2"
+    <Code v-for="code in codeBlocks" :key="code.id"
+      :code="code"
+      ref="codeSection">
+    </Code>
+    <!--div class="flex gap-2 justify-end absolute right-2 top-2"
         v-for="code in codeBlocks" :key="code.id" ref="runButton">
         <button class="btn btn-sm" @click.stop="toggleExpand(code)">
           <span v-if="code._collapsed"><i class="fa-solid fa-chevron-up"></i></span>
@@ -59,7 +66,7 @@
         <button class="btn btn-sm" @click.stop="copyToClipboard(code)">
           <i class="fa-solid fa-copy"></i>
         </button>
-    </div>
+    </div -->
   </div>
 </template>
 <script>
@@ -99,7 +106,7 @@ export default {
   },
   watch: {
     message () {
-      this.updateCodeBlocks()
+      this.codeBlocks = []
     }
   },
   methods: {
@@ -141,17 +148,14 @@ export default {
       }
     },
     updateCodeBlocks () {
-      const codeBlocks = [...this.$el.querySelectorAll('code[class^="language"]')]
-      this.codeBlocks = codeBlocks
-      setTimeout(() => {
-        console.log("Run buttons", this.$refs.runButton)
-        this.$refs.runButton?.forEach((b, ix) => {
-          const codeBlock = codeBlocks[ix]
-          const { parentNode } = codeBlock
-          parentNode.classList.add("relative")
-          parentNode.appendChild(b)
-        })
-      }, 300)
+      setInterval(() => {
+        const codeBlocks = [...this.$el.querySelectorAll('code[class^="language"]')]
+                            .filter(cb => !this.codeBlocks.find(ccb => ccb === cb))
+        if (codeBlocks.length) {
+          this.codeBlocks = [...this.codeBlocks, ...codeBlocks]
+          console.log("Code blocks", codeBlocks)
+        }
+      }, 500)      
     }
   }
 }
