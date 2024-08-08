@@ -1,9 +1,10 @@
 #!/bin/bash
 PORT=$1
-PROJECT_PATHS=()
+PROJECT_PATHS=("/shared")
 LOGS=0
 CMD="/gpt-engineer/gpt-web.sh"
 BUILD=0
+PORT=8003
 
 while [ "$1" != "" ]; do
   if [ "$1" == "-p" ]; then

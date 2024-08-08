@@ -95,7 +95,9 @@ export default {
       termSearchQuery: null,
       searchTerms: null,
       searchTermSelIx: -1,
-      showTermSearch: false
+      showTermSearch: false,
+      files: [],
+      images: []
     }
   },
   computed: {
@@ -300,6 +302,27 @@ export default {
     },
     saveChat () {
       this.$emit('save')
+    },
+    onContentPaste(pasteEvent) {
+      var items = pasteEvent.clipboardData?.items;
+      if (!items) {
+        return
+      }
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") == -1) continue;
+        var blob = items[i].getAsFile();
+        if (file.type.match('image.*')) {
+          this.addImage(blob);
+        }
+      }
+    },
+    addImage(file) {
+      this.files.push(file);
+      const img = new Image(),
+            reader = new FileReader();
+
+      reader.onload = (e) => this.images.push(e.target.result);
+      reader.readAsDataURL(file);
     }
   }
 }

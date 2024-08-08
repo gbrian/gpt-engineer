@@ -20,7 +20,7 @@ RUN apt-get install -y nodejs
 RUN npm install -g yarn
 RUN node -v
 
-USER gpt
+USER "${GPT_USER}:${GPT_USER_GROUP}"
 
 WORKDIR /gpt-engineer
 
