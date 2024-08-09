@@ -10,6 +10,7 @@ class Message(BaseModel):
     content: str = Field(default='')
     hide: bool = Field(default=False)
     improvement: bool = Field(default=False)
+    created_at: str = Field(default='')
 
 class Chat(BaseModel):
     id: str = Field(default='')

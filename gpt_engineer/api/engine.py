@@ -231,6 +231,7 @@ def apply_improve_code_changes(settings: GPTEngineerSettings, response: str):
         logger.info(f"Applying {len(changes)} changes to {file_path}")
         new_content = change_file_with_instructions(settings=settings, instruction_list=instruction_list, file_path=file_path, content=content)
         if new_content and new_content != content:
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, 'w') as f:
                 f.write(new_content)
         else:
@@ -239,6 +240,7 @@ def apply_improve_code_changes(settings: GPTEngineerSettings, response: str):
 def change_file_with_instructions(settings: GPTEngineerSettings, instruction_list: [str], file_path: str, content: str):
     chat = Chat(name=f"changes_at_{file_path}",messages=[])
 
+    content_instructions = f"EXISTING CONTENT:\n{content}" if content else ""
     chat.messages.append(Message(role="user", content=f""""
     Rewrite full file content replacing codx instructions by requiered changes.
     Return only the file content without any further decoration or comments.
@@ -248,8 +250,7 @@ def change_file_with_instructions(settings: GPTEngineerSettings, instruction_lis
     INSTRUCTIONS:
     { "- ".join(instruction_list) }
 
-    FILE CONTENT:
-    {content}
+    {content_instructions}
     """))
     chat_with_project(settings=settings, chat=chat, use_knowledge=False, append_references=False)
     return chat.messages[-1].content

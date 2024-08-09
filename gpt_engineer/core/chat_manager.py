@@ -56,6 +56,8 @@ class ChatManager:
         del chat_json["messages"]  
         header = f"# [[{json.dumps(chat_json)}]]"
         def serialize_message(message):
+            if not message.created_at:
+                message.created_at = datetime.now().isoformat()
             message_json = { **message.__dict__ }
             del message_json["content"]
             return "\n".join([
