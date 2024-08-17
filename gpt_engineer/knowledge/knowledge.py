@@ -72,7 +72,7 @@ class Knowledge:
                       persist_directory=self.db_path, 
                       embedding_function=self.embedding)
           return self.db
-      except ex:
+      except Exception as ex:
           logger.exception(f"Error opening Knowledge DB: {self.db_path}")
           raise ex
 
