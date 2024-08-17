@@ -8,16 +8,18 @@ MULTI_LINE_MENTION_START_PROGRESS = "<codx-processing"
 MULTI_LINE_MENTION_END_PROGRESS = "</codx-processing>"
 
 class Mention():
-    mention: str = None
-    start_line: int = None
-    end_line: int = None
-    respone: str = None
+    mention: str
+    start_line: int
+    end_line: int
+    respone: str
+    flags: [str]
 
     def __init__(self, mention, start_line, end_line=None, respone=None):
         self.mention = mention
         self.start_line = start_line
         self.end_line = end_line
         self.respone = respone
+        self.flags = []
 
     def in_progress(self):
         if self.end_line:

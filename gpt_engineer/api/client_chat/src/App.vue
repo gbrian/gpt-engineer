@@ -1,6 +1,7 @@
 <script setup>
 import { API } from './api/api'
 import ChatViewVue from "./views/ChatView.vue";
+import LiveEditVue from "./views/LiveEdit.vue";
 import KnowledgeViewVue from './views/KnowledgeView.vue';
 import ProfileViewVue from './views/ProfileView.vue';
 import ProjectSettingsVue from "./views/ProjectSettings.vue";
@@ -41,6 +42,14 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
           Tasks
         </div>
       </a>
+      <a role="tab" :class="['hidden tab flex items-center gap-2', tabIx === 'live' ? tabActive: tabInactive]"
+        @click="tabIx = 'live'"
+      >
+        <div class="font-medium flex gap-2 items-center">
+          <i class="fa-solid fa-tower-broadcast"></i>
+          Live edit
+        </div>
+      </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 ? tabActive: tabInactive]"
         @click="tabIx = 1"
       >
@@ -68,6 +77,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
     </div>
     <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="validProject">
       <ChatViewVue v-if="tabIx === 0" />
+      <LiveEditVue v-if="tabIx === 'live'" />
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 3" />

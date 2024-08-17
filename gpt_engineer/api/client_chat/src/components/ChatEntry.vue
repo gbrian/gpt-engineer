@@ -50,7 +50,7 @@ import Code from './Code.vue'
             
           </div>
         </div>
-        <div class="text-md text-wrap -my-2 overflow-y-auto" v-html="html"></div>
+        <div class="text-md text-wrap mt-2 overflow-y-auto" v-html="html"></div>
       </div>
     </div>
     <Code v-for="code in codeBlocks" :key="code.id"
