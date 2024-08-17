@@ -111,7 +111,7 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
     for search_project in search_projects:
         mention = [mention[1:] for mention in mentions if mention.lower() == search_project.project_name.lower()]
         query = query.replace(f"@{mention}", "")
-    logger.info(f"select_afefcted_documents_from_knowledge query without mentions {query}")
+
     def process_rag_query(rag_query):
         docs, file_list = find_relevant_documents(query=rag_query, settings=settings, ignore_documents=ignore_documents)
         if not docs:
@@ -127,8 +127,9 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
                 if sub_file_list:
                     file_list = file_list + sub_file_list
         return docs, file_list
-    # Disable query improvement
     return process_rag_query(rag_query=query)
+
+    # Disables muti query improvement
 
     rag_queries = "\n".join([
         "Extract up to 3 search queries from the user request.",
@@ -484,7 +485,7 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     org_content = strip_mentions(content=content, mentions=mentions)
     
     def mention_info(mention):
-      return f"Comment from line {mention.start_line}: {mention.mention}"
+      return f"User commented in line {mention.start_line}: {mention.mention}"
 
     query = "\n  *".join([mention_info(mention) for mention in mentions])
 

@@ -2,7 +2,7 @@
 import Code from './Code.vue'
 </script>
 <template>
-  <div :class="['relative w-full relative p-2 hover:bg-base-300 hover:rounded-md',
+  <div :class="['relative w-full relative p-2 hover:rounded-md',
       message.role === 'user' ? 'chat-start': 'chat-end',
     ]" >
     <div :class="['px-2 max-w-full group w-full prose -mx-2',
@@ -16,11 +16,11 @@ import Code from './Code.vue'
         <div class="flex gap-2 items-center">
           <div class="btn btn-xs flex gap-2 items-center font-bold text-xs bg-base-300 group-hover:bg-base-100 rounded-md">
             <button class="btn btn-xs" @click="$emit('hide')">
-              <span v-if="message.hide">
-                <i class="fa-solid fa-eye"></i>
+              <span class="text-warning" v-if="message.hide">
+                <i class="fa-solid fa-eye-slash"></i>
               </span>
               <span v-else>
-                <i class="fa-solid fa-eye-slash"></i>
+                <i class="fa-solid fa-eye"></i>
               </span>
             </button>
             <div v-if="message.role ==='user'">You ({{ message.role }})</div>
@@ -87,6 +87,7 @@ export default {
     }
   },
   mounted () {
+    this.message.collapse = this.message.hide
     this.updateCodeBlocks()
   },
   computed: {

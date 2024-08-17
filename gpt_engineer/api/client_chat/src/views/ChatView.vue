@@ -43,9 +43,17 @@ import moment from 'moment'
           </button>
         </div>
         <div class="grow"></div>
+        <button class="btn btn-xs" v-if="hiddenCount" @click="showHidden = !showHidden">
+          <div class="flex items-center gap-2" v-if="!showHidden">
+            ({{ hiddenCount }})
+            <i class="fa-solid fa-eye-slash"></i>
+          </div>
+          <span class="text-warning" v-else>
+            <i class="fa-solid fa-eye"></i>
+          </span>
+        </button>
         <button class="btn btn-primary btn-xs" @click="newChat">
           <i class="fa-solid fa-plus"></i>
-          New task
         </button>
         <button :class="['btn btn-sm hover:btn-info hover:text-white hidden', showSettings && 'btn-info text-white']" @click="showSettings = !showSettings">
           <i class="fa-solid fa-gear"></i>
@@ -89,7 +97,7 @@ import moment from 'moment'
         </button>
       </div>
       <Chat :chat="chat"
-        
+        :showHidden="showHidden"
         @refresh-chat="loadChat(chat.name)"
         @add-file="onAddFile"
         @delete-message="onRemoveMessage"
@@ -134,7 +142,8 @@ export default {
       showChatsTree: false,
       editName: false,
       showSettings: false,
-      addNewFile: null
+      addNewFile: null,
+      showHidden: false
     }
   },
   async created () {
@@ -148,6 +157,12 @@ export default {
     this.loadProfiles()
   },
   computed: {
+    hiddenCount () {
+      return this.chat.messages?.filter(m => m.hide).length
+    },
+    messages () {
+      return this.chat.messages.filter(m => !m.hide || this.showHidden)
+    }
   },
   watch: {
     async showChatsTree(newVal) {

@@ -11,64 +11,37 @@ class Mention():
     mention: str = None
     start_line: int = None
     end_line: int = None
-    respone: str = None
 
-    def __init__(self, mention, start_line, end_line=None, respone=None):
-        self.mention = mention
-        self.start_line = start_line
-        self.end_line = end_line
-        self.respone = respone
-
-    def in_progress(self):
-        if self.end_line:
-            return "\n".join([
-              SINGLE_LINE_MENTION_START_PROGRESS,
-              self.mention,
-              MULTI_LINE_MENTION_END
-            ])
-        return f"{SINGLE_LINE_MENTION_START_PROGRESS} {self.mention}"
-
-    def diff(self):
-        return "\n".join([
-            "<<<<<<< HEAD",
-                self.mention,
-            "=======",
-                self.respone,
-            ">>>>>>> updated"
-        ])
+    def add_line(self, line):
+      if not self.mention:
+          self.mention = line
+      else:
+          self.mention = f"{self.mention}\n{line}"
 
 def extract_mentions(content):
     content_lines = content.split("\n")
     mentions = []
-    start_line = None
-    end_line = None
     mention = None
 
-    def add_mention(_mention, _start, _end):
-        mentions.append(Mention(_mention.strip(), _start, _end))
-
     for ix, line in enumerate(content_lines):
-        if line.strip().startswith(SINGLE_LINE_MENTION_START):
-            start_line = ix
-            mention = line.replace(SINGLE_LINE_MENTION_START, "")
-            add_mention(mention, start_line, None)
+        if SINGLE_LINE_MENTION_START in line:
+            mention = Mention()
+            mention.start_line = ix
+            mention.add_line(line.split(SINGLE_LINE_MENTION_START)[1])
+            mentions.append(mention)
             mention = None
-            start_line = None
-            end_line = None
-
-        elif line.strip().startswith(MULTI_LINE_MENTION_START):
-            mention = []
-            start_line = ix
     
-        elif line.strip().startswith(MULTI_LINE_MENTION_END):
-            end_line = ix
-            add_mention("\n".join(mention), start_line, end_line)
+        elif MULTI_LINE_MENTION_START in line:
+            mention = Mention()
+            mention.start_line = ix
+            mentions.append(mention)
+    
+        elif MULTI_LINE_MENTION_END in line:
+            mention.end_line = ix
             mention = None
-            start_line = None
-            end_line = None
-
-        elif mention is not None:
-            mention.append(line)
+    
+        elif mention:
+            mention.add_line(line)
     return mentions
 
 def notify_mentions_in_progress(content):

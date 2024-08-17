@@ -5,11 +5,11 @@ import ChatEntry from '@/components/ChatEntry.vue'
     <div class="flex flex-col grow">
       <div class="grow overflow-auto relative">
         <div class="absolute top-0 left-0 w-full h-full scroller">
-          <div v-for="message, ix in chat.messages" :key="message.id">
+          <div v-for="message in messages" :key="message.id">
             <ChatEntry :message="message"
-              @edit="onEditMessage(ix)"
-              @remove="removeMessage(ix)"
-              @hide="toggleHide(ix)"
+              @edit="onEditMessage(message)"
+              @remove="removeMessage(message)"
+              @hide="toggleHide(message)"
               @run-edit="runEdit"
               @copy="onCopy(message)"
             />
@@ -86,7 +86,7 @@ import { API } from '@/api/api'
 const defFormater = d => JSON.stringify(d, null, 2)
 
 export default {
-  props: ['chat'],
+  props: ['chat', 'showHidden'],
   data () {
     return {
       waiting: false,
@@ -104,6 +104,9 @@ export default {
     editor () {
       return this.$refs.editor
     },
+    messages () {
+      return this.chat?.messages?.filter(m => !m.hide || this.showHidden)
+    }
   },
   watch: {
     termSearchQuery (newVal) {
@@ -115,9 +118,9 @@ export default {
     }
   },
   methods: {
-    onEditMessage (ix) {
-      this.editMessage = this.chat.messages[ix]
-      this.editMessageId = ix
+    onEditMessage (message) {
+      this.editMessage = message
+      this.editMessageId = this.chat.messages.findIndex(m => m === message)
 
       if (this.editMessage.role == 'user') {
         this.editor.innerText = this.editMessage.content
@@ -125,8 +128,7 @@ export default {
         this.editor.innerText = "Please apply this corrections to your message:\n- "
       }
     },
-    toggleHide(ix) {
-      const message = this.chat.messages[ix]
+    toggleHide(message) {
       message.hide = !message.hide 
       this.saveChat()
     },
@@ -246,7 +248,8 @@ export default {
         this.editMessageId = null
       }
     },
-    removeMessage(ix) {
+    removeMessage(message) {
+      const ix = this.chat.messages.findIndex(m => m === message)
       this.$emit("delete-message", ix)
     },
     async searchKeywords () {

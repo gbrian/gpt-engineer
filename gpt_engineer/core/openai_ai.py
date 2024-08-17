@@ -1,5 +1,6 @@
 import logging
 import json
+from datetime import datetime
 
 from typing import Union
 from openai import OpenAI
@@ -53,15 +54,18 @@ class OpenAI_AI:
 
     def chat_completions(self, messages, config={}):
         openai_messages = [self.convert_message(msg) for msg in messages]
+        model = config.get("model", self.settings.model)
+        temperature = float(config.get("temperature", self.settings.temperature))
+            
         response_stream = self.client.chat.completions.create(
-            model=config.get("model", self.settings.model),
-            temperature=float(config.get("temperature", self.settings.temperature)),
+            model=model,
+            temperature=temperature,
             messages=openai_messages,
             stream=True
         )
         callbacks = config.get("callbacks", None)
         content_parts = []
-        self.log(f"AI response: {response_stream}")
+        # self.log(f"AI response: {response_stream}")
         for chunk in response_stream:
             # Check for tools
             #tool_calls = self.process_tool_calls(chunk.choices[0].message)
@@ -80,7 +84,8 @@ class OpenAI_AI:
 
         response_content = "".join(content_parts)
         if self.settings.log_ai:
-            logger.debug("\n".join(
+            logger.debug("\n\n".join(
+                [f"[{datetime.now().isoformat()}] model: {model}, temperature: {temperature}"] +
                 [f"[{message.type}]\n{message.content}" for message in messages] +
                 ["[AI]",response_content]
             ))
