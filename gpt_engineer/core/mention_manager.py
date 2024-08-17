@@ -1,3 +1,4 @@
+import re
 
 SINGLE_LINE_MENTION_START = "@codx:"
 MULTI_LINE_MENTION_START = "<codx"
@@ -7,25 +8,42 @@ SINGLE_LINE_MENTION_START_PROGRESS = "@codx-processing:"
 MULTI_LINE_MENTION_START_PROGRESS = "<codx-processing"
 MULTI_LINE_MENTION_END_PROGRESS = "</codx-processing>"
 
-class Mention():
-    mention: str
-    start_line: int
-    end_line: int
-    respone: str
-    flags: [str]
+class MentionFlags():
+    no_knowledge: bool = False
+    model: str = None
 
-    def __init__(self, mention, start_line, end_line=None, respone=None):
-        self.mention = mention
-        self.start_line = start_line
-        self.end_line = end_line
-        self.respone = respone
-        self.flags = []
+class Mention():
+    mention: str = None
+    start_line: int = 0
+    end_line: int = 0
+    flags: MentionFlags = MentionFlags()
 
     def add_line(self, line):
+      line = self.extract_flags(line)
       if not self.mention:
           self.mention = line
       else:
           self.mention = f"{self.mention}\n{line}"
+
+    def extract_flags(self, line):
+        flag_patterns = {}
+        for flag_name, flag_value in vars(MentionFlags).items():
+            if isinstance(flag_value, bool):
+                flag_patterns[flag_name] = r'--' + flag_name.replace('_', '-')
+            elif isinstance(flag_value, str):
+                flag_patterns[flag_name] = r'--' + flag_name.replace('_', '-') + r'=([^ ]+)'
+
+        for flag, pattern in flag_patterns.items():
+            match = re.search(pattern, line)
+            if match:
+                if isinstance(getattr(self.flags, flag), bool):
+                    setattr(self.flags, flag, True)
+                elif isinstance(getattr(self.flags, flag), str):
+                    setattr(self.flags, flag, match.group(1))
+
+                line = re.sub(pattern, '', line).strip()
+
+        return line
 
 def extract_mentions(content):
     content_lines = content.split("\n")

@@ -500,7 +500,10 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
       """)
     ])
 
-    chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+    use_knowledge = False if [m for m in mentions if m.flags.no_knowledge] else True
+    if not use_knowledge:
+        logger.info(f"Skip KNOWLEDGE seach for processing: {query}")
+    chat_with_project(settings=settings, chat=chat, use_knowledge=use_knowledge)
     chat.messages.append(Message(role="user", content=f""""
     Rewrite full file content replacing codx instructions by requiered changes.
     Return only the file content without any further decoration or comments.
