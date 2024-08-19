@@ -155,7 +155,15 @@ export const API = {
     delete (name) {
       return API.delete(`/api/profiles/${name}?` + query())
     }
+  },
+  images: {
+    async upload (file) {
+      let formData = new FormData();
+      formData.append("file", file);
+      const { data: url } = await API.post(`/api/images?` + query(), formData)
+      return window.location.origin + url
+    }
   }
 }
 
-  window.API = API
+window.API = API

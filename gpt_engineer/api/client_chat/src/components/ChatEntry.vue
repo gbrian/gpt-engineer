@@ -51,6 +51,14 @@ import Code from './Code.vue'
           </div>
         </div>
         <div class="text-md text-wrap mt-2 overflow-y-auto" v-html="html"></div>
+        <div v-if="message.images">
+          <div class="text-xs font-bold">Attachments:</div>
+          <div class="carousel rounded-box">
+            <div class="carousel-item" v-for="url in message.images" :key="url">
+              <img class="border rounded-md w-20 h-20" :src="url" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <Code v-for="code in codeBlocks" :key="code.id"

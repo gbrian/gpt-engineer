@@ -1,4 +1,6 @@
 import os
+import uuid
+import shutil
 import time
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -12,14 +14,15 @@ for logger_id in [
     'httpx',
     'httpcore.http11',
     'httpcore.connection',
-    'openai._base_client',
     'chromadb.config',
     'chromadb.auth.registry',
     'chromadb.api.segment'
     ]:
     logging.getLogger(logger_id).setLevel(logging.WARNING)
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile
+from fastapi.staticfiles import StaticFiles
+from flask import send_file
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -62,6 +65,8 @@ from gpt_engineer.api.engine import (
 WATCH_FOLDERS = []
 from gpt_engineer.core.scheduler import add_work
 
+IMAGE_UPLOAD_FOLDER = f"{os.path.dirname(__file__)}/images"
+
 def find_projects_to_watch ():
     global WATCH_FOLDERS
     for settings in find_all_projects():
@@ -95,6 +100,8 @@ class GPTEngineerAPI:
         )
 
         app.mount("/static", StaticFiles(directory="gpt_engineer/api/client_chat", html=True), name="client_chat")
+        app.mount("/api/images", StaticFiles(directory=IMAGE_UPLOAD_FOLDER), name="images")
+
         @app.on_event("startup")
         def startup_event():
             logger.info("Creating FASTAPI")
@@ -195,7 +202,24 @@ class GPTEngineerAPI:
         def api_save_chat(chat: Chat, request: Request):
             settings = request.state.settings
             ChatManager(settings=settings).save_chat(chat)
-        
+
+        @app.post("/api/images")
+        def api_image_upload(file: UploadFile):
+            if file.filename == '':
+                return jsonify({'error': 'No selected file'}), 400
+
+            # Generate a unique filename using UUID
+            unique_filename = f"{str(uuid.uuid4())}-{file.filename}"
+            file_path = os.path.join(IMAGE_UPLOAD_FOLDER, unique_filename)
+            
+            # Save the file
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, "wb+") as file_object:
+                shutil.copyfileobj(file.file, file_object)   
+
+            # Return the full URL to access the image
+            image_url = '/api/images/' + unique_filename
+            return image_url
 
         @app.post("/api/run/improve")
         def api_run_improve(chat: Chat, request: Request):

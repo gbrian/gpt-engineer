@@ -10,7 +10,8 @@ from openai.types.chat.chat_completion_user_message_param import ChatCompletionU
 from gpt_engineer.core.settings import GPTEngineerSettings
 from langchain.schema import (
     AIMessage,
-    HumanMessage
+    HumanMessage,
+    BaseMessage
 )
 
 logger = logging.getLogger(__name__)
@@ -47,16 +48,21 @@ class OpenAI_AI:
         if self.settings.log_ai:
             logger.info(msg)
 
-    def convert_message(self, gpt_message: Union[AIMessage, HumanMessage]): 
-        if gpt_message.type == "ia":
-            return { "content": gpt_message.content, "role": "system" }
-        return { "content": gpt_message.content, "role": "user" }
+    def convert_message(self, gpt_message: Union[AIMessage, HumanMessage, BaseMessage]): 
+        if gpt_message.type == "image":
+            return { "content": json.loads(gpt_message.content), "role": "user" }
+        return {
+            "role": "assistant" if gpt_message.type == "ai" else "user",
+            "content": gpt_message.content
+        }
 
     def chat_completions(self, messages, config={}):
         openai_messages = [self.convert_message(msg) for msg in messages]
         model = config.get("model", self.settings.model)
         temperature = float(config.get("temperature", self.settings.temperature))
-            
+        
+        if self.settings.log_ai:
+            logger.info(f"openai_messages: {openai_messages}")
         response_stream = self.client.chat.completions.create(
             model=model,
             temperature=temperature,
@@ -65,7 +71,8 @@ class OpenAI_AI:
         )
         callbacks = config.get("callbacks", None)
         content_parts = []
-        # self.log(f"AI response: {response_stream}")
+        if self.settings.log_ai:
+            self.log(f"AI response: {response_stream}")
         for chunk in response_stream:
             # Check for tools
             #tool_calls = self.process_tool_calls(chunk.choices[0].message)

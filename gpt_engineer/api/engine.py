@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from datetime import datetime
 
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from langchain.schema.document import Document
 
 from gpt_engineer.utils import extract_code_blocks, extract_json_blocks 
@@ -27,7 +27,9 @@ from gpt_engineer.api.model import (
     Chat,
     Message,
     KnowledgeSearch,
-    Document
+    Document,
+    Content,
+    ImageUrl
 )
 from gpt_engineer.core.context import (
   find_relevant_documents,
@@ -563,7 +565,8 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None, append_references: bool=True):
-    query = chat.messages[-1].content
+    user_message = chat.messages[-1]
+    query = user_message.content
     if "@codx-code" in query:
         return improve_existing_code(chat=chat, settings=settings)
 
@@ -574,10 +577,37 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     messages = [
       HumanMessage(content=profile_manager.read_profile("project").content)
     ]
+
+    def convert_message(m):
+        msg = None
+        if m.images:
+            text_content = {
+                  "type": "text",
+                  "text": m.content 
+                }
+            content = [ text_content ] + \
+                [
+                  {
+                    "type": "image_url",
+                    "image_url": {
+                      "url": url
+                    }
+                  } for url in m.images]
+
+            logger.info(f"ImageMEssage content: {content}")
+            msg = BaseMessage(type="image", content=json.dumps(content))
+        elif m.role == "user":
+            msg = HumanMessage(content=m.content)
+        else:
+            msg = AIMessage(content=m.content)
+  
+        logger.info(f"convert_message {m} - {msg}")  
+        return msg
+
     for m in chat.messages[0:-1]:
         if m.hide or m.improvement:
             continue
-        msg = HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
+        msg = convert_message(m)
         messages.append(msg)
 
     context = ""
@@ -604,7 +634,9 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
                   HOPE IT HELPS TO ANSWER USER REQUEST.
                   KEEP FILE SOURCE WHEN WRITTING CODE BLOCKS (EXISTING OR NEWS).
                   {context}"""))
-    messages.append(HumanMessage(content=query))
+
+    messages.append(convert_message(user_message))
+    
     messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
     if documents and append_references:

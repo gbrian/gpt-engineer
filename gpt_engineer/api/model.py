@@ -5,12 +5,25 @@ from typing import List, Dict, Union
 
 from gpt_engineer.core.settings import GPTEngineerSettings
 
+class ImageUrl(BaseModel):
+    url: str = Field(default="")
+
+class Content(BaseModel):
+    type: str = Field(default='text')
+    text: str = Field(default=None)
+    image_url: ImageUrl = Field(default=None)
+
+class ChatMessage(BaseModel):
+    role: str = Field(default='')
+    content: List[Content] = Field(default=[])
+
 class Message(BaseModel):
     role: str = Field(default='')
     content: str = Field(default='')
     hide: bool = Field(default=False)
     improvement: bool = Field(default=False)
     created_at: str = Field(default='')
+    images: List[str] = Field(default=[])
 
 class Chat(BaseModel):
     id: str = Field(default='')

@@ -48,6 +48,11 @@ import ChatEntry from '@/components/ChatEntry.vue'
           </li>
         </ul>
       </div>
+      <div class="carousel rounded-box">
+        <div class="carousel-item" v-for="url in images" :key="url">
+          <img class="w-40 h-40" :src="url" />
+        </div>
+      </div>
       <div class="flex gap-2 items-end mt-2">
         <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
           editMessageId !== null ? 'border-error': '',
@@ -177,7 +182,8 @@ export default {
       if (message) {
         this.addMessage({
           role: 'user',
-          content: message
+          content: message,
+          images: this.images
         })
         this.editor.innerText = ""
         this.$refs.anchor.scrollIntoView()
@@ -216,9 +222,6 @@ export default {
           content: `#### File: ${doc.metadata.source.split("/").reverse()[0]}\n>${doc.metadata.source}\n\`\`\`${doc.metadata.language}\n${doc.page_content}\`\`\``
         }) 
       )
-      // const allSources = documents.map(doc => doc.metadata.source)
-      // this.chat.file_list = [...this.chat.file_list||[], ...allSources].filter((v,ix,arr) => arr.findIndex(e => e === v) === ix)
-      
       this.saveChat()
     },
     async sendApiRequest (apiCall, formater = defFormater) {
@@ -307,26 +310,24 @@ export default {
     saveChat () {
       this.$emit('save')
     },
-    onContentPaste(pasteEvent) {
+    async onContentPaste(pasteEvent) {
       var items = pasteEvent.clipboardData?.items;
       if (!items) {
         return
       }
       for (var i = 0; i < items.length; i++) {
         if (items[i].type.indexOf("image") == -1) continue;
-        var blob = items[i].getAsFile();
+        var file = items[i].getAsFile();
         if (file.type.match('image.*')) {
-          this.addImage(blob);
+          pasteEvent.preventDefault();
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const base64URL = event.target.result;
+            this.images.push(base64URL);
+          };
+          reader.readAsDataURL(file);
         }
       }
-    },
-    addImage(file) {
-      this.files.push(file);
-      const img = new Image(),
-            reader = new FileReader();
-
-      reader.onload = (e) => this.images.push(e.target.result);
-      reader.readAsDataURL(file);
     },
     onGenerateCode(message, code) {
       this.editor.innerText = `Generate code only for this piece of code:
