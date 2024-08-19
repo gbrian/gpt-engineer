@@ -52,9 +52,11 @@ import Code from './Code.vue'
         </div>
         <div class="text-md text-wrap mt-2 overflow-y-auto" v-html="html"></div>
         <div v-if="message.images">
-          <div class="text-xs font-bold">Attachments:</div>
-          <div class="carousel rounded-box">
-            <div class="carousel-item" v-for="url in message.images" :key="url">
+          <div class="grid grid-cols-6">
+            <div class="carousel-item click"
+              v-for="url in message.images" :key="url"
+              @click="$emit('image', url)"
+            >
               <img class="border rounded-md w-20 h-20" :src="url" />
             </div>
           </div>

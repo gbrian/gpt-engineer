@@ -13,11 +13,17 @@ import ChatEntry from '@/components/ChatEntry.vue'
               @run-edit="runEdit"
               @copy="onCopy(message)"
               @generate-code="onGenerateCode(message, $event)"
+              @image="previewImage = $event"
             />
           </div>
           <div class="anchor" ref="anchor"></div>
         </div>
       </div>
+      <Modal class="" @close="previewImage = null" v-if="previewImage">
+        <div class="flex justify-center bg-base-300 p-4">
+          <img :src="previewImage" class="click rounded-md" @click="previewImage = null"/>
+        </div>
+      </Modal>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
       <div class="dropdown dropdown-top dropdown-open mb-1" v-if="showTermSearch">
         <div tabindex="0" role="button" class="rounded-md bg-base-300 w-fit p-2">
@@ -49,8 +55,13 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </ul>
       </div>
       <div class="carousel rounded-box">
-        <div class="carousel-item" v-for="url in images" :key="url">
+        <div class="carousel-item relative" v-for="url, ix in images" :key="url">
           <img class="w-40 h-40" :src="url" />
+          <button class="btn btn-xs btn-circle btn-error absolute right-2 top-2"
+            @click="removeImage(ix)"
+          >
+            X
+          </button>
         </div>
       </div>
       <div class="flex gap-2 items-end mt-2">
@@ -60,6 +71,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
         ]" contenteditable="true"
           ref="editor" @input="onMessageChange"
           @paste="onContentPaste"
+          @keydown.esc.stop="onResetEdit"
         >
         </div>
         <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage">
@@ -103,7 +115,8 @@ export default {
       searchTermSelIx: -1,
       showTermSearch: false,
       files: [],
-      images: []
+      images: [],
+      previewImage: null
     }
   },
   computed: {
@@ -133,6 +146,7 @@ export default {
       } else {
         this.editor.innerText = "Please apply this corrections to your message:\n- "
       }
+      this.images = message.images || []
     },
     toggleHide(message) {
       message.hide = !message.hide 
@@ -186,6 +200,7 @@ export default {
           images: this.images
         })
         this.editor.innerText = ""
+        this.images = []
         this.$refs.anchor.scrollIntoView()
       }
     },
@@ -250,6 +265,7 @@ export default {
         this.editMessage = null
         this.editor.innerText = ""
         this.editMessageId = null
+        this.images = []
       }
     },
     removeMessage(message) {
@@ -334,6 +350,9 @@ export default {
       \`\`\`
       ${code}
       \`\`\``
+    },
+    removeImage(ix) {
+      this.images = this.images.filter((i, imx) => imx !== ix)
     }
   }
 }
