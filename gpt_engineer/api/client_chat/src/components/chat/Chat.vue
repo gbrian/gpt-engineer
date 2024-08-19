@@ -19,11 +19,11 @@ import ChatEntry from '@/components/ChatEntry.vue'
           <div class="anchor" ref="anchor"></div>
         </div>
       </div>
-      <Modal class="" @close="previewImage = null" v-if="previewImage">
+      <div class="absolute top-0 left-0 right-0 bottom-0 z-50" v-if="previewImage">
         <div class="flex justify-center bg-base-300 p-4">
           <img :src="previewImage" class="click rounded-md" @click="previewImage = null"/>
         </div>
-      </Modal>
+      </div>
       <div class="badge my-2 animate-pulse" v-if="waiting">typing ...</div>
       <div class="dropdown dropdown-top dropdown-open mb-1" v-if="showTermSearch">
         <div tabindex="0" role="button" class="rounded-md bg-base-300 w-fit p-2">
@@ -56,7 +56,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
       </div>
       <div class="carousel rounded-box">
         <div class="carousel-item relative" v-for="url, ix in images" :key="url">
-          <img class="w-40 h-40" :src="url" />
+          <img class="w-40 h-40 click" :src="url" @click="previewImage = url" />
           <button class="btn btn-xs btn-circle btn-error absolute right-2 top-2"
             @click="removeImage(ix)"
           >
