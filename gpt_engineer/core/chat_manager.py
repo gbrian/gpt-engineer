@@ -86,3 +86,9 @@ class ChatManager:
                 continue
             chat_message.content = line if not chat_message.content else f"{chat_message.content}\n{line}"
         return chat
+
+    def find_by_id(self, id):
+        for chat in self.list_chats():
+          if chat["id"] == id:
+              return self.load_chat(chat_name=chat["name"])
+        return None

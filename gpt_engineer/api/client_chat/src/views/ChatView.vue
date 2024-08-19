@@ -30,9 +30,14 @@ import moment from 'moment'
             @keydown.enter.stop="saveChat"
             @keydown.esc="editName = false"
             v-model="chat.name" />
-          <div class="click font-bold flex flex-col" @click="editName = true" v-else> 
-            {{ chat.name }}
-            <div class="text-xs">{{ moment.utc(chat.updated_at).fromNow() }}</div>
+          <div class="font-bold flex flex-col" v-else> 
+            <div class="click" @click="editName = true">{{ chat.name }}</div>
+            <div class="flex gap-2">
+              <div class="text-xs">{{ moment.utc(chat.updated_at).fromNow() }}</div>
+              <div class="badge badge-sm">
+                {{  chat.id }}
+              </div>
+            </div>
           </div>
         
           <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
@@ -41,6 +46,7 @@ import moment from 'moment'
           <button class="btn btn-xs hover:btn-error hover:text-white" @click="deleteChat">
             <i class="fa-solid fa-trash"></i>
           </button>
+          
         </div>
         <div class="grow"></div>
         <button class="btn btn-xs" v-if="hiddenCount" @click="showHidden = !showHidden">

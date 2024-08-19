@@ -12,6 +12,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
               @hide="toggleHide(message)"
               @run-edit="runEdit"
               @copy="onCopy(message)"
+              @generate-code="onGenerateCode(message, $event)"
             />
           </div>
           <div class="anchor" ref="anchor"></div>
@@ -326,6 +327,12 @@ export default {
 
       reader.onload = (e) => this.images.push(e.target.result);
       reader.readAsDataURL(file);
+    },
+    onGenerateCode(message, code) {
+      this.editor.innerText = `Generate code only for this piece of code:
+      \`\`\`
+      ${code}
+      \`\`\``
     }
   }
 }

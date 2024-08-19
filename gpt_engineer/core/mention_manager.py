@@ -1,4 +1,6 @@
 import re
+import json
+import logging
 
 SINGLE_LINE_MENTION_START = "@codx:"
 MULTI_LINE_MENTION_START = "<codx"
@@ -8,9 +10,12 @@ SINGLE_LINE_MENTION_START_PROGRESS = "@codx-processing:"
 MULTI_LINE_MENTION_START_PROGRESS = "<codx-processing"
 MULTI_LINE_MENTION_END_PROGRESS = "</codx-processing>"
 
+logger = logging.getLogger(__name__)
+
 class MentionFlags():
     no_knowledge: bool = False
     model: str = None
+    chat_id: str = None
 
 class Mention():
     mention: str = None
@@ -18,8 +23,15 @@ class Mention():
     end_line: int = 0
     flags: MentionFlags = MentionFlags()
 
+    def __str__(self):
+        data = {
+          **self.__dict__,
+          "flags": self.flags.__dict__
+        }
+        return json.dumps(data, indent=2)
+
     def add_line(self, line):
-      line = self.extract_flags(line)
+      line = self.extract_flags(line.strip())
       if not self.mention:
           self.mention = line
       else:
@@ -30,18 +42,19 @@ class Mention():
         for flag_name, flag_value in vars(MentionFlags).items():
             if isinstance(flag_value, bool):
                 flag_patterns[flag_name] = r'--' + flag_name.replace('_', '-')
-            elif isinstance(flag_value, str):
+            else:
                 flag_patterns[flag_name] = r'--' + flag_name.replace('_', '-') + r'=([^ ]+)'
 
         for flag, pattern in flag_patterns.items():
             match = re.search(pattern, line)
+            # logger.info(f"FLAG MATCH {pattern}: {match}")
             if match:
                 if isinstance(getattr(self.flags, flag), bool):
                     setattr(self.flags, flag, True)
-                elif isinstance(getattr(self.flags, flag), str):
+                    line = re.sub(pattern, '', line).strip()
+                else:
                     setattr(self.flags, flag, match.group(1))
-
-                line = re.sub(pattern, '', line).strip()
+                    line = re.sub(match.group(0), '', line).strip()
 
         return line
 

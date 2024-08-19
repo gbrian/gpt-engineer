@@ -3,13 +3,20 @@ import hljs from 'highlight.js';
 import CodeEditor from 'simple-code-editor';
 </script>
 <template>
-  <CodeEditor
-    line-nums 
-    :value="codeText"
-    :languages="languages"
-    width="100%"
-    theme="github-dark"
-  ></CodeEditor>
+  <div>
+    <div class="flex gap-2 w-full justify-center" ref="toolbar">
+      <button class="btn btn-xs tooltip" data-tip="Generate code" @click="$emit('generate-code', code.innerText)">
+        <i class="fa-solid fa-file-code"></i>
+      </button>
+    </div>
+    <CodeEditor
+      line-nums 
+      :value="codeText"
+      :languages="languages"
+      width="100%"
+      theme="github-dark"
+    ></CodeEditor>
+  </div>
 </template>
 <script>
 export default {
@@ -29,6 +36,7 @@ export default {
   mounted () {
     this.code.parentNode.after(this.$el)
     this.code.parentNode.remove()
+    this.$el.querySelector('.header.border').append(this.$refs.toolbar)
   }
 }
 </script>

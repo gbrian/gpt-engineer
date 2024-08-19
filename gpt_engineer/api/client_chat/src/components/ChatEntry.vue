@@ -55,7 +55,9 @@ import Code from './Code.vue'
     </div>
     <Code v-for="code in codeBlocks" :key="code.id"
       :code="code"
-      ref="codeSection">
+      ref="codeSection"
+      @generate-code="$emit('generate-code', $event)"
+    >
     </Code>
     <!--div class="flex gap-2 justify-end absolute right-2 top-2"
         v-for="code in codeBlocks" :key="code.id" ref="runButton">

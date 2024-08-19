@@ -468,6 +468,7 @@ def change_file(context_documents, query, file_path, org_content, settings, save
 
 
 def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
+    chat_manager = ChatManager(settings=settings)
     content = None
     with open(file_path, 'r') as f:
         content = f.read()
@@ -477,6 +478,8 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
             f.write(new_content)
 
     mentions = extract_mentions(content)
+    #logger.info(f"EXTRACT MENTIONS: {mentions[0]}")
+    
     if not mentions:
         return
     new_content = notify_mentions_in_progress(content)
@@ -485,8 +488,17 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
     org_content = strip_mentions(content=content, mentions=mentions)
     
     def mention_info(mention):
+      chat = chat_manager.find_by_id(mention.flags.chat_id) if mention.flags.chat_id else None
+      if chat:
+        logger.info(f"using CHAT for processing ention: {mention.mention}")
+        return f"""Based on this conversation:
+        ```markdown
+        {chat_manager.serialize_chat(chat)}
+        ```
+        User commented in line {mention.start_line}: {mention.mention}
+        """
       return f"User commented in line {mention.start_line}: {mention.mention}"
-
+    
     query = "\n  *".join([mention_info(mention) for mention in mentions])
 
     chat = Chat(name=f"changes_at_{file_path}",messages=[
@@ -499,10 +511,14 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
       {new_content}
       """)
     ])
-
-    use_knowledge = False if [m for m in mentions if m.flags.no_knowledge] else True
-    if not use_knowledge:
-        logger.info(f"Skip KNOWLEDGE seach for processing: {query}")
+    use_knowledge = True
+    using_chat = True if [m for m in mentions if m.flags.chat_id] else False
+    
+    skip_knowledge_search = True if [m for m in mentions if m.flags.no_knowledge] else False
+    if using_chat or skip_knowledge_search:
+      use_knowledge = False       
+      logger.info(f"Skip KNOWLEDGE seach for processing, using_chat={using_chat}: {query}")
+    
     chat_with_project(settings=settings, chat=chat, use_knowledge=use_knowledge)
     chat.messages.append(Message(role="user", content=f""""
     Rewrite full file content replacing codx instructions by requiered changes.
@@ -583,7 +599,11 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         logger.info(f"chat_with_project found {doc_length} relevant documents")
 
     
-    messages.append(AIMessage(content=f"THIS INFORMATION IS COMING FROM PROJECT'S FILES. HOPE IT HELPS TO ANSWER USER REQUEST.\n\n{context}"))
+    messages.append(AIMessage(
+      content=f"""THIS INFORMATION IS COMING FROM PROJECT'S FILES.
+                  HOPE IT HELPS TO ANSWER USER REQUEST.
+                  KEEP FILE SOURCE WHEN WRITTING CODE BLOCKS (EXISTING OR NEWS).
+                  {context}"""))
     messages.append(HumanMessage(content=query))
     messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
