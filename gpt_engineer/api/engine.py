@@ -514,9 +514,10 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
       """)
     ])
     use_knowledge = True
-    using_chat = True if [m for m in mentions if m.flags.chat_id] else False
     
-    skip_knowledge_search = True if [m for m in mentions if m.flags.no_knowledge] else False
+    using_chat = True if [m for m in mentions if m.flags.chat_id] else False
+    skip_knowledge_search = False if [m for m in mentions if m.flags.knowledge] else True
+    
     if using_chat or skip_knowledge_search:
       use_knowledge = False       
       logger.info(f"Skip KNOWLEDGE seach for processing, using_chat={using_chat}: {query}")
