@@ -2,12 +2,12 @@ import re
 import json
 import logging
 
-SINGLE_LINE_MENTION_START = "@codx-processing:"
-MULTI_LINE_MENTION_START = "<codx-processing-processing"
-MULTI_LINE_MENTION_END = "</codx-processing>"
+SINGLE_LINE_MENTION_START = "@codx:"
+MULTI_LINE_MENTION_START = "<codx"
+MULTI_LINE_MENTION_END = "</codx>"
 
 SINGLE_LINE_MENTION_START_PROGRESS = "@codx-processing:"
-MULTI_LINE_MENTION_START_PROGRESS = "<codx-processing-processing-processing"
+MULTI_LINE_MENTION_START_PROGRESS = "<codx-processing"
 MULTI_LINE_MENTION_END_PROGRESS = "</codx-processing>"
 
 logger = logging.getLogger(__name__)
