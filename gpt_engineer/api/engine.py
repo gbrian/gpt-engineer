@@ -576,7 +576,11 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     profile_manager = ProfileManager(settings=settings)
 
     messages = [
-      HumanMessage(content=profile_manager.read_profile("project").content)
+      SystemMessage(content=f"""
+      {profile_manager.read_profile("project").content}
+      
+      Please always keep your answers short and simple unless a more detailed answer has been requested
+      """)
     ]
 
     def convert_message(m):

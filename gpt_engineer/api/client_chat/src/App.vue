@@ -222,7 +222,8 @@ export default {
       this.openProject(this.allProjects.find(p => p.project_name === projectName).gpteng_path)
     },
     openProject (path) {
-      window.location = `${window.location.origin}?gpteng_path=${encodeURIComponent(path)}`
+      API.init(path)
+      this.init()
     },
     async createNewProject () {
       const { data: { gpteng_path } } = await API.project.create(this.getProjectPath())
