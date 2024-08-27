@@ -566,6 +566,7 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None, append_references: bool=True):
+    chat_mode = chat.mode
     user_message = chat.messages[-1]
     query = user_message.content
     if "@codx-code" in query:
@@ -575,11 +576,14 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     dbs = build_dbs(settings)
     profile_manager = ProfileManager(settings=settings)
 
+    instructions = "Please always keep your answers short and simple unless a more detailed answer has been requested"
+    if chat_mode == 'document':
+      instructions = "You are assisting the user writting a document. Use user comments to improve the document."
     messages = [
       SystemMessage(content=f"""
       {profile_manager.read_profile("project").content}
       
-      Please always keep your answers short and simple unless a more detailed answer has been requested
+      {instructions}
       """)
     ]
 
@@ -651,7 +655,10 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         response = f"{messages[-1].content}\n\nRESOURCES:\n{sources}"
 
     response_message = Message(role="assistant", content=response)
-    chat.messages.append(response_message)
+    if chat_mode == 'document':
+        chat.messages = [response_message]
+    else:  
+        chat.messages.append(response_message)
     return chat
 
 def check_project(settings: GPTEngineerSettings):

@@ -36,6 +36,7 @@ class Chat(BaseModel):
     messages: List[Message] = Field(default=[])
     created_at: str = Field(default='')
     updated_at: str = Field(default='')
+    mode: str = Field(default='chat')
 
 class Logprobs(BaseModel):
     tokens: List[str]

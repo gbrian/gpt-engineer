@@ -39,7 +39,10 @@ import moment from 'moment'
               </div>
             </div>
           </div>
-        
+          <select v-model="chat.mode" class="select select-xs select-bordered">
+            <option selected value="chat">chat</option>
+            <option selected value="document">document</option>
+          </select>
           <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
             <i class="fa-solid fa-floppy-disk"></i>
           </button>

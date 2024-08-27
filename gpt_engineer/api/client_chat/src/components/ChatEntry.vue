@@ -13,7 +13,7 @@ import Code from './Code.vue'
     ]"
     >
       <div>
-        <div class="flex gap-2 items-center">
+        <div class="flex gap-2 items-center" v-if="showHeader !== false">
           <div class="btn btn-xs flex gap-2 items-center font-bold text-xs bg-base-300 group-hover:bg-base-100 rounded-md">
             <button class="btn btn-xs" @click="$emit('hide')">
               <span class="text-warning" v-if="message.hide">
@@ -91,7 +91,7 @@ const md = new MarkdownIt({
 md.use(emoji)
 
 export default {
-  props: ['message'],
+  props: ['message', 'showHeader'],
   data () {
     return {
       codeBlocks: [],
