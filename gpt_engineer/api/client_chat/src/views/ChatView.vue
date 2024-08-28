@@ -26,7 +26,7 @@ import moment from 'moment'
             <i class="fa-solid fa-folder-tree"></i>
           </button>
           <input v-if="editName"
-            type="text" class="input input-md input-bordered"
+            type="text" class="input input-xs input-bordered"
             @keydown.enter.stop="saveChat"
             @keydown.esc="editName = false"
             v-model="chat.name" />
@@ -41,7 +41,7 @@ import moment from 'moment'
           </div>
           <select v-model="chat.mode" class="select select-xs select-bordered">
             <option selected value="chat">chat</option>
-            <option selected value="document">document</option>
+            <option selected value="task">task</option>
           </select>
           <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
             <i class="fa-solid fa-floppy-disk"></i>
@@ -189,6 +189,7 @@ export default {
     },
     newChat () {
       this.chat = API.chatManager.newChat()
+      this.chat.mode = this.chat.mode || 'chat'
     },
     async saveChat () {
       this.editName = false

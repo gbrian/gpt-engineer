@@ -7,7 +7,6 @@ import ChatEntry from '@/components/ChatEntry.vue'
         <div class="absolute top-0 left-0 w-full h-full scroller">
           <div v-for="message in messages" :key="message.id">
             <ChatEntry :message="message"
-              :showHeader="chat.mode === 'chat'"
               @edit="onEditMessage(message)"
               @remove="removeMessage(message)"
               @hide="toggleHide(message)"

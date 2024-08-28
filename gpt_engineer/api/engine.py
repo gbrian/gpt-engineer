@@ -167,11 +167,15 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
 
 def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_changes: bool=False):
     knowledge = Knowledge(settings=settings)
+    profile_manager = ProfileManager(settings=settings)
+
     request = \
     f"""
-    You maintainig the code base for project {settings.project_name}
-    Files are located at: {settings.project_path}
-    This is a view of the files tree: {generate_markdown_tree(knowledge.get_all_sources())}
+    {profile_manager.read_profile("software_developer").content}
+    Project name: {settings.project_name}
+    Root path: {settings.project_path}
+    Files tree view: {generate_markdown_tree(knowledge.get_all_sources())}
+    
     Create a list of find&replace intructions for each change needed:
     INSTRUCTIONS:
       { AI_CODE_GENERATOR_PARSER.get_format_instructions() }
@@ -567,6 +571,8 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None, append_references: bool=True):
     chat_mode = chat.mode
+    is_refine = True if chat_mode == 'task' and len(chat.messages) > 1 else False
+        
     user_message = chat.messages[-1]
     query = user_message.content
     if "@codx-code" in query:
@@ -576,15 +582,35 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     dbs = build_dbs(settings)
     profile_manager = ProfileManager(settings=settings)
 
-    instructions = "Please always keep your answers short and simple unless a more detailed answer has been requested"
-    if chat_mode == 'document':
-      instructions = "You are assisting the user writting a document. Use user comments to improve the document."
+    instructions = f"""BEGIN INSTRUCTIONS
+    This is a converation between you and the user about the project {settings.project_name}.
+    Please always keep your answers short and simple unless a more detailed answer has been requested.
+    {profile_manager.read_profile("project").content}
+
+    END INSTRUCTIONS
+    """
+    
+    if chat_mode == 'task':
+        task = chat.messages[1].content if is_refine else ""
+        if is_refine:
+            query = f"{chat.messages[0].content}\n{query}"
+        instructions = f"""BEGIN INSTRUCTIONS
+    You are helping user to wtite a task definition for the project {settings.project_name}.
+    Update existing task based on the comments from the user.
+    
+    About the project:
+    {profile_manager.read_profile("project").content}
+    
+    If you create code snippeds in your answer please follow this:
+    {profile_manager.read_profile("software_developer").content}
+    END INSTRUCTIONS
+
+    BEGIN TASK
+    {task}
+    END TASK
+    """
     messages = [
-      SystemMessage(content=f"""
-      {profile_manager.read_profile("project").content}
-      
-      {instructions}
-      """)
+      SystemMessage(content=instructions)
     ]
 
     def convert_message(m):
@@ -613,11 +639,15 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         logger.info(f"convert_message {m} - {msg}")  
         return msg
 
-    for m in chat.messages[0:-1]:
-        if m.hide or m.improvement:
-            continue
-        msg = convert_message(m)
+    if is_refine:
+        msg = convert_message(chat.messages[0])
         messages.append(msg)
+    else:
+        for m in chat.messages[0:-1]:
+            if m.hide or m.improvement:
+                continue
+            msg = convert_message(m)
+            messages.append(msg)
 
     context = ""
     documents = []
@@ -655,10 +685,10 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         response = f"{messages[-1].content}\n\nRESOURCES:\n{sources}"
 
     response_message = Message(role="assistant", content=response)
-    if chat_mode == 'document':
-        chat.messages = [response_message]
-    else:  
-        chat.messages.append(response_message)
+    if chat_mode == 'task':
+        for msg in chat.messages[1:]:
+          msg.hide = True
+    chat.messages.append(response_message)
     return chat
 
 def check_project(settings: GPTEngineerSettings):
