@@ -66,6 +66,7 @@ WATCH_FOLDERS = []
 from gpt_engineer.core.scheduler import add_work
 
 IMAGE_UPLOAD_FOLDER = f"{os.path.dirname(__file__)}/images"
+os.makedirs(IMAGE_UPLOAD_FOLDER, exist_ok=True)
 
 def find_projects_to_watch ():
     global WATCH_FOLDERS
