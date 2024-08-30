@@ -124,6 +124,13 @@ import MarkdownVue from '@/components/Markdown.vue'
             <span class="-mt-1" v-if="fileFilter">({{ showFiles.length }})</span>
           </label>
         </div>
+        <div class="flex my-2">
+            <div class="badge click" v-for="count, extension in extensions" :key="extension"
+                @click="fileFilter = '.' + extension"
+            >
+                {{ extension }} ({{ count }})
+            </div>
+        </div>
         <div class="max-h-60 overflow-auto" v-if="showFiles?.length">
           <div class="text-xs" v-for="file in showFiles" :key="file">
             <div class="flex gap-2">
@@ -137,11 +144,15 @@ import MarkdownVue from '@/components/Markdown.vue'
             <i class="fa-solid fa-circle-info"></i> Index ({{ selectedFileCount }}) files now
           </button>
           <button class="btn btn-primary btn-sm btn-error text-white"
-            @click="ignoreSelectedFiles" v-if="selectedFileCount && showIndexFiles !== 2">
-            <i class="fa-solid fa-circle-xmark"></i> Ignore ({{ selectedFileCount }}) files
+            @click="ignoreSelectedFiles(true)" v-if="selectedFileCount && showIndexFiles !== 2">
+            <i class="fa-solid fa-folder"></i> Ignore ({{ selectedFileCount }}) folder
+          </button>
+          <button class="btn btn-primary btn-sm btn-error text-white"
+            @click="ignoreSelectedFiles(false)" v-if="selectedFileCount && showIndexFiles !== 2">
+            <i class="fa-solid fa-file"></i> Ignore ({{ selectedFileCount }}) files
           </button>
           <button class="btn btn-primary btn-sm btn-success text-white"
-            @click="ignoreSelectedFiles" v-if="selectedFileCount && showIndexFiles === 2">
+            @click="ignoreSelectedFiles(false)" v-if="selectedFileCount && showIndexFiles === 2">
             <i class="fa-solid fa-plus"></i> Add ({{ selectedFileCount }}) files
           </button>
           <button class="btn btn-primary btn-sm btn-warning text-white" @click="dropSelectedFiles" v-if="selectedFileCount">
@@ -305,8 +316,14 @@ export default {
     showFiles () {
       const { fileFilter } = this
       return this.showFilesSelected?.filter(f => !fileFilter || f.indexOf(fileFilter) !== -1)
+    },
+    extensions () {
+        return this.showFiles?.filter(f => f.indexOf(".") !== -1).reduce((acc, v) => {
+            const extension = v.split(".").reverse()[0]
+            acc[extension] = (acc[extension]||0) + 1
+            return acc
+        } , {})
     }
-
   },
   watch: {
   },
@@ -338,9 +355,11 @@ export default {
       this.reloadStatus()
       this.loading = false
     },
-    async ignoreSelectedFiles () {
+    async ignoreSelectedFiles (ignoreFolder) {
       const currIgnore = API.lastSettings?.knowledge_file_ignore.split(',') || []
-      const newIgnore = [...currIgnore, ...this.selectedFilePaths]
+      const ignoreFiles = this.selectedFilePaths.map(file => file.replace(this.projectPath, ""))
+      const ignoreFolders = ignoreFiles.map(file => file.split("/").reverse()[1])
+      const newIgnore = [...currIgnore, ...(ignoreFolder ? ignoreFolders : ignoreFiles)]
       API.lastSettings.knowledge_file_ignore = newIgnore.join(",")
       await API.settings.write(API.lastSettings)
       await this.reloadStatus()

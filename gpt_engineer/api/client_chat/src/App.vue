@@ -68,12 +68,6 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-solid fa-brain"></i>
         Setting
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 4 ? tabActive: tabInactive]"
-        @click="tabIx = 4"
-      >
-        <i class="fa-solid fa-book-open"></i>
-        Notebooks
-      </a>
     </div>
     <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="validProject">
       <ChatViewVue v-if="tabIx === 0" />
@@ -81,7 +75,6 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 3" />
-      <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
       <div v-if="tabIx === 'home'">
         <div class="flex gap-2 items-center">
           <div class="grow" v-if="validProject">
@@ -137,7 +130,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
           </select>
         </div>
         <div class="modal-action">
-          <label for="my_modal_6" class="btn" @click="onOpenProject">
+          <label for="my_modal_6" class="btn" @click="onOpenProject(newProject)">
             Open
           </label>
           <label class="modal-backdrop" for="my_modal_6">Close</label>
@@ -215,7 +208,7 @@ export default {
       return API.lastSettings?.gpteng_path
     },
     onOpenProject (path) {
-      this.openProject(path || this.newProject)
+      this.openProject(path)
     },
     async openSubProject (projectName) {
       await this.getAllProjects()

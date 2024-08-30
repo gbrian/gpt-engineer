@@ -20,18 +20,20 @@ RUN apt-get install -y nodejs
 RUN npm install -g yarn
 RUN node -v
 
+RUN mkdir /shared
+
 USER "${GPT_USER}:${GPT_USER_GROUP}"
 
 WORKDIR /gpt-engineer
 
-COPY --chown=gpt ./gpt_engineer /gpt-engineer/gpt_engineer
-COPY --chown=gpt ./notebooks /gpt-engineer/notebooks
-COPY --chown=gpt ./pyproject.toml /gpt-engineer/pyproject.toml
-COPY --chown=gpt ./gpt-web.sh /gpt-engineer/gpt-web.sh
-COPY --chown=gpt ./main.py /gpt-engineer/main.py
+COPY --chown=$USER ./gpt_engineer /gpt-engineer/gpt_engineer
+COPY --chown=$USER ./notebooks /gpt-engineer/notebooks
+COPY --chown=$USER ./pyproject.toml /gpt-engineer/pyproject.toml
+COPY --chown=$USER ./gpt-web.sh /gpt-engineer/gpt-web.sh
+COPY --chown=$USER ./main.py /gpt-engineer/main.py
 
 RUN pip install -e .
 
 ENV PATH=$PATH:/home/gpt/.local/bin
 
-CMD ["bash", "/gpt-engineer/gpt-web.sh"]
+CMD ["./gpt-web.sh"]

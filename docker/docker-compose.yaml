@@ -1,0 +1,19 @@
+gpt-engineer:
+    image: gpt-engineer
+    container_name: gpt-engineer
+    working_dir: /gpt-engineer
+    command: bash -c "gpt-web.sh"
+    build:
+      context: ./..
+    volumes:
+      - ${SHARED_VOLUME}:/shared
+    restart: unless-stopped
+    environment:
+      - WEB_PORT=${WEB_PORT:-8001}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gpt-codx.rule=Host(`$DOMAIN`)"
+      - "traefik.http.routers.gpt-codx.entrypoints=websecure"
+      - "traefik.http.routers.gpt-codx.service=gpt-codx"
+      - "traefik.http.services.gpt-codx.loadbalancer.server.port=${WEB_PORT:-8001}"
+      - "traefik.http.routers.gpt-codx.middlewares=gpt-codx-headers@file"

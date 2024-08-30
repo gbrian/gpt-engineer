@@ -20,8 +20,8 @@ if [ "$VENV_PATH" != "" ]; then
   pip install -e .
 fi
 
-echo "Running gpt-engineer notebooks"
-bash notebooks/run_notebooks.sh &
+# echo "Running gpt-engineer notebooks"
+# bash notebooks/run_notebooks.sh &
 
 echo "Running gpt-engineer at $VENV_PATH - Home: $HOME"
 # run api
@@ -29,6 +29,4 @@ echo "Running gpt-engineer at $VENV_PATH - Home: $HOME"
 gpt-engineer --api --port $API_PORT &
 cd gpt_engineer/api/client_chat
 npm i
-npm run dev &
-read
-clean
+npm run dev
