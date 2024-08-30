@@ -1,10 +1,12 @@
 <script setup>
 import { API } from './api/api'
+import HomeViewVue from "./views/HomeView.vue";
 import ChatViewVue from "./views/ChatView.vue";
 import LiveEditVue from "./views/LiveEdit.vue";
 import KnowledgeViewVue from './views/KnowledgeView.vue';
 import ProfileViewVue from './views/ProfileView.vue';
 import ProjectSettingsVue from "./views/ProjectSettings.vue";
+import KanbanVue from './components/kanban/Kanban.vue'
 </script>
 
 <template>
@@ -33,6 +35,32 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
             {{ projectName }}
           </div> 
         </div>
+        <div class="dropdown">
+          <div tabindex="0" role="button" class="">
+            <i class="fa-solid fa-angle-down"></i>
+          </div>
+          <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+            <li v-for="project in allProjects" :key="project.project_name">
+              <a @click="openProject(project.gpteng_path)">
+                <div class="rounded-full font-bold flex gap-2 flex gap-2 items-center">
+                  <div class="w-4 h-4 bg-cover bg-center rounded-full bg-primay"
+                      :style="`background-image:url('${project.project_icon}')`"></div>
+                  <div class="">
+                    {{ project.project_name }}
+                  </div> 
+                </div>
+
+
+              </a>
+            </li>
+          </ul>
+        </div>
+      </a>
+      <a role="tab" :class="['hidden tab flex items-center gap-2', tabIx === 'kanban' ? tabActive: tabInactive]"
+        @click="tabIx = 'kanban'"
+      >
+        <i class="fa-solid fa-book-open"></i>
+        Kanban
       </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 0 ? tabActive: tabInactive]"
         @click="tabIx = 0"
@@ -56,65 +84,35 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
         <i class="fa-solid fa-book"></i>
         Knowledge
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 3 ? tabActive: tabInactive]"
-        @click="tabIx = 3"
-      >
-      <i class="fa-solid fa-id-card-clip"></i>
-        Profiles
-      </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 2 ? tabActive: tabInactive]"
-        @click="tabIx = 2"
-      >
-        <i class="fa-solid fa-brain"></i>
-        Setting
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'settings' ? tabActive: tabInactive]"
+          @click="tabIx = 'settings'"
+        >
+          <i class="fa-solid fa-brain"></i>
       </a>
     </div>
-    <div class="grow relative overflow-auto bg-base-100 px-4 py-2 " v-if="validProject">
+    <div class="grow relative overflow-auto bg-base-100 p-2" v-if="validProject">
+      <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md mt-2" v-if="['profiles', 'settings'].includes(tabIx)">
+        <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'profiles' ? tabActive: tabInactive]"
+        @click="tabIx = 'profiles'"
+        >
+        <i class="fa-solid fa-id-card-clip"></i>
+          Profiles
+        </a>
+        <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'settings' ? tabActive: tabInactive]"
+          @click="tabIx = 'settings'"
+        >
+          <i class="fa-solid fa-brain"></i>
+          Setting
+        </a>
+      </div>
+      <KanbanVue v-if="tabIx === 'kanban'" />
       <ChatViewVue v-if="tabIx === 0" />
       <LiveEditVue v-if="tabIx === 'live'" />
       <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
-      <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 2" />
-      <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 3" />
-      <div v-if="tabIx === 'home'">
-        <div class="flex gap-2 items-center">
-          <div class="grow" v-if="validProject">
-            <div class="flex gap-2 items-center">
-              Parent 
-              <div class="click badge badge-xs my-2 flex gap-2 badge-warning badge-ouline p-2"
-                @click="openSubProject(lastSettings.parent_project)"
-                v-if="lastSettings.parent_project">
-                <i class="fa-solid fa-caret-up"></i> {{ lastSettings.parent_project }} 
-              </div>
-            </div>
-            <div class="flex gap-2" v-if="subProjects">
-              Depends on
-              <div tabindex="0" class="click badge badge-info text-white flex gap-1 items-center"
-                v-for="projectName in subProjects" :key="projectName"
-                  @click="openSubProject(projectName)"
-              >
-                {{ projectName }} 
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="text-xl my-4">Jump to</div>
-        <div class="mb-4 grid grid-cols-3 gap-4">
-          <div class="my-2 flex flex-col items-center flex px-4 py-6 gap-2 click rounded-md bg-base-300" 
-            v-for="project in allProjects" :key="project.gpteng_path"
-              @click="onOpenProject(project.gpteng_path)"
-            >
-              <div class="w-8 h-8 bg-cover bg-center rounded-full bg-primay"
-                :style="`background-image:url('${project.project_icon}')`"></div>
-              <div class="max-w-full overflow-hidden">{{ project.project_name }}</div>
-              <div class="flex gap-2 text-xs items-center justify-center">
-                <span class="animate-pulse" v-if="project.watching">
-                  <i class="fa-solid fa-eye"></i>
-                </span>
-                {{ project.model }}
-              </div>
-          </div>
-        </div>
-      </div>
+      <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'settings'" />
+      <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'profiles'" />
+      <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
+      <HomeViewVue v-if="tabIx == 'home'"></HomeViewVue>
     </div>
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">
@@ -191,6 +189,13 @@ export default {
       return this.lastSettings?.project_name
     }
   },
+  watch: {
+    tabIx (newValue) {
+      if (newValue === 'home') {
+        this.getAllProjects()
+      }
+    }
+  },
   methods: {
     async init () {
       this.gptengPath = this.getProjectPath()
@@ -215,7 +220,8 @@ export default {
       this.openProject(this.allProjects.find(p => p.project_name === projectName).gpteng_path)
     },
     openProject (path) {
-      window.location = `${window.location.origin}?gpteng_path=${encodeURIComponent(path)}`
+      API.init(path)
+      this.init()
     },
     async createNewProject () {
       const { data: { gpteng_path } } = await API.project.create(this.getProjectPath())

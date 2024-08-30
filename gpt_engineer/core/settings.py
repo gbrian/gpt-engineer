@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 class GPTEngineerSettings:
     project_name: str
     project_path: str
+    project_wiki: str
     model: str
     temperature: float
     steps_config: str
@@ -47,6 +48,7 @@ class GPTEngineerSettings:
     def __init__(self, **kwrgs):
         self.project_name = None
         self.project_path = "."
+        self.project_wiki = None
         self.openai_api_key = settings.OPENAI_API_KEY
         self.openai_api_base = settings.OPENAI_API_BASE
         self.knowledge_extract_document_tags = False
@@ -69,6 +71,8 @@ class GPTEngineerSettings:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():
               self.__dict__[key] = kwrgs.get(key)
+        if not self.project_wiki: 
+            self.project_wiki = f"{self.project_path}/wiki"
 
     @classmethod
     def from_env(cls):
@@ -120,6 +124,10 @@ class GPTEngineerSettings:
     def get_dbs(self):
       from gpt_engineer.core import build_dbs
       return build_dbs(settings=self)
+
+    def get_ai(self):
+      from gpt_engineer.core import build_ai
+      return build_ai(settings=self)
 
     def get_sub_projects(self):
         try:

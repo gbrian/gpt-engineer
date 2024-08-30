@@ -35,7 +35,8 @@ from gpt_engineer.core.context import (
   find_relevant_documents,
   AI_CODE_VALIDATE_RESPONSE_PARSER,
   generate_markdown_tree,
-  AI_CODE_GENERATOR_PARSER
+  AI_CODE_GENERATOR_PARSER,
+  AICodeGerator
 )
 
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
@@ -106,7 +107,8 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
     # Extract mentions from the query
     mentions = re.findall(r'@\S+', query)
     logger.info(f"Extracted mentions: {mentions}")
-    sub_projects = [mention[1:].lower() for mention in mentions]
+    settings_sub_projects = settings.get_sub_projects()
+    sub_projects = set(settings_sub_projects + [mention[1:].lower() for mention in mentions])
     all_projects = find_all_projects()
     search_projects = [settings for settings in all_projects if settings.project_name.lower() in sub_projects]
     logger.info(f"select_afefcted_documents_from_knowledge query subprojects {sub_projects} - {search_projects}")
@@ -165,13 +167,19 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
     return file_list
 
 
-def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_changes: bool=False):
+def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_changes: bool=None):
     knowledge = Knowledge(settings=settings)
+    profile_manager = ProfileManager(settings=settings)
+    if apply_changes is None:
+        apply_changes = True if chat.mode == 'task' else False
+
     request = \
     f"""
-    You maintainig the code base for project {settings.project_name}
-    Files are located at: {settings.project_path}
-    This is a view of the files tree: {generate_markdown_tree(knowledge.get_all_sources())}
+    {profile_manager.read_profile("software_developer").content}
+    Project name: {settings.project_name}
+    Root path: {settings.project_path}
+    Files tree view: {generate_markdown_tree(knowledge.get_all_sources())}
+    
     Create a list of find&replace intructions for each change needed:
     INSTRUCTIONS:
       { AI_CODE_GENERATOR_PARSER.get_format_instructions() }
@@ -180,17 +188,18 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
       * Keep content identation; is crucial to find the content to replace and to make new content work
     """
     logger.info(f"improve_existing_code prompt: {request}")
+    code_generator = None
     if not chat.messages[-1].improvement:
         retry_count = 1
         request_msg = Message(role="user", content=request)
         chat.messages.append(request_msg)
-        def try_chat_code_changes(attempt: int):
+        def try_chat_code_changes(attempt: int) -> AICodeGerator:
             chat_with_project(settings=settings, chat=chat, use_knowledge=False)
             chat.messages = [msg for msg in chat.messages if msg != request_msg]
             chat.messages[-1].improvement = True
             response = chat.messages[-1].content.strip()
             try:
-                AI_CODE_GENERATOR_PARSER.invoke(response)
+                return AI_CODE_GENERATOR_PARSER.invoke(response)
             except Exception as ex:
                 logger.error(f"Error parsing response: {response}")
                 attempt = attempt - 1
@@ -198,16 +207,19 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
                     chat.messages.pop()
                     return try_chat_code_changes(attempt)
                 raise ex
-        try_chat_code_changes(retry_count)
+        code_generator = try_chat_code_changes(retry_count)
         if not apply_changes:
-            return
-    
-    response = chat.messages[-1].content
-    apply_improve_code_changes(settings=settings, response=response)
-    chat.messages.append(Message(role="assistant", content="Changes applied"))
+            return code_generator
+    else:
+        code_generator = AI_CODE_GENERATOR_PARSER.invoke(response)
 
-def apply_improve_code_changes(settings: GPTEngineerSettings, response: str):
-    changes = AI_CODE_GENERATOR_PARSER.invoke(response).code_changes
+    if chat.mode == 'task':
+        chat.messages[-1].hide = True
+    apply_improve_code_changes(settings=settings, code_generator=code_generator)
+    return code_generator
+
+def apply_improve_code_changes(settings: GPTEngineerSettings, code_generator: AICodeGerator):
+    changes = code_generator.code_changes
     logger.info(f"improve_existing_code total changes: {len(changes)}")
     changes_by_file_path = {}
     for change in changes:
@@ -345,6 +357,9 @@ def check_project_changes(settings: GPTEngineerSettings):
 
     logger.info(f"Reload knowledge files {new_files}")
     reload_knowledge(settings=settings)
+
+    for file_path in new_files:
+        update_wiki(settings=settings, file_path=file_path)
 
 def extract_changes(content):
     for block in extract_json_blocks(content):
@@ -566,6 +581,9 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 
 
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None, append_references: bool=True):
+    chat_mode = chat.mode
+    is_refine = True if chat_mode == 'task' and len(chat.messages) > 1 else False
+        
     user_message = chat.messages[-1]
     query = user_message.content
     if "@codx-code" in query:
@@ -575,8 +593,35 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     dbs = build_dbs(settings)
     profile_manager = ProfileManager(settings=settings)
 
+    instructions = f"""BEGIN INSTRUCTIONS
+    This is a converation between you and the user about the project {settings.project_name}.
+    Please always keep your answers short and simple unless a more detailed answer has been requested.
+    {profile_manager.read_profile("project").content}
+
+    END INSTRUCTIONS
+    """
+    
+    if chat_mode == 'task':
+        task = chat.messages[1].content if is_refine else ""
+        if is_refine:
+            query = f"{chat.messages[0].content}\n{query}"
+        instructions = f"""BEGIN INSTRUCTIONS
+    You are helping user to wtite a task definition for the project {settings.project_name}.
+    Update existing task based on the comments from the user.
+    
+    About the project:
+    {profile_manager.read_profile("project").content}
+    
+    If you create code snippeds in your answer please follow this:
+    {profile_manager.read_profile("software_developer").content}
+    END INSTRUCTIONS
+
+    BEGIN TASK
+    {task}
+    END TASK
+    """
     messages = [
-      HumanMessage(content=profile_manager.read_profile("project").content)
+      SystemMessage(content=instructions)
     ]
 
     def convert_message(m):
@@ -605,11 +650,15 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         logger.info(f"convert_message {m} - {msg}")  
         return msg
 
-    for m in chat.messages[0:-1]:
-        if m.hide or m.improvement:
-            continue
-        msg = convert_message(m)
+    if is_refine:
+        msg = convert_message(chat.messages[0])
         messages.append(msg)
+    else:
+        for m in chat.messages[0:-1]:
+            if m.hide or m.improvement:
+                continue
+            msg = convert_message(m)
+            messages.append(msg)
 
     context = ""
     documents = []
@@ -647,6 +696,9 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         response = f"{messages[-1].content}\n\nRESOURCES:\n{sources}"
 
     response_message = Message(role="assistant", content=response)
+    if chat_mode == 'task':
+        for msg in chat.messages[1:]:
+          msg.hide = True
     chat.messages.append(response_message)
     return chat
 
@@ -679,3 +731,23 @@ def find_all_projects():
         except Exception as ex:
             logger.exception(f"Error loading project {str(project_settings)}")
     return all_projects
+
+def update_wiki(settings: GPTEngineerSettings, file_path: str):
+    with open(file_path, 'r') as f:
+        file_content = f.read()
+        logger.info(f"update_wiki file_path: {file_path}, project_wiki: {settings.project_wiki}")
+        chat = Chat(messages=[
+          HumanMessage(content=f"""File {file_path} has changed.
+          Extract usefull informatation to add to wiki pages at {settings.project_wiki}
+          If there are no wiki files about this file, create new one.
+          FILE CONTENT:
+          {file_content}""")
+        ])
+        chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+        code_generator = improve_existing_code(settings=settings, chat=chat, apply_changes=False)
+        logger.info(f"update_wiki file_path: {file_path}, changes: {code_generator}")
+        if code_generator:
+            wiki_changes = [change for change in code_generator.code_changes if settings.project_wiki in change.file_path]
+            logger.info(f"update_wiki file_path: {file_path}, wiki changes: {wiki_changes}")
+            if wiki_changes:
+                apply_improve_code_changes(settings=settings, code_generator=AICodeGerator(code_changes=wiki_changes))

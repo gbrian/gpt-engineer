@@ -5,24 +5,8 @@ const gpteng_key = window.location.search
                     .slice(1).split("&")
                     .map(p => p.split("="))
                     .find(([k]) => k === "gpteng_path")
-const gpteng_path = decodeURIComponent(gpteng_key ? gpteng_key[1] : "")
 
-const readLastSettings = () => {
-  if (gpteng_path) {
-    return {
-      gpteng_path
-    }
-  }
-  const settings = localStorage.getItem("API_SETTINGS")
-  try {
-    return JSON.parse(settings)
-  } catch (ex) {
-    console.error("Invalid settings")
-  }
-  return null
-}
 const query = () => `gpteng_path=${encodeURIComponent(API.lastSettings?.gpteng_path)}`
-
 const axiosRequest = axios.create({
 });
 export const API = {
@@ -46,7 +30,7 @@ export const API = {
     .catch(console.error)
     .finally(() => API.liveRequests--)
   },
-  lastSettings: readLastSettings(),
+  lastSettings: {},
   chatManager,
   project: {
     list () {
@@ -163,7 +147,23 @@ export const API = {
       const { data: url } = await API.post(`/api/images?` + query(), formData)
       return window.location.origin + url
     }
+  },
+  init (gpteng_path) {
+    this.gpteng_path = gpteng_path
+    if (gpteng_path) {
+      this.lastSettings = {
+        gpteng_path
+      }
+    } else {
+      const settings = localStorage.getItem("API_SETTINGS")
+      try {
+        this.lastSettings = JSON.parse(settings)
+      } catch (ex) {
+        console.error("Invalid settings")
+      }
+    }
   }
 }
-
+const gpteng_path = decodeURIComponent(gpteng_key ? gpteng_key[1] : "")
+API.init(gpteng_path)
 window.API = API

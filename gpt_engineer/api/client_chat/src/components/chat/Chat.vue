@@ -2,6 +2,7 @@
 import ChatEntry from '@/components/ChatEntry.vue'
 </script>
 <template>
+  <div class="flex flex-col gap-2 grow">
     <div class="flex flex-col grow">
       <div class="grow overflow-auto relative">
         <div class="absolute top-0 left-0 w-full h-full scroller">
@@ -64,40 +65,43 @@ import ChatEntry from '@/components/ChatEntry.vue'
           </button>
         </div>
       </div>
-      <div class="flex gap-2 items-end mt-2">
-        <div :class="['max-h-40 border rounded-md grow px-2 py-1 overflow-auto text-wrap',
-          editMessageId !== null ? 'border-error': '',
-          editMessageId !== null ? 'border-warning': '',
-        ]" contenteditable="true"
-          ref="editor" @input="onMessageChange"
-          @paste="onContentPaste"
-          @keydown.esc.stop="onResetEdit"
-        >
-        </div>
-        <button class="btn btn-info btn-sm btn-circle mb-1" @click="sendMessage">
+    </div>
+    <div :class="['flex gap-2 p-2 bg-base-300 border rounded-md shadow', multiline ? 'flex-col' : '']">
+      <div :class="['max-h-40 grow px-2 py-1 overflow-auto text-wrap focus-visible:outline-none',
+        editMessageId !== null ? 'border-error': '',
+        editMessageId !== null ? 'border-warning': '',
+      ]" contenteditable="true"
+        ref="editor" @input="onMessageChange"
+        @paste="onContentPaste"
+        @keydown.esc.stop="onResetEdit"
+      >
+      </div>
+      <div class="flex gap-2 items-center justify-end mt-1">
+        <button class="btn btn btn-sm btn-circle mb-1 btn-outline" @click="sendMessage">
           <i class="fa-solid fa-comment"></i>
         </button>
-        <button class="btn btn-neutral btn-sm btn-circle mb-1" @click="askKnowledge">
-          <i class="fa-solid fa-book"></i>
+        <button class="btn btn-info btn-sm btn-circle mb-1 btn-outline" @click="askKnowledge">
+          <i class="fa-solid fa-file-circle-plus"></i>
         </button>
-        <button class="btn btn-warning btn-sm mb-1" @click="improveCode">
+        <button class="btn btn-warning btn-sm mb-1 btn-outline" @click="improveCode">
           <i class="fa-solid fa-code"></i> Code
         </button>
       </div>
-      <div class="flex mt-2 w-full p-1 rounded-md bg-warning text-neutral" v-if="editMessageId != null">
-        <div class="font-bold">
-          <span v-if="editMessage.role === 'user'">Edit message: </span>
-          <span v-else>Request corrections: </span>
-        </div>
-        <span class="italic">
-          {{ chat.messages[editMessageId].content.slice(0, 50)  }}...
-        </span>
-        <div class="grow"></div>
-        <button class="click hover:shadow" @click="editMessageId = null">
-          <i class="fa-regular fa-circle-xmark"></i>
-        </button>
-      </div>
     </div>
+    <div class="flex mt-2 w-full p-1 rounded-md bg-warning text-neutral" v-if="editMessageId != null">
+      <div class="font-bold">
+        <span v-if="editMessage.role === 'user'">Edit message: </span>
+        <span v-else>Request corrections: </span>
+      </div>
+      <span class="italic">
+        {{ chat.messages[editMessageId].content.slice(0, 50)  }}...
+      </span>
+      <div class="grow"></div>
+      <button class="click hover:shadow" @click="editMessageId = null">
+        <i class="fa-regular fa-circle-xmark"></i>
+      </button>
+    </div>
+  </div>
 </template>
 <script>
 import { API } from '@/api/api'
@@ -116,7 +120,8 @@ export default {
       showTermSearch: false,
       files: [],
       images: [],
-      previewImage: null
+      previewImage: null,
+      editorText: ""
     }
   },
   computed: {
@@ -125,6 +130,9 @@ export default {
     },
     messages () {
       return this.chat?.messages?.filter(m => !m.hide || this.showHidden)
+    },
+    multiline () {
+      return this.editorText.indexOf("\n") !== -1
     }
   },
   watch: {
@@ -137,14 +145,18 @@ export default {
     }
   },
   methods: {
+    setEditorText (text) {
+      this.editor.innerText = text
+      this.onMessageChange()
+    },
     onEditMessage (message) {
       this.editMessage = message
       this.editMessageId = this.chat.messages.findIndex(m => m === message)
 
       if (this.editMessage.role == 'user') {
-        this.editor.innerText = this.editMessage.content
+        this.setEditorText(this.editMessage.content)
       } else {
-        this.editor.innerText = "Please apply this corrections to your message:\n- "
+        this.setEditorText("Please apply this corrections to your message:\n- ")
       }
       this.images = message.images || []
     },
@@ -199,7 +211,7 @@ export default {
           content: message,
           images: this.images
         })
-        this.editor.innerText = ""
+        this.setEditorText("")
         this.images = []
         this.$refs.anchor.scrollIntoView()
       }
@@ -222,7 +234,7 @@ export default {
                 this.chat.messages[this.chat.messages.length - 1].content
     },
     async askKnowledge () {
-      const searchTerm = this.getSendMessage() 
+      const searchTerm = this.editor.innerText 
       const knowledgeSearch = {
           searchTerm,
           searchType: 'embeddings',
@@ -230,7 +242,7 @@ export default {
           cutoffScore: API.lastSettings.knowledge_context_cutoff_relevance_score,
           documentCount: API.lastSettings.knowledge_search_document_count
       }
-      this.postMyMessage()
+      // this.postMyMessage()
       const { data: { documents } } = await API.knowledge.search(knowledgeSearch)
       documents.map(doc => this.addMessage({
           role: 'assistant',
@@ -263,7 +275,7 @@ export default {
     onResetEdit() {
       if (this.editMessageId !== null) {
         this.editMessage = null
-        this.editor.innerText = ""
+        this.setEditorText("")
         this.editMessageId = null
         this.images = []
       }
@@ -291,7 +303,7 @@ export default {
       }
       text += `@${term.key} `
       this.editMessage = text.trim()
-      this.$refs.editor.innerText = this.editMessage
+      this.setEditorText(this.editMessage)
       
       this.$emit('add-file', term.file)
       this.closeTermSearch ();
@@ -346,13 +358,16 @@ export default {
       }
     },
     onGenerateCode(message, code) {
-      this.editor.innerText = `Generate code only for this piece of code:
+      this.setEditorText(`Generate code only for this piece of code:
       \`\`\`
       ${code}
-      \`\`\``
+      \`\`\``)
     },
     removeImage(ix) {
       this.images = this.images.filter((i, imx) => imx !== ix)
+    },
+    onMessageChange () {
+      this.editorText = this.editor.innerText.trim() || ""
     }
   }
 }

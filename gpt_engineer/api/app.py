@@ -310,5 +310,12 @@ class GPTEngineerAPI:
         def api_list_chats(file_name: str):
             os.system(f"code-server -r {file_name}")
 
+        @app.get("/api/wiki/:file_name")
+        def api_get_keywords(request: Request):
+            settings = request.state.settings
+            query = request.query_params.get("query")
+            return get_keywords(settings=settings, query=query)
+
+
         return app
             
