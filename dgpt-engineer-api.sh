@@ -1,6 +1,5 @@
 #!/bin/bash
-PORT=$1
-PROJECT_PATHS=("/shared")
+PROJECT_PATHS=()
 LOGS=0
 CMD="/gpt-engineer/gpt-web.sh"
 BUILD=0

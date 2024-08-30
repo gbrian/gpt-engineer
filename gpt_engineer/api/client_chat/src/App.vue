@@ -128,7 +128,7 @@ import KanbanVue from './components/kanban/Kanban.vue'
           </select>
         </div>
         <div class="modal-action">
-          <label for="my_modal_6" class="btn" @click="onOpenProject">
+          <label for="my_modal_6" class="btn" @click="onOpenProject(newProject)">
             Open
           </label>
           <label class="modal-backdrop" for="my_modal_6">Close</label>
@@ -213,7 +213,7 @@ export default {
       return API.lastSettings?.gpteng_path
     },
     onOpenProject (path) {
-      this.openProject(path || this.newProject)
+      this.openProject(path)
     },
     async openSubProject (projectName) {
       await this.getAllProjects()

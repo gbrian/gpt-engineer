@@ -720,17 +720,16 @@ def get_keywords(settings: GPTEngineerSettings, query):
 
 def find_all_projects():
     all_projects = []
-    project_paths = os.environ.get("PROJECT_PATHS", "").split(" ")
-    logger.info(f"find_projects_to_watch: Scanning project paths: {project_paths}")
-    for project_path in project_paths:
-        for project_settings in Path(project_path).glob("**/.gpteng"):
-            logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
-            try:
-                settings = GPTEngineerSettings.from_project(gpteng_path=str(project_settings))
-                if settings.gpteng_path not in all_projects:
-                    all_projects = all_projects + [settings]
-            except Exception as ex:
-                logger.exception(f"Error loading project {str(project_settings)}")
+    project_path = "/"
+    # logger.info(f"find_projects_to_watch: Scanning project paths: {project_path}")
+    for project_settings in Path(project_path).glob("**/.gpteng"):
+        # logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
+        try:
+            settings = GPTEngineerSettings.from_project(gpteng_path=str(project_settings))
+            if settings.gpteng_path not in all_projects:
+                all_projects = all_projects + [settings]
+        except Exception as ex:
+            logger.exception(f"Error loading project {str(project_settings)}")
     return all_projects
 
 def update_wiki(settings: GPTEngineerSettings, file_path: str):

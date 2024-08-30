@@ -62,31 +62,21 @@ from gpt_engineer.api.engine import (
     find_all_projects
 )
 
-WATCH_FOLDERS = []
 from gpt_engineer.core.scheduler import add_work
 
 IMAGE_UPLOAD_FOLDER = f"{os.path.dirname(__file__)}/images"
 os.makedirs(IMAGE_UPLOAD_FOLDER, exist_ok=True)
 
-def find_projects_to_watch ():
-    global WATCH_FOLDERS
-    for settings in find_all_projects():
-        if settings.watching and settings.gpteng_path not in WATCH_FOLDERS:
-            WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
-            logger.info(f"{settings.gpteng_path} ADDED TO WATCH")
-                
-find_projects_to_watch()
-
 def process_projects_changes():
-    global WATCH_FOLDERS
-    for gpteng_path in WATCH_FOLDERS:
+    check_projects = [settings for settings in find_all_projects() if settings.watching]
+    for settings in check_projects:
         try:
-            settings = GPTEngineerSettings.from_project(gpteng_path=gpteng_path)
             check_project_changes(settings=settings)
         except Exception as ex:
             logger.exception(f"Processing {gpteng_path} error: {ex}")
             pass
 
+logger.info("Starting process_projects_changes job")
 add_work(process_projects_changes)
 
 class GPTEngineerAPI:
@@ -98,6 +88,7 @@ class GPTEngineerAPI:
             openapi_url="/api/openapi.json",
             docs_url="/api/docs",
             redoc_url="/api/redoc",
+            ssl_context='adhoc'
         )
 
         app.mount("/static", StaticFiles(directory="gpt_engineer/api/client_chat", html=True), name="client_chat")
@@ -130,7 +121,6 @@ class GPTEngineerAPI:
             if gpteng_path:
                 try:
                     settings = GPTEngineerSettings.from_project(gpteng_path)
-                    logger.info(f"Request settings {settings.__dict__}")
                 except:
                     pass
             request.state.settings = settings
@@ -294,9 +284,6 @@ class GPTEngineerAPI:
             settings = request.state.settings
             settings.watching = True
             settings.save_project()
-            global WATCH_FOLDERS
-            if settings.gpteng_path not in WATCH_FOLDERS:
-                WATCH_FOLDERS = WATCH_FOLDERS + [settings.gpteng_path]
             return { "OK": 1 }
         
         @app.get("/api/project/unwatch")
@@ -304,8 +291,6 @@ class GPTEngineerAPI:
             settings = request.state.settings
             settings.watching = False
             settings.save_project()
-            global WATCH_FOLDERS
-            WATCH_FOLDERS = [folder for folder in WATCH_FOLDERS if folder != settings.gpteng_path]
             return { "OK": 1 }
 
         @app.get("/api/knowledge/keywords")

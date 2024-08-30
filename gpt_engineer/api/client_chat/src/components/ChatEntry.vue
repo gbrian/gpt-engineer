@@ -35,9 +35,12 @@ import Code from './Code.vue'
                 <i class="fa-solid fa-chevron-down"></i>
               </span>
             </button>
-            <button class="btn btn-xs bg-base-100" @click="copyMessageToClipboard">
+            <button class="hidden btn btn-xs bg-base-100" @click="copyMessageToClipboard">
               <i class="fa-solid fa-copy"></i>
             </button>      
+            <button class="btn btn-xs " @click="srcView = !srcView">
+                <i class="fa-solid fa-code"></i>
+            </button>
             <button class="btn btn-xs bg-success" @click="$emit('edit')">
               <i class="fa-solid fa-pencil"></i>
             </button>
@@ -50,7 +53,8 @@ import Code from './Code.vue'
             
           </div>
         </div>
-        <div class="text-md text-wrap mt-2 overflow-y-auto" v-html="html"></div>
+        <pre v-if="srcView">{{ message.content }}</pre>
+        <div class="text-md text-wrap mt-2 overflow-y-auto" v-html="html" v-else></div>
         <div v-if="message.images">
           <div class="grid grid-cols-6">
             <div class="carousel-item click"
@@ -95,7 +99,8 @@ export default {
   data () {
     return {
       codeBlocks: [],
-      showDoc: false
+      showDoc: false,
+      srcView: false
     }
   },
   mounted () {
