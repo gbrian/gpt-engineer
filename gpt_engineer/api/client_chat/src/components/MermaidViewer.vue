@@ -13,14 +13,6 @@ import VueMermaidString from 'vue-mermaid-string'
 </template>
 <script>
 export default {
-  props: ['showEditor'],
-  data () {
-    return {
-      diagram: `
-      graph TD
-        A --> B
-      `
-    }
-  }
+  props: ['showEditor', 'diagram']
 }
 </script>

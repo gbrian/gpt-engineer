@@ -35,7 +35,8 @@ from gpt_engineer.core.context import (
   find_relevant_documents,
   AI_CODE_VALIDATE_RESPONSE_PARSER,
   generate_markdown_tree,
-  AI_CODE_GENERATOR_PARSER
+  AI_CODE_GENERATOR_PARSER,
+  AICodeGerator
 )
 
 from gpt_engineer.core.steps import setup_sys_prompt_existing_code
@@ -106,7 +107,8 @@ def select_afefcted_documents_from_knowledge(ai: AI, dbs: DBs, query: str, setti
     # Extract mentions from the query
     mentions = re.findall(r'@\S+', query)
     logger.info(f"Extracted mentions: {mentions}")
-    sub_projects = [mention[1:].lower() for mention in mentions]
+    settings_sub_projects = settings.get_sub_projects()
+    sub_projects = set(settings_sub_projects + [mention[1:].lower() for mention in mentions])
     all_projects = find_all_projects()
     search_projects = [settings for settings in all_projects if settings.project_name.lower() in sub_projects]
     logger.info(f"select_afefcted_documents_from_knowledge query subprojects {sub_projects} - {search_projects}")
@@ -165,9 +167,11 @@ def select_afected_files_from_knowledge(ai: AI, dbs: DBs, query: str, settings: 
     return file_list
 
 
-def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_changes: bool=False):
+def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_changes: bool=None):
     knowledge = Knowledge(settings=settings)
     profile_manager = ProfileManager(settings=settings)
+    if apply_changes is None:
+        apply_changes = True if chat.mode == 'task' else False
 
     request = \
     f"""
@@ -184,17 +188,18 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
       * Keep content identation; is crucial to find the content to replace and to make new content work
     """
     logger.info(f"improve_existing_code prompt: {request}")
+    code_generator = None
     if not chat.messages[-1].improvement:
         retry_count = 1
         request_msg = Message(role="user", content=request)
         chat.messages.append(request_msg)
-        def try_chat_code_changes(attempt: int):
+        def try_chat_code_changes(attempt: int) -> AICodeGerator:
             chat_with_project(settings=settings, chat=chat, use_knowledge=False)
             chat.messages = [msg for msg in chat.messages if msg != request_msg]
             chat.messages[-1].improvement = True
             response = chat.messages[-1].content.strip()
             try:
-                AI_CODE_GENERATOR_PARSER.invoke(response)
+                return AI_CODE_GENERATOR_PARSER.invoke(response)
             except Exception as ex:
                 logger.error(f"Error parsing response: {response}")
                 attempt = attempt - 1
@@ -202,16 +207,19 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
                     chat.messages.pop()
                     return try_chat_code_changes(attempt)
                 raise ex
-        try_chat_code_changes(retry_count)
+        code_generator = try_chat_code_changes(retry_count)
         if not apply_changes:
-            return
-    
-    response = chat.messages[-1].content
-    apply_improve_code_changes(settings=settings, response=response)
-    chat.messages.append(Message(role="assistant", content="Changes applied"))
+            return code_generator
+    else:
+        code_generator = AI_CODE_GENERATOR_PARSER.invoke(response)
 
-def apply_improve_code_changes(settings: GPTEngineerSettings, response: str):
-    changes = AI_CODE_GENERATOR_PARSER.invoke(response).code_changes
+    if chat.mode == 'task':
+        chat.messages[-1].hide = True
+    apply_improve_code_changes(settings=settings, code_generator=code_generator)
+    return code_generator
+
+def apply_improve_code_changes(settings: GPTEngineerSettings, code_generator: AICodeGerator):
+    changes = code_generator.code_changes
     logger.info(f"improve_existing_code total changes: {len(changes)}")
     changes_by_file_path = {}
     for change in changes:
@@ -349,6 +357,9 @@ def check_project_changes(settings: GPTEngineerSettings):
 
     logger.info(f"Reload knowledge files {new_files}")
     reload_knowledge(settings=settings)
+
+    for file_path in new_files:
+        update_wiki(settings=settings, file_path=file_path)
 
 def extract_changes(content):
     for block in extract_json_blocks(content):
@@ -721,3 +732,23 @@ def find_all_projects():
             except Exception as ex:
                 logger.exception(f"Error loading project {str(project_settings)}")
     return all_projects
+
+def update_wiki(settings: GPTEngineerSettings, file_path: str):
+    with open(file_path, 'r') as f:
+        file_content = f.read()
+        logger.info(f"update_wiki file_path: {file_path}, project_wiki: {settings.project_wiki}")
+        chat = Chat(messages=[
+          HumanMessage(content=f"""File {file_path} has changed.
+          Extract usefull informatation to add to wiki pages at {settings.project_wiki}
+          If there are no wiki files about this file, create new one.
+          FILE CONTENT:
+          {file_content}""")
+        ])
+        chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+        code_generator = improve_existing_code(settings=settings, chat=chat, apply_changes=False)
+        logger.info(f"update_wiki file_path: {file_path}, changes: {code_generator}")
+        if code_generator:
+            wiki_changes = [change for change in code_generator.code_changes if settings.project_wiki in change.file_path]
+            logger.info(f"update_wiki file_path: {file_path}, wiki changes: {wiki_changes}")
+            if wiki_changes:
+                apply_improve_code_changes(settings=settings, code_generator=AICodeGerator(code_changes=wiki_changes))

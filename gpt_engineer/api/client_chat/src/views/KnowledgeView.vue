@@ -19,6 +19,12 @@ import MarkdownVue from '@/components/Markdown.vue'
         <i class="fa-solid fa-rotate-right"></i> Update
       </div>
     </div>
+    <div class="text-xs flex gap-2" v-if="subProjects?.length">
+      Linked projects:
+      <span class="badge badge-xs badge-warning" v-for="sp in subProjects" :key="sp">
+        {{ sp }}
+      </span>
+    </div>
     <div class="flex flex-col gap-2" v-if="settings?.use_knowledge">
       <div class="text-xs flex gap-2 items-center">
         <i class="fa-solid fa-sliders"></i>
@@ -305,8 +311,14 @@ export default {
     showFiles () {
       const { fileFilter } = this
       return this.showFilesSelected?.filter(f => !fileFilter || f.indexOf(fileFilter) !== -1)
+    },
+    subProjects () {
+      const {sub_projects } = this.settings
+      if (Array.isArray(sub_projects)) {
+        return sub_projects
+      }
+      return sub_projects?.split(",")
     }
-
   },
   watch: {
   },

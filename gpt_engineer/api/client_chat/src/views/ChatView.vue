@@ -64,27 +64,6 @@ import moment from 'moment'
         <button class="btn btn-primary btn-xs" @click="newChat">
           <i class="fa-solid fa-plus"></i>
         </button>
-        <button :class="['btn btn-sm hover:btn-info hover:text-white hidden', showSettings && 'btn-info text-white']" @click="showSettings = !showSettings">
-          <i class="fa-solid fa-gear"></i>
-        </button>
-      </div>
-      <div class="py-2 flex gap-2 items-center bg-base-300/20 rounded-md" v-if="showSettings">
-        <div class="flex gap-2 items-center bg-info p-1 rounded-md">
-          <div class="dropdown">
-            <div tabindex="0" role="button" class="btn btn-sm btn-neutral">
-              <i class="fa-solid fa-user-doctor"></i>
-              Add profiles
-            </div>
-            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-              <li @click="addProfile(p)" v-for="p in profiles" :key="p"
-                ><a><i class="fa-solid fa-plus"></i> {{ p }}</a>
-              </li>
-            </ul>
-          </div>
-          <button class="btn btn-sm mr-2" @click="addFile = ''">
-            <i class="fa-solid fa-file-circle-plus"></i>
-          </button>
-        </div>
       </div>
       <div v-if="false">
         <span class="cursor-pointer mr-2 hover:underline group text-primary"

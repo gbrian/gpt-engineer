@@ -24,6 +24,7 @@
     "pinia": "^2.1.7",
     "simple-code-editor": "^2.0.9",
     "vue": "^3.4.21",
+    "vue-mermaid-string": "^6.0.0",
     "vue-router": "^4.3.0",
     "vuedraggable": "^4.1.0"
   },
