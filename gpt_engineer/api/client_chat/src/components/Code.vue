@@ -1,6 +1,7 @@
 <script setup>
 import hljs from 'highlight.js';
 import CodeEditor from 'simple-code-editor';
+import MermaidViewerVue from './MermaidViewer.vue'
 </script>
 <template>
   <div>
@@ -9,12 +10,14 @@ import CodeEditor from 'simple-code-editor';
         <i class="fa-solid fa-file-code"></i>
       </button>
     </div>
+    <MermaidViewerVue :diagram="codeText" v-if="language === 'mermaid'" />
     <CodeEditor
       line-nums 
       :value="codeText"
       :languages="languages"
       width="100%"
       theme="github-dark"
+      v-else
     ></CodeEditor>
   </div>
 </template>
@@ -28,7 +31,7 @@ export default {
     }
   },
   created () {
-    const language = this.code.attributes["class"].value.split("-").reverse()[0]
+    const language = this.language
     this.languages = [[ language, language.toUpperCase() ]]
     this.codeText = this.code.innerText
     console.log("Code block created", language)
@@ -36,7 +39,12 @@ export default {
   mounted () {
     this.code.parentNode.after(this.$el)
     this.code.parentNode.remove()
-    this.$el.querySelector('.header.border').append(this.$refs.toolbar)
+    this.$el.querySelector('.header.border')?.append(this.$refs.toolbar)
+  },
+  computed: {
+    language() {
+      return this.code.attributes["class"].value.split("-").reverse()[0]
+    }
   }
 }
 </script>

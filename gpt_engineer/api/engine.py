@@ -59,12 +59,19 @@ logger = logging.getLogger(__name__)
 def reload_knowledge(settings: GPTEngineerSettings, path: str = None):
     knowledge = Knowledge(settings=settings)
     logger.info(f"***** reload_knowledge: {path}")
+    documents = None
     if path:
         documents = knowledge.reload_path(path)
         logger.info(f"reload_knowledge: {path} - Docs: {len(documents)}")
-        return { "doc_count": len(documents) if documents else 0 }
-    
-    knowledge.reload()
+    else:    
+        documents = knowledge.reload()
+    all_files = set([doc.metadata["source"] for doc in documents])
+    for file_path in all_files:
+        try:
+            update_wiki(settings=settings, file_path=file_path)
+        except:
+            pass
+    return { "doc_count": len(documents) if documents else 0 }
 
 def knowledge_search(settings: GPTEngineerSettings, knowledge_search: KnowledgeSearch):
     if knowledge_search.document_search_type:
@@ -316,7 +323,8 @@ def check_knowledge_status(settings: GPTEngineerSettings):
     pending_files = knowledge.detect_changes()
     return {
       "last_update": str(last_update),
-      "pending_files": pending_files,
+      "pending_files": pending_files[0:2000],
+      "total_pending_changes": len(pending_files),
       **status
     }
 
@@ -359,7 +367,11 @@ def check_project_changes(settings: GPTEngineerSettings):
     reload_knowledge(settings=settings)
 
     for file_path in new_files:
-        update_wiki(settings=settings, file_path=file_path)
+        try:
+            update_wiki(settings=settings, file_path=file_path)
+            logger.info(f"Update wiki done for {file_path}")
+        except:
+            logger.exception(f"Update wiki ERROR for {file_path}")
 
 def extract_changes(content):
     for block in extract_json_blocks(content):
@@ -721,33 +733,58 @@ def get_keywords(settings: GPTEngineerSettings, query):
 def find_all_projects():
     all_projects = []
     project_path = "/"
-    # logger.info(f"find_projects_to_watch: Scanning project paths: {project_path}")
-    for project_settings in Path(project_path).glob("**/.gpteng"):
-        # logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
+    paths = [p for p in Path(project_path).glob("**/.gpteng") if os.path.isfile(f"{p}/project.json")]
+    # logger.info(f"find_projects_to_watch: Scanning project paths: {project_path} - {paths}")
+    for project_settings in paths:
         try:
             settings = GPTEngineerSettings.from_project(gpteng_path=str(project_settings))
             if settings.gpteng_path not in all_projects:
-                all_projects = all_projects + [settings]
+                all_projects.append(settings)
+                # logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
         except Exception as ex:
             logger.exception(f"Error loading project {str(project_settings)}")
     return all_projects
 
 def update_wiki(settings: GPTEngineerSettings, file_path: str):
+    project_wiki_path = settings.get_project_wiki_path()
+    if file_path.startswith(project_wiki_path):
+        return
+
+    project_wiki_home = f"{project_wiki_path}/home.md"
+
+    home_content = f"# {settings.project_name}"
+    if os.path.isfile(project_wiki_home):
+        with open(project_wiki_home, 'r') as f:
+            home_content = f.read()
+
     with open(file_path, 'r') as f:
         file_content = f.read()
-        logger.info(f"update_wiki file_path: {file_path}, project_wiki: {settings.project_wiki}")
+        logger.info(f"update_wiki file_path: {file_path}, project_wiki: {project_wiki_path}")
         chat = Chat(messages=[
-          HumanMessage(content=f"""File {file_path} has changed.
-          Extract usefull informatation to add to wiki pages at {settings.project_wiki}
-          If there are no wiki files about this file, create new one.
-          FILE CONTENT:
-          {file_content}""")
+          Message(role="user", content=f"""Extract iportant parts from the content of {file_path} to be added to the wiki.
+          {file_content}
+          """)
         ])
         chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+        chat.messages.append(Message(role="user", content=f"""
+        Improve our current wiki with the new knowledge extracted from {file_path},
+        Highlight important parts and create mermaid diagrams to help user's understanding of the project.
+        If information is not relevant for the whole project but for the file itself remove from home and create a new linked wiki page instead.
+        
+        Wiki directory structure:
+        ```md
+        {generate_markdown_tree(Path(project_wiki_path).glob("**"))}
+        ```
+
+        Wiki home content:
+        ```{project_wiki_home}
+        {home_content}
+        ```
+        """))
         code_generator = improve_existing_code(settings=settings, chat=chat, apply_changes=False)
         logger.info(f"update_wiki file_path: {file_path}, changes: {code_generator}")
         if code_generator:
-            wiki_changes = [change for change in code_generator.code_changes if settings.project_wiki in change.file_path]
+            wiki_changes = [change for change in code_generator.code_changes if project_wiki_path in change.file_path]
             logger.info(f"update_wiki file_path: {file_path}, wiki changes: {wiki_changes}")
             if wiki_changes:
                 apply_improve_code_changes(settings=settings, code_generator=AICodeGerator(code_changes=wiki_changes))

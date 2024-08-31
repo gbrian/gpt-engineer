@@ -71,8 +71,6 @@ class GPTEngineerSettings:
             keys = GPTEngineerSettings().__dict__.keys()
             for key in kwrgs.keys():
               self.__dict__[key] = kwrgs.get(key)
-        if not self.project_wiki: 
-            self.project_wiki = f"{self.project_path}/wiki"
 
     @classmethod
     def from_env(cls):
@@ -136,3 +134,8 @@ class GPTEngineerSettings:
             # logger.exception(f"Error loading subproijects for {self.project_name} - {self.sub_projects}")
             pass
         return []
+
+    def get_project_wiki_path(self):
+        if not self.project_wiki: 
+            return f"{self.project_path}/wiki"
+        return self.project_wiki

@@ -104,14 +104,11 @@ class Knowledge:
             self.last_changed_file_paths = list(dict.fromkeys([d.metadata["source"] for d in documents]))
             self.build_summary()
             logger.info('Knowledge reloaded')
-            changes = self.clean_deleted_documents()
-            if changes or documents: 
-                self.build_summary()
-            return True if len(documents) else False
+            self.refresh_last_update()
+            return documents
         except Exception as ex:
             logger.error(f"Error loading knowledge {ex}")
             pass
-        self.refresh_last_update()
 
     def reload_path(self, path: str):
         logger.info(f"reload_path {path}")

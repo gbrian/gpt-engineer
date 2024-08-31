@@ -7,6 +7,7 @@ import KnowledgeViewVue from './views/KnowledgeView.vue';
 import ProfileViewVue from './views/ProfileView.vue';
 import ProjectSettingsVue from "./views/ProjectSettings.vue";
 import KanbanVue from './components/kanban/Kanban.vue'
+import WikiViewVue from './views/WikiView.vue';
 </script>
 
 <template>
@@ -56,12 +57,14 @@ import KanbanVue from './components/kanban/Kanban.vue'
           </ul>
         </div>
       </a>
-      <a role="tab" :class="['hidden tab flex items-center gap-2', tabIx === 'kanban' ? tabActive: tabInactive]"
-        @click="tabIx = 'kanban'"
-      >
-        <i class="fa-solid fa-book-open"></i>
-        Kanban
-      </a>
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'wiki' ? tabActive: tabInactive]"
+        @click="tabIx = 'wiki'"
+        >
+          <i class="fa-brands fa-wikipedia-w"></i>
+          wiki
+
+        </a>
+
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 0 ? tabActive: tabInactive]"
         @click="tabIx = 0"
       >
@@ -70,16 +73,8 @@ import KanbanVue from './components/kanban/Kanban.vue'
           Tasks
         </div>
       </a>
-      <a role="tab" :class="['hidden tab flex items-center gap-2', tabIx === 'live' ? tabActive: tabInactive]"
-        @click="tabIx = 'live'"
-      >
-        <div class="font-medium flex gap-2 items-center">
-          <i class="fa-solid fa-tower-broadcast"></i>
-          Live edit
-        </div>
-      </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 1 ? tabActive: tabInactive]"
-        @click="tabIx = 1"
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'knowledge' ? tabActive: tabInactive]"
+        @click="tabIx = 'knowledge'"
       >
         <i class="fa-solid fa-book"></i>
         Knowledge
@@ -108,11 +103,13 @@ import KanbanVue from './components/kanban/Kanban.vue'
       <KanbanVue v-if="tabIx === 'kanban'" />
       <ChatViewVue v-if="tabIx === 0" />
       <LiveEditVue v-if="tabIx === 'live'" />
-      <KnowledgeViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 1" />
+      <KnowledgeViewVue class="p-2 abolsute top-0 left-0 w-full" v-if="tabIx === 'knowledge'" />
+      <WikiViewVue class="p-2" v-if="tabIx == 'wiki'"></WikiViewVue>
+
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'settings'" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'profiles'" />
       <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
-      <HomeViewVue v-if="tabIx == 'home'"></HomeViewVue>
+      <HomeViewVue class="p-2" v-if="tabIx == 'home'"></HomeViewVue>
     </div>
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">

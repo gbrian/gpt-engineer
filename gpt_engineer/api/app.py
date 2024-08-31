@@ -20,7 +20,7 @@ for logger_id in [
     ]:
     logging.getLogger(logger_id).setLevel(logging.WARNING)
 
-from fastapi import FastAPI, Request, UploadFile
+from fastapi import FastAPI, Request, Response, UploadFile
 from fastapi.staticfiles import StaticFiles
 from flask import send_file
 from fastapi.responses import JSONResponse
@@ -310,12 +310,12 @@ class GPTEngineerAPI:
         def api_list_chats(file_name: str):
             os.system(f"code-server -r {file_name}")
 
-        @app.get("/api/wiki/:file_name")
-        def api_get_keywords(request: Request):
+        @app.get("/api/wiki")
+        def api_get_wiki(request: Request):
             settings = request.state.settings
-            query = request.query_params.get("query")
-            return get_keywords(settings=settings, query=query)
-
+            file_path = request.query_params.get("file_path")
+            with open(f"{settings.project_wiki}{file_path}") as f:
+              return Response(content=f.read(), media_type="text/html")
 
         return app
             

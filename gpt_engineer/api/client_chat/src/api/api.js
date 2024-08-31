@@ -148,6 +148,11 @@ export const API = {
       return window.location.origin + url
     }
   },
+  wiki: {
+    read (path) {
+      return API.get(`/api/wiki?file_path=${path}&` + query())
+    }
+  },
   init (gpteng_path) {
     this.gpteng_path = gpteng_path
     if (gpteng_path) {

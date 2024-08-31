@@ -110,7 +110,7 @@ import MarkdownVue from '@/components/Markdown.vue'
     <div class="p-4 flex flex-col gap-2 grow">
       <div role="tablist" class="tabs tabs-lifted">
         <a role="tab" :class="['tab', showIndexFiles === 0 && 'tab-active text-primary']" @click="setTab(0)">
-          <div class="text-xl font-medium">({{ status?.pending_files?.length }}) Pending files</div>
+          <div class="text-xl font-medium">({{ status?.pending_files?.length }} / {{ status?.total_pending_changes }}) Pending files</div>
         </a>
         <a role="tab" :class="['tab', showIndexFiles === 1 && 'tab-active text-primary']" @click="setTab(1)">
           <div class="text-xl font-medium">({{ status?.files?.length }}) Indexed files</div>

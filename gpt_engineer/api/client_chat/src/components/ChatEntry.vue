@@ -73,16 +73,6 @@ import Code from './Code.vue'
       @generate-code="$emit('generate-code', $event)"
     >
     </Code>
-    <!--div class="flex gap-2 justify-end absolute right-2 top-2"
-        v-for="code in codeBlocks" :key="code.id" ref="runButton">
-        <button class="btn btn-sm" @click.stop="toggleExpand(code)">
-          <span v-if="code._collapsed"><i class="fa-solid fa-chevron-up"></i></span>
-          <span v-else><i class="fa-solid fa-chevron-down"></i></span>
-        </button>
-        <button class="btn btn-sm" @click.stop="copyToClipboard(code)">
-          <i class="fa-solid fa-copy"></i>
-        </button>
-    </div -->
   </div>
 </template>
 <script>
