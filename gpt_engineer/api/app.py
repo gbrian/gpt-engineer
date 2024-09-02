@@ -314,8 +314,11 @@ class GPTEngineerAPI:
         def api_get_wiki(request: Request):
             settings = request.state.settings
             file_path = request.query_params.get("file_path")
-            with open(f"{settings.project_wiki}{file_path}") as f:
-              return Response(content=f.read(), media_type="text/html")
+            try:
+                with open(f"{settings.project_wiki}{file_path}") as f:
+                  return Response(content=f.read(), media_type="text/html")
+            except:
+                return Response(content="# No project wiki...yet!", media_type="text/html")
 
         return app
             

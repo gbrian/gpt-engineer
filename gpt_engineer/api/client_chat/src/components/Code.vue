@@ -9,16 +9,22 @@ import MermaidViewerVue from './MermaidViewer.vue'
       <button class="btn btn-xs tooltip" data-tip="Generate code" @click="$emit('generate-code', code.innerText)">
         <i class="fa-solid fa-file-code"></i>
       </button>
+      <button class="btn btn-xs tooltip" data-tip="Preview HTML"
+        @click="htmlPreview = !htmlPreview" v-if="language === 'html'"
+      >
+        <i class="fa-brands fa-chrome"></i>
+      </button>
     </div>
-    <MermaidViewerVue :diagram="codeText" v-if="language === 'mermaid'" />
+    <MermaidViewerVue :diagram="codeText" v-if="showMermaid" />
     <CodeEditor
       line-nums 
       :value="codeText"
       :languages="languages"
       width="100%"
       theme="github-dark"
-      v-else
+      v-if="showCode"
     ></CodeEditor>
+    <div class="" v-html="this.codeText" v-if="htmlPreview"></div>
   </div>
 </template>
 <script>
@@ -27,7 +33,8 @@ export default {
   data () {
     return {
       codeText: null,
-      languages: null
+      languages: null,
+      htmlPreview: false
     }
   },
   created () {
@@ -44,6 +51,12 @@ export default {
   computed: {
     language() {
       return this.code.attributes["class"].value.split("-").reverse()[0]
+    },
+    showMermaid () {
+      return this.language === 'mermaid'
+    },
+    showCode () {
+      return !this.showMermaid && ! this.htmlPreview
     }
   }
 }
