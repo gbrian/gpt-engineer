@@ -747,7 +747,7 @@ def find_all_projects():
 
 def update_wiki(settings: GPTEngineerSettings, file_path: str):
     project_wiki_path = settings.get_project_wiki_path()
-    if file_path.startswith(project_wiki_path):
+    if not settings.project_wiki or file_path.startswith(project_wiki_path):
         return
 
     project_wiki_home = f"{project_wiki_path}/home.md"

@@ -2,6 +2,7 @@
 import Code from './Code.vue'
 import { full as emoji } from 'markdown-it-emoji'
 import MarkdownIt from 'markdown-it'
+import highlight  from 'markdown-it-highlightjs'
 </script>
 <template>
   <div>
@@ -19,6 +20,7 @@ const md = new MarkdownIt({
   html: true
 })
 md.use(emoji)
+md.use(highlight)
 
 export default {
   props: ['text'],
@@ -37,7 +39,7 @@ export default {
     html () {
       if (!this.showDoc) {
         try {
-          return md.render(this.text)
+          return md.render(this.sanitizedText)
         } catch (ex) {
           console.error("Message can't be rendered", this.text)
         }
@@ -46,6 +48,9 @@ export default {
     },
     showDocPreview () {
       return md.render("```json\n" + JSON.stringify(this.text, null, 2) + "\n```")
+    },
+    sanitizedText () {
+      return this.text?.replace("```thymeleaf", "```html")
     }
   },
   watch: {

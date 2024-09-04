@@ -1,11 +1,11 @@
 <script setup>
-import Code from './Code.vue'
+import Markdown from './Markdown.vue'
 </script>
 <template>
   <div :class="['relative w-full relative p-2 hover:rounded-md',
       message.role === 'user' ? 'chat-start': 'chat-end',
     ]" >
-    <div :class="['px-2 max-w-full group w-full prose -mx-2',
+    <div :class="['px-2 max-w-full group w-full -mx-2 prose-xs',
       message.improvement ? 'border-green-300/20 bg-green-900' : 'border-slate-300/20',
       message.role === 'user' ? '': '',
       message.collapse ? 'max-h-40 overflow-hidden': 'h-fit',
@@ -54,7 +54,7 @@ import Code from './Code.vue'
           </div>
         </div>
         <pre v-if="srcView">{{ message.content }}</pre>
-        <div class="text-md text-wrap mt-2 overflow-y-auto" v-html="html" v-else></div>
+        <Markdown class="" :text="message.content" v-else></Markdown>
         <div v-if="message.images">
           <div class="grid grid-cols-6">
             <div class="carousel-item click"
@@ -67,22 +67,18 @@ import Code from './Code.vue'
         </div>
       </div>
     </div>
-    <Code v-for="code in codeBlocks" :key="code.id"
-      :code="code"
-      ref="codeSection"
-      @generate-code="$emit('generate-code', $event)"
-    >
-    </Code>
   </div>
 </template>
 <script>
 import { full as emoji } from 'markdown-it-emoji'
+import highlight  from 'markdown-it-highlightjs'
 import MarkdownIt from 'markdown-it'
 
 const md = new MarkdownIt({
   html: true
 })
 md.use(emoji)
+md.use(highlight)
 
 export default {
   props: ['message'],
@@ -95,7 +91,7 @@ export default {
   },
   mounted () {
     this.message.collapse = this.message.hide
-    this.updateCodeBlocks()
+    // this.updateCodeBlocks()
   },
   computed: {
     html () {
