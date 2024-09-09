@@ -1,6 +1,7 @@
 <script setup>
 import { API } from './api/api'
 import HomeViewVue from "./views/HomeView.vue";
+import ProjectViewVue from "./views/ProjectView.vue";
 import ChatViewVue from "./views/ChatView.vue";
 import LiveEditVue from "./views/LiveEdit.vue";
 import KnowledgeViewVue from './views/KnowledgeView.vue';
@@ -82,7 +83,7 @@ import WikiViewVue from './views/WikiView.vue';
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'settings' ? tabActive: tabInactive]"
           @click="tabIx = 'settings'"
         >
-          <i class="fa-solid fa-brain"></i>
+        <i class="fa-solid fa-gear"></i>
       </a>
     </div>
     <div class="grow relative overflow-auto bg-base-100 p-2" v-if="validProject">
@@ -96,7 +97,7 @@ import WikiViewVue from './views/WikiView.vue';
         <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'settings' ? tabActive: tabInactive]"
           @click="tabIx = 'settings'"
         >
-          <i class="fa-solid fa-brain"></i>
+          <i class="fa-solid fa-sliders"></i>
           Setting
         </a>
       </div>
@@ -109,7 +110,7 @@ import WikiViewVue from './views/WikiView.vue';
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'settings'" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'profiles'" />
       <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
-      <HomeViewVue class="p-2" v-if="tabIx == 'home'"></HomeViewVue>
+      <ProjectViewVue class="p-2" v-if="tabIx == 'home'"></ProjectViewVue>
     </div>
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">
@@ -144,7 +145,7 @@ import WikiViewVue from './views/WikiView.vue';
 export default {
   data () {
     return {
-      tabIx: 0,
+      tabIx: 'home',
       newProject: null,
       gptengPath: null,
       showOpenProjectModal: false,
