@@ -3,118 +3,137 @@ import { API } from '../api/api'
 import AddFileDialog from '../components/chat/AddFileDialog.vue'
 import Chat from '@/components/chat/Chat.vue'
 import moment from 'moment'
+import PRView from '../views/PRView.vue'
 </script>
 <template>
-  <div class="flex gap-2 h-full justify-between" v-if="chat">
-    <div class="flex flex-col  bg-base-300 p-2 overflow-auto" v-if="showChatsTree">
-      <ul tabindex="0" class=" p-2 w-52">
-        <li class="p-2 click hover:underline flex flex-col"
-          v-for="openChat in chats" :key="openChat"
-          @click="loadChat(openChat.name)" >
-          <div class="text-xs">{{ moment.utc(openChat.updated_at).fromNow() }}</div>
-          <a>{{ openChat.name }}</a>
-        </li>
-      </ul>
-    <div class="grow"></div>
-      <div class="px-2">
-      </div>
+  <div class="flex flex-col gap-1 h-full" v-if="chat">
+    <div class="px-2 flex gap-2 items-center">
+      <i class="fa-solid fa-code-branch"></i>
+      {{ API.lastSettings.current_git_branch }}
+      <div class="grow"></div>
+      <button class="btn btn-sm" @click="showPRView = false" v-if="showPRView">
+        Task
+      </button>
+      <button class="btn btn-sm" @click="showPRView = true" v-else>
+        PR
+      </button>
     </div>
-    <div class="grow flex flex-col gap-2">
-      <div class="text-xl flex gap-2 items-center" v-if="!chatMode">
-        <div class="flex gap-2 items-end">
-          <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']" @click="showChatsTree = !showChatsTree">
-            <i class="fa-solid fa-folder-tree"></i>
-          </button>
-          <input v-if="editName"
-            type="text" class="input input-xs input-bordered"
-            @keydown.enter.stop="saveChat"
-            @keydown.esc="editName = false"
-            v-model="chat.name" />
-          <div class="font-bold flex flex-col" v-else> 
-            <div class="click" @click="editName = true">{{ chat.name }}</div>
+    <PRView v-if="showPRView"></PRView>
+    <div class="grow flex gap-2 h-full justify-between" v-else>
+      <div class="flex flex-col  bg-base-300 p-2 overflow-auto" v-if="showChatsTree">
+        <ul tabindex="0" class=" p-2 w-52">
+          <li class="p-2 click hover:underline flex flex-col"
+            v-for="openChat in chats" :key="openChat"
+            @click="loadChat(openChat.name)" >
+            <div class="text-xs">{{ moment.utc(openChat.updated_at).fromNow() }}</div>
+            <a>{{ openChat.name }}</a>
+          </li>
+        </ul>
+      <div class="grow"></div>
+        <div class="px-2">
+        </div>
+      </div>
+      <div class="grow flex flex-col gap-2">
+        <div class="text-xl flex gap-2 items-center" v-if="!chatMode">
+          <div class="flex flex-col sm:flex-row gap-2 w-full">
             <div class="flex gap-2">
-              <div class="text-xs">{{ moment.utc(chat.updated_at).fromNow() }}</div>
-              <div class="badge badge-sm">
-                {{  chat.id }}
+              <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']" @click="showChatsTree = !showChatsTree">
+                <i class="fa-solid fa-folder-tree"></i>
+              </button>
+              <input v-if="editName"
+                type="text" class="input input-xs input-bordered"
+                @keydown.enter.stop="saveChat"
+                @keydown.esc="editName = false"
+                v-model="chat.name" />
+              <div class="font-bold flex flex-col" v-else> 
+                <div class="click" @click="editName = true">{{ chat.name }}</div>
+                <div class="flex gap-2">
+                  <div class="text-xs">{{ moment.utc(chat.updated_at).fromNow() }}</div>
+                  <div class="badge badge-sm">
+                    {{  chat.id }}
+                  </div>
+                </div>
               </div>
             </div>
+            <div class="grow"></div>
+            <div class="flex gap-2">
+              <select v-model="chat.mode" class="select select-xs select-bordered">
+                <option selected value="chat">chat</option>
+                <option selected value="task">task</option>
+              </select>
+              <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
+                <i class="fa-solid fa-floppy-disk"></i>
+              </button>
+              <button class="btn btn-xs hover:btn-error hover:text-white" @click="deleteChat">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+              
+              <button class="btn btn-xs" v-if="hiddenCount" @click="showHidden = !showHidden">
+                <div class="flex items-center gap-2" v-if="!showHidden">
+                  ({{ hiddenCount }})
+                  <i class="fa-solid fa-eye-slash"></i>
+                </div>
+                <span class="text-warning" v-else>
+                  <i class="fa-solid fa-eye"></i>
+                </span>
+              </button>
+              <button class="btn btn-primary btn-xs" @click="newChat">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
           </div>
-          <select v-model="chat.mode" class="select select-xs select-bordered">
-            <option selected value="chat">chat</option>
-            <option selected value="task">task</option>
-          </select>
-          <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
-            <i class="fa-solid fa-floppy-disk"></i>
-          </button>
-          <button class="btn btn-xs hover:btn-error hover:text-white" @click="deleteChat">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-          
         </div>
-        <div class="grow"></div>
-        <button class="btn btn-xs" v-if="hiddenCount" @click="showHidden = !showHidden">
-          <div class="flex items-center gap-2" v-if="!showHidden">
-            ({{ hiddenCount }})
-            <i class="fa-solid fa-eye-slash"></i>
-          </div>
-          <span class="text-warning" v-else>
-            <i class="fa-solid fa-eye"></i>
+        <div v-if="false">
+          <span class="cursor-pointer mr-2 hover:underline group text-primary"
+            v-for="file in chat.profiles" :key="file" :title="file"
+            @click="showFile = file"
+          >
+            <i class="fa-solid fa-user-doctor"></i>
+            {{ file.split("/").reverse()[0] }}
           </span>
-        </button>
-        <button class="btn btn-primary btn-xs" @click="newChat">
-          <i class="fa-solid fa-plus"></i>
-        </button>
-      </div>
-      <div v-if="false">
-        <span class="cursor-pointer mr-2 hover:underline group text-primary"
-          v-for="file in chat.profiles" :key="file" :title="file"
-          @click="showFile = file"
-        >
-          <i class="fa-solid fa-user-doctor"></i>
-          {{ file.split("/").reverse()[0] }}
-        </span>
-        <span class="cursor-pointer mr-2 hover:underline group text-secondary"
-          v-for="file in chat.file_list" :key="file" :title="file"
-          @click="showFile = file"
-        >
-          <i class="fa-solid fa-file"></i>
-          {{ file.split("/").reverse()[0] }}
-        </span>
-        <button class="btn btn-circle btn-xs" @click="addNewFile = true">
-          <i class="fa-solid fa-plus"></i>
-        </button>
-      </div>
-      <Chat :chat="chat"
-        :showHidden="showHidden"
-        @refresh-chat="loadChat(chat.name)"
-        @add-file="onAddFile"
-        @delete-message="onRemoveMessage"
-        @save="saveChat"
-      v-if="chat"/>
-      <div class="modal modal-open" role="dialog" v-if="showFile || addFile !== null">
-        <div class="modal-box flex flex-col gap-4 p-4">
-          <h3 class="font-bold text-lg" v-if="showFile">
-            This file belongs to the task context:
-            <div class="font-thin">{{ showFile }}</div>
-          </h3>
-          <div v-else>
-            <input type="text" class="input input-bordered w-full" v-model="addFile" placeholder="Add file to context, full path" />
-          </div>
-          <div class="flex gap-2 justify-center">
-            <button class="btn btn-error" @click="removeFileFromContext" v-if="showFile">
-              Remove
-            </button>
-            <button class="btn btn-primary" @click="addFileToContext" v-else>
-              Add
-            </button>
-            <button class="btn" @click="addFile = showFile = null">
-              Close
-            </button>
+          <span class="cursor-pointer mr-2 hover:underline group text-secondary"
+            v-for="file in chat.file_list" :key="file" :title="file"
+            @click="showFile = file"
+          >
+            <i class="fa-solid fa-file"></i>
+            {{ file.split("/").reverse()[0] }}
+          </span>
+          <button class="btn btn-circle btn-xs" @click="addNewFile = true">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+        <Chat :chat="chat"
+          :showHidden="showHidden"
+          @refresh-chat="loadChat(chat.name)"
+          @add-file="onAddFile"
+          @delete-message="onRemoveMessage"
+          @save="saveChat"
+        v-if="chat"/>
+        <div class="modal modal-open" role="dialog" v-if="showFile || addFile !== null">
+          <div class="modal-box flex flex-col gap-4 p-4">
+            <h3 class="font-bold text-lg" v-if="showFile">
+              This file belongs to the task context:
+              <div class="font-thin">{{ showFile }}</div>
+            </h3>
+            <div v-else>
+              <input type="text" class="input input-bordered w-full" v-model="addFile" placeholder="Add file to context, full path" />
+            </div>
+            <div class="flex gap-2 justify-center">
+              <button class="btn btn-error" @click="removeFileFromContext" v-if="showFile">
+                Remove
+              </button>
+              <button class="btn btn-primary" @click="addFileToContext" v-else>
+                Add
+              </button>
+              <button class="btn" @click="addFile = showFile = null">
+                Close
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      <add-file-dialog v-if="addNewFile" @open="onAddFile" @close="addNewFile = false" />
     </div>
-    <add-file-dialog v-if="addNewFile" @open="onAddFile" @close="addNewFile = false" />
   </div>
 </template>
 <script>
@@ -131,7 +150,8 @@ export default {
       editName: false,
       showSettings: false,
       addNewFile: null,
-      showHidden: false
+      showHidden: false,
+      showPRView: false
     }
   },
   async created () {

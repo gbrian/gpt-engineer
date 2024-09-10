@@ -65,8 +65,8 @@ import WikiViewVue from './views/WikiView.vue';
 
         </a>
 
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 0 ? tabActive: tabInactive]"
-        @click="tabIx = 0"
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'tasks' ? tabActive: tabInactive]"
+        @click="tabIx = 'tasks'"
       >
         <div class="font-medium flex gap-2 items-center">
           <i class="fa-solid fa-clipboard-list"></i>
@@ -101,7 +101,7 @@ import WikiViewVue from './views/WikiView.vue';
         </a>
       </div>
       <KanbanVue v-if="tabIx === 'kanban'" />
-      <ChatViewVue v-if="tabIx === 0" />
+      <ChatViewVue v-if="tabIx === 'tasks'" />
       <LiveEditVue v-if="tabIx === 'live'" />
       <KnowledgeViewVue class="p-2 abolsute top-0 left-0 w-full" v-if="tabIx === 'knowledge'" />
       <WikiViewVue class="p-2" v-if="tabIx == 'wiki'"></WikiViewVue>
@@ -144,7 +144,7 @@ import WikiViewVue from './views/WikiView.vue';
 export default {
   data () {
     return {
-      tabIx: 0,
+      tabIx: 'tasks',
       newProject: null,
       gptengPath: null,
       showOpenProjectModal: false,

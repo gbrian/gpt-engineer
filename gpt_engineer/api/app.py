@@ -8,7 +8,16 @@ logger = logging.getLogger(__name__)
 
 from pathlib import Path
 import traceback
-for logger_id in [
+
+def disable_logs(logs):
+  for logger_id in logs:
+      logging.getLogger(logger_id).setLevel(logging.WARNING)
+
+def enable_logs(logs):
+  for logger_id in logs:
+      logging.getLogger(logger_id).setLevel(logging.INFO)
+
+disable_logs([
     'apscheduler.scheduler',
     'apscheduler.executors.default',
     'httpx',
@@ -17,8 +26,8 @@ for logger_id in [
     'chromadb.config',
     'chromadb.auth.registry',
     'chromadb.api.segment'
-    ]:
-    logging.getLogger(logger_id).setLevel(logging.WARNING)
+    ])
+
 
 from fastapi import FastAPI, Request, Response, UploadFile
 from fastapi.staticfiles import StaticFiles
@@ -121,6 +130,11 @@ class GPTEngineerAPI:
             if gpteng_path:
                 try:
                     settings = GPTEngineerSettings.from_project(gpteng_path)
+                    ai_logs = ["openai._base_client"]
+                    if settings.log_ai:
+                        enable_logs(ai_logs)
+                    else:
+                        disable_logs(ai_logs)
                 except:
                     pass
             request.state.settings = settings
@@ -133,7 +147,7 @@ class GPTEngineerAPI:
 
         @app.get("/api/projects")
         def api_find_all_projects():
-            return find_all_projects()
+            return find_all_projects(detailed=True)
 
         @app.get("/api/knowledge/reload")
         def api_knowledge_reload(request: Request):

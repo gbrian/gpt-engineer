@@ -3,6 +3,7 @@ import logging
 import re
 import json
 import time
+import subprocess
 from pathlib import Path
 from datetime import datetime
 
@@ -204,6 +205,8 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
             chat_with_project(settings=settings, chat=chat, use_knowledge=False)
             chat.messages = [msg for msg in chat.messages if msg != request_msg]
             chat.messages[-1].improvement = True
+            if chat.mode == 'task':
+                chat.messages[-1].hide = True
             response = chat.messages[-1].content.strip()
             try:
                 return AI_CODE_GENERATOR_PARSER.invoke(response)
@@ -220,8 +223,6 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
     else:
         code_generator = AI_CODE_GENERATOR_PARSER.invoke(response)
 
-    if chat.mode == 'task':
-        chat.messages[-1].hide = True
     apply_improve_code_changes(settings=settings, code_generator=code_generator)
     return code_generator
 
@@ -595,6 +596,8 @@ def check_file_for_mentions(settings: GPTEngineerSettings, file_path: str):
 def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: bool=True, callback=None, append_references: bool=True):
     chat_mode = chat.mode
     is_refine = True if chat_mode == 'task' and len(chat.messages) > 1 else False
+    ai_messages = [m for m in chat.messages if not m.hide and not m.improvement and m.role == "assistant"]
+    last_ai_message = ai_messages[-1] if ai_messages else None
         
     user_message = chat.messages[-1]
     query = user_message.content
@@ -614,23 +617,24 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     """
     
     if chat_mode == 'task':
-        task = chat.messages[1].content if is_refine else ""
+        task = last_ai_message.content if is_refine and last_ai_message else ""
         if is_refine:
             query = f"{chat.messages[0].content}\n{query}"
-        instructions = f"""BEGIN INSTRUCTIONS
-    You are helping user to wtite a task definition for the project {settings.project_name}.
-    Update existing task based on the comments from the user.
-    
-    About the project:
+        instructions = f"""Help me writting a coding task.
+    Here you have details about the project:
+    ```md
     {profile_manager.read_profile("project").content}
-    
-    If you create code snippeds in your answer please follow this:
-    {profile_manager.read_profile("software_developer").content}
-    END INSTRUCTIONS
+    ```
 
-    BEGIN TASK
+    Details about writting code:
+    ```md
+    {profile_manager.read_profile("software_developer").content}
+    ```
+
+    And this is what we have written so far:
+    ```md
     {task}
-    END TASK
+    ```
     """
     messages = [
       SystemMessage(content=instructions)
@@ -730,7 +734,7 @@ def extract_tags(settings: GPTEngineerSettings, doc):
 def get_keywords(settings: GPTEngineerSettings, query):
     return KnowledgeKeywords(settings=settings).get_keywords(query)
 
-def find_all_projects():
+def find_all_projects(detailed: bool = False):
     all_projects = []
     project_path = "/"
     paths = [p for p in Path(project_path).glob("**/.gpteng") if os.path.isfile(f"{p}/project.json")]
@@ -743,7 +747,17 @@ def find_all_projects():
                 # logger.info(f"find_projects_to_watch: project found {str(project_settings)}")
         except Exception as ex:
             logger.exception(f"Error loading project {str(project_settings)}")
-    return all_projects
+    def projects_with_details():
+        for project in all_projects:
+            try:
+              command = ["git", "branch", "--show-current"]
+              result = subprocess.run(command, cwd=project.project_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+              project.__dict__["current_git_branch"] = result.stdout.decode('utf-8')
+            except Exception as ex:
+                project.__dict__["current_git_branch"] = f"Error: {ex}"
+                pass
+        return all_projects
+    return projects_with_details() if detailed else all_projects
 
 def update_wiki(settings: GPTEngineerSettings, file_path: str):
     project_wiki_path = settings.get_project_wiki_path()

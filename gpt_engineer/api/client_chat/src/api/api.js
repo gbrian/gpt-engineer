@@ -153,12 +153,11 @@ export const API = {
       return API.get(`/api/wiki?file_path=${path}&` + query())
     }
   },
-  init (gpteng_path) {
+  async init (gpteng_path) {
     this.gpteng_path = gpteng_path
     if (gpteng_path) {
-      this.lastSettings = {
-        gpteng_path
-      }
+      const { data } = await API.project.list()
+      this.lastSettings = data.find(p => p.gpteng_path === gpteng_path)
     } else {
       const settings = localStorage.getItem("API_SETTINGS")
       try {
