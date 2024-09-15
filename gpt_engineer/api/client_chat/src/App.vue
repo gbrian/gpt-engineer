@@ -13,22 +13,11 @@ import WikiViewVue from './views/WikiView.vue';
 
 <template>
   <div class="w-full h-screen max-w-screen flex flex-col bg-base-300 dark relative" data-theme="dark">
-    <div class="alert alert-error text-xs font-bold text-white" v-if="!lastSettings?.openai_api_key">
-      Please fix your settings. No AI key present
-    </div>
     <progress :class="['progress progress-success w-full', liveRequests ? '': 'opacity-0']"></progress>
-    <div class="alert alert-warning flex gap-2 justify-center" v-if="!validProject">
-      No project found at <span class="">"{{gptengPath}}"</span>
-      <button class="btn btn-sm" v-if="gptengPath" @click="createNewProject">
-        <i class="fa-solid fa-plus"></i> New
-      </button>
-      <button class="btn btn-sm" @click="onShowOpenProjectModal">
-        <i class="fa-regular fa-folder-open"></i> Open
-      </button>
-    </div>
-    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md" v-if="validProject">
+    <div role="tablist" class="tabs tabs-lifted bg-base-100 rounded-md">
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'home' ? tabActive: tabInactive]"
         @click="tabIx = 'home'"
+        v-if="validProject"
       >
         <div class="rounded-full font-bold flex gap-2 flex gap-2 items-center">
           <div class="w-4 h-4 bg-cover bg-center rounded-full bg-primay"
@@ -58,8 +47,12 @@ import WikiViewVue from './views/WikiView.vue';
           </ul>
         </div>
       </a>
+      <a role="tab" :class="['tab flex items-center gap-2']" v-else>
+          <img src="https://codx-dev.meetnav.com/only_icon.png" class="h-7" >
+          Welcome
+      </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'wiki' ? tabActive: tabInactive]"
-        @click="tabIx = 'wiki'"
+        @click="tabIx = 'wiki'" v-if="validProject"
         >
           <i class="fa-brands fa-wikipedia-w"></i>
           wiki
@@ -67,7 +60,7 @@ import WikiViewVue from './views/WikiView.vue';
         </a>
 
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'tasks' ? tabActive: tabInactive]"
-        @click="tabIx = 'tasks'"
+        @click="tabIx = 'tasks'" v-if="validProject"
       >
         <div class="font-medium flex gap-2 items-center">
           <i class="fa-solid fa-clipboard-list"></i>
@@ -75,13 +68,13 @@ import WikiViewVue from './views/WikiView.vue';
         </div>
       </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'knowledge' ? tabActive: tabInactive]"
-        @click="tabIx = 'knowledge'"
+        @click="tabIx = 'knowledge'" v-if="validProject"
       >
         <i class="fa-solid fa-book"></i>
         Knowledge
       </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'settings' ? tabActive: tabInactive]"
-          @click="tabIx = 'settings'"
+          @click="tabIx = 'settings'" v-if="validProject"
         >
         <i class="fa-solid fa-gear"></i>
       </a>

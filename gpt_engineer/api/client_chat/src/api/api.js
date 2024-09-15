@@ -18,6 +18,12 @@ export const API = {
       .catch(console.error)
       .finally(() => API.liveRequests--)
   },
+  del (url) {
+    API.liveRequests++
+    return axiosRequest.delete(url)
+      .catch(console.error)
+      .finally(() => API.liveRequests--)
+  },
   post (url, data) {
     API.liveRequests++
     return axiosRequest.post(url, data)
@@ -37,7 +43,10 @@ export const API = {
       return API.get('/api/projects')
     },
     create(projectPath) {
-      return API.get('/api/project/create?project_path=' + projectPath)
+      return API.post('/api/projects?project_path=' + projectPath, {})
+    },
+    delete() {
+      return API.del('/api/projects?' + query())
     },
     watch () {
       return API.get('/api/project/watch?' + query())
@@ -157,15 +166,16 @@ export const API = {
     this.gpteng_path = gpteng_path
     if (gpteng_path) {
       const { data } = await API.project.list()
-      this.lastSettings = data.find(p => p.gpteng_path === gpteng_path)
+      API.lastSettings = data.find(p => p.gpteng_path === gpteng_path)
     } else {
       const settings = localStorage.getItem("API_SETTINGS")
       try {
-        this.lastSettings = JSON.parse(settings)
+        API.lastSettings = JSON.parse(settings)
       } catch (ex) {
         console.error("Invalid settings")
       }
     }
+    console.log("API init", gpteng_path, API.lastSettings)
   }
 }
 const gpteng_path = decodeURIComponent(gpteng_key ? gpteng_key[1] : "")

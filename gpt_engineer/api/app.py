@@ -299,6 +299,28 @@ class GPTEngineerAPI:
             settings.watching = True
             settings.save_project()
             return { "OK": 1 }
+
+        @app.post("/api/projects")
+        def api_project_create(request: Request):
+            project_path = request.query_params.get("project_path")
+            settings = None
+            try:
+                settings = GPTEngineerSettings.from_project(project_path)
+            except:
+                settings = GPTEngineerSettings()
+                settings.project_path = project_path
+                settings.project_name = settings.project_path.split("/")[-1] 
+                settings.gpteng_path = f"{settings.project_path}/.gpteng"
+                settings.save_project()
+                settings = GPTEngineerSettings.from_project(settings.gpteng_path)
+            return settings
+        
+        @app.delete("/api/projects")
+        def api_project_delete(request: Request):
+            settings = request.state.settings
+            # shutil.rmtree(settings.project_path)
+            logger.info(f"RMEOVE PROJECT {settings.project_path}")
+            return { "ok": 1 }
         
         @app.get("/api/project/unwatch")
         def api_project_unwatch(request: Request):

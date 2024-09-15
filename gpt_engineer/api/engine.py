@@ -737,7 +737,9 @@ def get_keywords(settings: GPTEngineerSettings, query):
 def find_all_projects(detailed: bool = False):
     all_projects = []
     project_path = "/"
-    paths = [p for p in Path(project_path).glob("**/.gpteng") if os.path.isfile(f"{p}/project.json")]
+    all_gpteng_path = [str(p) for p in Path(project_path).glob("**/.gpteng")]
+    # logger.exception(f"all_gpteng_path {all_gpteng_path}")
+    paths = [p for p in all_gpteng_path if os.path.isfile(f"{p}/project.json")]
     # logger.info(f"find_projects_to_watch: Scanning project paths: {project_path} - {paths}")
     for project_settings in paths:
         try:
