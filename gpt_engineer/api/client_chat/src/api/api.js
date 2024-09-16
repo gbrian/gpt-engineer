@@ -145,8 +145,9 @@ export const API = {
     save (profile) {
       return API.post(`/api/profiles?` + query(), profile)
     },
-    delete (name) {
-      return API.delete(`/api/profiles/${name}?` + query())
+    async delete (name) {
+      await API.delete(`/api/profiles/${name}?` + query())
+      API.lastSettings = null
     }
   },
   images: {

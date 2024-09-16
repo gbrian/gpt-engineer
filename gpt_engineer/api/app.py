@@ -15,7 +15,7 @@ def disable_logs(logs):
 
 def enable_logs(logs):
   for logger_id in logs:
-      logging.getLogger(logger_id).setLevel(logging.INFO)
+      logging.getLogger(logger_id).setLevel(logging.DEBUG)
 
 disable_logs([
     'apscheduler.scheduler',
@@ -318,8 +318,8 @@ class GPTEngineerAPI:
         @app.delete("/api/projects")
         def api_project_delete(request: Request):
             settings = request.state.settings
-            # shutil.rmtree(settings.project_path)
-            logger.info(f"RMEOVE PROJECT {settings.project_path}")
+            shutil.rmtree(settings.gpteng_path)
+            logger.error(f"PROJECT REMOVED {settings.gpteng_path}")
             return { "ok": 1 }
         
         @app.get("/api/project/unwatch")

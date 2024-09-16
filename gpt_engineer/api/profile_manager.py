@@ -5,6 +5,7 @@ import logging
 from gpt_engineer.core.dbs import DBs
 from gpt_engineer.core.settings import GPTEngineerSettings
 from gpt_engineer.api.model import Profile
+from gpt_engineer.api.profiles.coding import get_coding_profiles
 
 class ProfileManager:
     def __init__(self, settings: GPTEngineerSettings):
@@ -49,3 +50,6 @@ class ProfileManager:
         profile_path = [file_path for file_path in project_profiles if file_path.endswith(profile_name)]
         if profile_path:
             os.remove(profile_path[0])
+
+    def get_coding_profiles(self, file_paths: [str]):
+        return get_coding_profiles(file_paths)

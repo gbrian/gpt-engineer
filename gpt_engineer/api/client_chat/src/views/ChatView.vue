@@ -188,7 +188,7 @@ export default {
     },
     newChat () {
       this.chat = API.chatManager.newChat()
-      this.chat.mode = this.chat.mode || 'chat'
+      this.chat.mode = this.chat.mode || 'task'
     },
     async saveChat () {
       this.editName = false

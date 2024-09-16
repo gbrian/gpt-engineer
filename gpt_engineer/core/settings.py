@@ -106,6 +106,7 @@ class GPTEngineerSettings:
     def save_project(self):
       settings = self.__dict__
       path = f"{self.gpteng_path}/project.json"
+      os.makedirs(self.gpteng_path, exist_ok=True)
       logging.info(f"Saving project {path} {settings}")
       with open(path, 'w') as f:
         f.write(json.dumps(settings, indent=2))
