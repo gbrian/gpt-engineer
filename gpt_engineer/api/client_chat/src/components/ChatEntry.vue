@@ -65,6 +65,11 @@ import Markdown from './Markdown.vue'
             </div>
           </div>
         </div>
+        <div class="grid gap-2 grid-cols-3 mt-2">
+          <div v-for="file in message.files" :key="file" :data-tip="file" class="badge badge-info badge-sm tooltip">
+            {{ file.split("/").reverse()[0] }}
+          </div>
+        </div>
       </div>
     </div>
   </div>

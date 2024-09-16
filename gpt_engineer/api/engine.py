@@ -619,21 +619,24 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
     if chat_mode == 'task':
         task = last_ai_message.content if is_refine and last_ai_message else ""
         if is_refine:
-            query = f"{chat.messages[0].content}\n{query}"
-        instructions = f"""Help me writting a coding task.
-    Here you have details about the project:
+            user_message = Message(role="user", content=
+              f"""Update curren task definition:
+              ```md
+              {task}
+              ```
+              With user comments:
+              ```md
+              {query}
+              ```
+              """)
+        instructions = f"""You are assisting me on coding for this project:
     ```md
     {profile_manager.read_profile("project").content}
     ```
 
-    Details about writting code:
+    Please, when writing code, follow this guidelines:
     ```md
     {profile_manager.read_profile("software_developer").content}
-    ```
-
-    And this is what we have written so far:
-    ```md
-    {task}
     ```
     """
     messages = [
@@ -702,28 +705,24 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
         logger.info(f"chat_with_project found {doc_length} relevant documents")
 
     
-    messages.append(AIMessage(
-      content=f"""THIS INFORMATION IS COMING FROM PROJECT'S FILES.
-                  HOPE IT HELPS TO ANSWER USER REQUEST.
-                  KEEP FILE SOURCE WHEN WRITTING CODE BLOCKS (EXISTING OR NEWS).
-                  {context}"""))
-
+    if context:
+        user_message = Message(role="user", content=f"""{user_message.content}
+        
+        THIS INFORMATION IS COMING FROM PROJECT'S FILES.
+        HOPE IT HELPS TO ANSWER USER REQUEST.
+        KEEP FILE SOURCE WHEN WRITTING CODE BLOCKS (EXISTING OR NEWS).
+        {context}
+        """)
     messages.append(convert_message(user_message))
     
     messages = ai.next(messages, step_name=curr_fn(), callback=callback)
     response = messages[-1].content
+    sources = []
     if documents and append_references:
         sources = list(set([doc.metadata['source'].replace(settings.project_path, "") \
                         for doc in documents]))
-        sources = '\n'.join([f'- {source}' for source in sources])
-        response = f"{messages[-1].content}\n\nRESOURCES:\n{sources}"
-        if coding_profiles:
-            profiles = ""
-            for profile in coding_profiles:
-                profiles = f"* {profile['type']}\n"
-            response = f"{response}\n\nPROFILES:\n{profiles}"
-
-    response_message = Message(role="assistant", content=response)
+        
+    response_message = Message(role="assistant", content=response, files=sources)
     if chat_mode == 'task':
         for msg in chat.messages[1:]:
           msg.hide = True

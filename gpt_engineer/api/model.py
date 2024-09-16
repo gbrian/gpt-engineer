@@ -24,6 +24,7 @@ class Message(BaseModel):
     improvement: bool = Field(default=False)
     created_at: str = Field(default='')
     images: List[str] = Field(default=[])
+    files: List[str] = Field(default=[])
 
 class Chat(BaseModel):
     id: str = Field(default='')
