@@ -678,6 +678,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
 
     context = ""
     documents = []
+    coding_profiles = []
     if use_knowledge:
         affected_documents, doc_file_list = select_afefcted_documents_from_knowledge(ai=ai,
                                                         dbs=dbs,
@@ -691,6 +692,12 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
             for doc in documents:
                 doc_context = document_to_context(doc)
                 context = context + f"{doc_context}\n"
+
+            coding_profiles = profile_manager.get_coding_profiles(doc_file_list)
+            logger.info(f"Coding profgiles: {coding_profiles} - files: {doc_file_list}")
+            for profile in coding_profiles:
+                context = context + f"coding profile {profile['content']}\n"
+
         doc_length = len(documents) if documents else 0
         logger.info(f"chat_with_project found {doc_length} relevant documents")
 
@@ -710,6 +717,11 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
                         for doc in documents]))
         sources = '\n'.join([f'- {source}' for source in sources])
         response = f"{messages[-1].content}\n\nRESOURCES:\n{sources}"
+        if coding_profiles:
+            profiles = ""
+            for profile in coding_profiles:
+                profiles = f"* {profile['type']}\n"
+            response = f"{response}\n\nPROFILES:\n{profiles}"
 
     response_message = Message(role="assistant", content=response)
     if chat_mode == 'task':
@@ -737,7 +749,9 @@ def get_keywords(settings: GPTEngineerSettings, query):
 def find_all_projects(detailed: bool = False):
     all_projects = []
     project_path = "/"
-    paths = [p for p in Path(project_path).glob("**/.gpteng") if os.path.isfile(f"{p}/project.json")]
+    all_gpteng_path = [str(p) for p in Path(project_path).glob("**/.gpteng")]
+    # logger.exception(f"all_gpteng_path {all_gpteng_path}")
+    paths = [p for p in all_gpteng_path if os.path.isfile(f"{p}/project.json")]
     # logger.info(f"find_projects_to_watch: Scanning project paths: {project_path} - {paths}")
     for project_settings in paths:
         try:
