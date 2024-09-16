@@ -7,8 +7,19 @@ import PRView from '../views/PRView.vue'
 </script>
 <template>
   <div class="flex flex-col gap-1 h-full" v-if="chat">
-    <div class="px-2 flex gap-2 items-center">
-      <i class="fa-solid fa-code-branch"></i>
+    <div class="flex gap-2 items-center">
+      <div class="dropdown">
+        <div tabindex="0" role="button" class="btn btn-xs m-1"><i class="fa-solid fa-code-branch"></i></div>
+        <ul tabindex="0" class="dropdown-content menu bg-base-300 rounded-box z-[1] w-68 p-2 shadow">
+          <li class="mt-2">
+            <a class="input input-bordered input-sm flex gap-2">
+              <input class="bg-transparent active:outline-none" placeholder="New branch...">
+              <i class="fa-solid fa-plus"></i>
+            </a>
+          </li>
+          <li><a>{{ API.lastSettings.current_git_branch }}</a></li>
+        </ul>
+      </div>
       {{ API.lastSettings.current_git_branch }}
       <div class="grow"></div>
       <button class="btn btn-sm" @click="showPRView = false" v-if="showPRView">
