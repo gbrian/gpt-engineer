@@ -18,13 +18,17 @@ class ChatManager:
         file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*.md")]
         def chat_info(file_path):
           name = os.path.basename(file_path).split(".")[0]
-          chat = self.load_chat(chat_name=name)
-          chat.messages = chat.messages[0:1]
-          return {
-            **chat.__dict__,
-            "file_path": file_path
-          }
-        return sorted([chat_info(file_path) for file_path in file_paths],
+          try:
+              chat = self.load_chat(chat_name=name)
+              chat.messages = chat.messages[0:1]
+              return {
+                **chat.__dict__,
+                "file_path": file_path
+              }
+          except:
+              return None
+        all_chats = [chat_info(file_path) for file_path in file_paths]
+        return sorted([chat for chat in all_chats if chat],
             key=lambda x: x["updated_at"],
             reverse=True)
 

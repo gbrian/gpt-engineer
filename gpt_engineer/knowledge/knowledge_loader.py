@@ -82,6 +82,7 @@ class KnowledgeLoader:
                 documents = documents + new_docs
             except Exception as ex:
                 logging.exception(f"Error loading file {file_path}")  
+        documents = [doc for doc in documents if doc.page_content]
         logger.debug(f"Loaded {len(documents)} documents from {len(files)} files")
         return documents
 
