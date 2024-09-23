@@ -38,6 +38,9 @@ class Chat(BaseModel):
     created_at: str = Field(default='')
     updated_at: str = Field(default='')
     mode: str = Field(default='chat')
+    board: str = Field(default='')
+    column: str = Field(default='')
+    column_index: int = Field(default=-1)
 
 class Logprobs(BaseModel):
     tokens: List[str]

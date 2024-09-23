@@ -94,8 +94,8 @@ import WikiViewVue from './views/WikiView.vue';
           Setting
         </a>
       </div>
-      <KanbanVue v-if="tabIx === 'kanban'" />
-      <ChatViewVue v-if="tabIx === 'tasks'" />
+      <KanbanVue v-if="tabIx === 'tasks'" />
+      <ChatViewVue v-if="tabIx === '___tasks'" />
       <LiveEditVue v-if="tabIx === 'live'" />
       <KnowledgeViewVue class="p-2 abolsute top-0 left-0 w-full" v-if="tabIx === 'knowledge'" />
       <WikiViewVue class="p-2" v-if="tabIx == 'wiki'"></WikiViewVue>

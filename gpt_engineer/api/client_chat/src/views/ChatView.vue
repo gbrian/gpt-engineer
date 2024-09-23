@@ -48,7 +48,8 @@ import PRView from '../views/PRView.vue'
         <div class="text-xl flex gap-2 items-center" v-if="!chatMode">
           <div class="flex flex-col sm:flex-row gap-2 w-full">
             <div class="flex gap-2">
-              <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']" @click="showChatsTree = !showChatsTree">
+              <button :class="['btn btn-xs hover:btn-info hover:text-white', showChatsTree && 'btn-info text-white']"
+                @click="onShowChats">
                 <i class="fa-solid fa-folder-tree"></i>
               </button>
               <input v-if="editName"
@@ -149,7 +150,7 @@ import PRView from '../views/PRView.vue'
 </template>
 <script>
 export default {
-  props: ['chatMode'],
+  props: ['chatMode', 'openChat'],
   data() {
     return {
       chat: null,
@@ -166,12 +167,16 @@ export default {
     }
   },
   async created () {
-    this.chats = await API.chats.list()
-    if (this.chats.length) {
-      this.chat = await API.chats.loadChat(this.chats[0].name)
+    if (this.openChat) {
+      this.chat = this.openChat
     } else {
-      this.chat = await API.chats.newChat()
-      this.chats.push(this.chat.name)
+      this.chats = await API.chats.list()
+      if (this.chats.length) {
+        this.chat = await API.chats.loadChat(this.chats[0].name)
+      } else {
+        this.chat = await API.chats.newChat()
+        this.chats.push(this.chat.name)
+      }
     }
     this.loadProfiles()
   },
@@ -244,6 +249,13 @@ export default {
     onRemoveMessage (ix) {
       this.chat.messages = this.chat.messages.filter((m, i) => i !== ix)
       this.saveChat()
+    },
+    onShowChats () {
+      if (this.chats?.length) {
+        this.showChatsTree = !this.showChatsTree
+      } else {
+        this.$emit('chats')
+      }
     }
   }
 }

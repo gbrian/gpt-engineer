@@ -7,6 +7,8 @@ from gpt_engineer.core.settings import GPTEngineerSettings
 
 from gpt_engineer.api.model import Chat, Message
 
+logger = logging.getLogger(__name__)
+
 class ChatManager:
     def __init__(self, settings: GPTEngineerSettings):
         self.settings = settings
@@ -17,7 +19,7 @@ class ChatManager:
         path = self.chat_path
         file_paths = [str(file_path) for file_path in pathlib.Path(path).rglob("*.md")]
         def chat_info(file_path):
-          name = os.path.basename(file_path).split(".")[0]
+          name = ".".join(os.path.basename(file_path).split(".")[:-1])
           try:
               chat = self.load_chat(chat_name=name)
               chat.messages = chat.messages[0:1]
@@ -25,7 +27,8 @@ class ChatManager:
                 **chat.__dict__,
                 "file_path": file_path
               }
-          except:
+          except Exception as ex:
+              logger.error(f"Error loading chat {name}: {ex}")
               return None
         all_chats = [chat_info(file_path) for file_path in file_paths]
         return sorted([chat for chat in all_chats if chat],
@@ -48,7 +51,7 @@ class ChatManager:
         if not chat_file.endswith(".md"):
             chat_file += ".md"
         with open(chat_file, 'r') as f:
-            chat = self.deserialize_chat(content=f.read())
+            chat = self.deserialize_chat(content=f.read(), chat_only=True)
             if not chat.created_at:
                 stats = os.stat(chat_file)
                 chat.created_at = str(datetime.fromtimestamp(stats.st_ctime, tz=timezone.utc))
@@ -73,11 +76,14 @@ class ChatManager:
         chat_content = "\n".join([header] + messages)
         return chat_content
 
-    def deserialize_chat(self, content) -> Chat:
+    def deserialize_chat(self, content, chat_only: bool=False) -> Chat:
         lines = content.split("\n")
         chat_json = json.loads(lines[0][4:-2])
         chat = Chat(**chat_json)
         chat.messages = []
+        if chat_only:
+            return chat
+
         chat_message = None
         for line in lines[1:]:
             if line.startswith("## [[{") and line.endswith("}]]"):
