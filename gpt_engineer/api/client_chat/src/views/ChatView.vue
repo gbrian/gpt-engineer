@@ -251,11 +251,7 @@ export default {
       this.saveChat()
     },
     onShowChats () {
-      if (this.chats?.length) {
-        this.showChatsTree = !this.showChatsTree
-      } else {
-        this.$emit('chats')
-      }
+      this.$emit('chats')
     }
   }
 }

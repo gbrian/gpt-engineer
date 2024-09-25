@@ -48,10 +48,10 @@ export default {
       return mappings[this.task.type] || mappings.default;
     },
     description () {
-      return this.task.messages ? this.task.messages[0]?.content: null
+      return this.task.messages?.length ? this.task.messages[0].content: null
     },
     image () {
-      let image = (this.task.messages[0]?.images||[])[0]
+      let image = this.task.messages?.length ? (this.task.messages[0].images||[])[0] : null
       if (image) {
         try {
           return JSON.parse(image)

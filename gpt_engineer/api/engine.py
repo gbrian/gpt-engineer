@@ -651,7 +651,7 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
             except:
                 return  { "src": image, "alt": "" }
         if m.images:
-            images = [parse_image(image) for image in images]
+            images = [parse_image(image) for image in m.images]
             text_content = {
                   "type": "text",
                   "text": m.content 
@@ -661,9 +661,9 @@ def chat_with_project(settings: GPTEngineerSettings, chat: Chat, use_knowledge: 
                   {
                     "type": "image_url",
                     "image_url": {
-                      "url": get_image_url(image)
+                      "url": image["src"]
                     }
-                  } for image in m.images]
+                  } for image in images]
 
             logger.info(f"ImageMEssage content: {content}")
             msg = BaseMessage(type="image", content=json.dumps(content))

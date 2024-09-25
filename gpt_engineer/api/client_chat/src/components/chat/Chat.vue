@@ -66,8 +66,10 @@ import ChatEntry from '@/components/ChatEntry.vue'
         </ul>
       </div>
       <div class="carousel rounded-box">
-        <div class="carousel-item relative click flex flex-col" v-for="image, ix in allImages" :key="url">
-          <img class="w-40 h-40 click" :src="image.src" :alt="image.alt" @click="imagePreview = image" />
+        <div class="carousel-item relative click flex flex-col" v-for="image, ix in allImages" :key="image.src">
+          <div class="bg-auto bg-no-repeat bg-center h-28 w-28 bg-base-300 mr-4"
+            :style="`background-image: url(${image.src})`" @click="imagePreview = image">
+          </div>
           <p class="text-xs">{{ image.alt }}</p>
           <button class="btn btn-xs btn-circle btn-error absolute right-2 top-2"
             @click="removeImage(ix)"

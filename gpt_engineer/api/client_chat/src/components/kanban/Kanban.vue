@@ -5,7 +5,7 @@ import { API } from '../../api/api'
 import ChatViewVue from '../../views/ChatView.vue'
 </script>
 <template>
-  <ChatViewVue :openChat="chat" v-if="chat" @chats="chat = null" ></ChatViewVue>
+  <ChatViewVue :openChat="chat" v-if="chat" @chats="onChatEditDone" ></ChatViewVue>
   <div class="flex flex-col gap-2 h-full" v-else>
     <div class="dropdown">
       <div tabindex="0" class="click text-2xl flex gap-2 items-center">
@@ -73,15 +73,8 @@ export default {
       board: unassigned
     };
   },
-  async created () {
-    this.chats = await API.chats.list()
-    this.chats = this.chats
-                    .map(c => ({
-                      ...c,
-                      board: c.board || unassigned,
-                      column: c.column || unassigned
-                    }))
-    this.buildColumns()
+  created () {
+    this.buildKanba()
   },
   computed: {
     boards () {
@@ -97,7 +90,14 @@ export default {
         column_index: 0
       }
     },
-    buildColumns () {
+    async buildKanba () {
+      this.chats = await API.chats.list()
+      this.chats = this.chats
+                    .map(c => ({
+                      ...c,
+                      board: c.board || unassigned,
+                      column: c.column || unassigned
+                    }))
       const columns = [...new Set(this.chats?.map(c => c.column))]
       this.columns = [...columns.map(col => ({
           title: col,
@@ -124,7 +124,7 @@ export default {
         task.chat_index = ix
         task.id && API.chats.save(task, true)
       })
-      this.buildColumns()
+      this.buildKanba()
     },
     onEditColumnTitle(column) {
       column.newTitle = column.title
@@ -138,6 +138,10 @@ export default {
     onColumnsChanged() {},
     async openChat(element) {
       this.chat = await API.chats.loadChat(element.name)
+    },
+    onChatEditDone () {
+      this.chat = null
+      this.buildKanba()
     }
   }
 };
