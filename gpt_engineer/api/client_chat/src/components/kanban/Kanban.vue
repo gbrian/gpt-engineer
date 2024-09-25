@@ -19,33 +19,45 @@ import ChatViewVue from '../../views/ChatView.vue'
       </ul>
     </div>
     <div class="flex justify-center grow overflow-auto">
-      <div class="min-h-screen min-w-full overflow-x-scroll">
-        <div
-          v-for="column in columns"
-          :key="column.title"
-          class="bg-neutral rounded-lg px-3 py-3 column-width rounded mr-4"
-        >
-          <p class="text-neutral-content font-semibold font-sans tracking-wide text-sm flex justify-between items-center">
-            {{column.title}}
-            <button class="btn btn-sm" @click="newChat (column.title)">
-              <i class="fa-solid fa-plus"></i>
-            </button>
-          </p>
-          <draggable 
-            v-model="column.tasks" 
-            :group="column.title" 
-            @start="drag=true" 
-            @end="drag=false" 
-            :item-key="column.title">
-            <template #item="{element}">
-              <task-card
-                :task="element"
-                class="mt-3 cursor-move"
-                @click="chat = element"
-              ></task-card>
-            </template>
-          </draggable>
-        </div>
+      <div class="flex min-h-screen min-w-full overflow-x-scroll">
+        
+        <draggable 
+            v-model="columns"
+            group="columns" 
+            @change="onColumnsChanged()" 
+            item-key="title"
+            class="flex overflow-auto"
+          >
+          <template #item="{element}">
+            <div class="bg-neutral rounded-lg px-3 py-3 column-width rounded mr-4 overflow-auto">
+              <p class="text-neutral-content font-semibold font-sans tracking-wide text-sm flex justify-between items-center">
+                <div class="flex input input-bordered input-sm" v-if="element.editTitle">
+                  <input type="text" v-model="element.newTitle"
+                    @keydown.esc="element.editTitle = false"
+                    @keydown.enter="onColumnTitleChanged(column)"
+                  >
+                </div>
+                <div class="click" @click="onEditColumnTitle(element)" v-else>{{element.title}}</div>
+                <button class="btn btn-sm" @click="newChat (element.title)">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+              </p>
+              <draggable 
+                v-model="element.tasks" 
+                group="tasks" 
+                @change="onColumnTasksChanged(column)" 
+                item-key="title">
+                <template #item="{element}">
+                  <task-card
+                    :task="element"
+                    class="mt-3 cursor-move overflow-hidden"
+                    @click="openChat(element)"
+                  ></task-card>
+                </template>
+              </draggable>
+            </div>
+          </template>
+        </draggable>
       </div>
     </div>
   </div>
@@ -57,27 +69,23 @@ export default {
     return {
       chat: null,
       chats: [],
+      columns: [],
       board: unassigned
     };
   },
   async created () {
-    this.chats = (await API.chats.list())
+    this.chats = await API.chats.list()
+    this.chats = this.chats
                     .map(c => ({
                       ...c,
                       board: c.board || unassigned,
                       column: c.column || unassigned
                     }))
+    this.buildColumns()
   },
   computed: {
     boards () {
       return [...new Set(this.chats?.map(c => c.board))]             
-    },
-    columns () {
-      const columns = [...new Set(this.chats?.map(c => c.column))]
-      return columns.map(col => ({
-        title: col,
-        tasks: this.chats.filter(c => c.column === col)
-      }))
     }
   },
   methods: {
@@ -86,8 +94,50 @@ export default {
         name: "New chat",
         board: this.board,
         column,
-        column_ix: 0
+        column_index: 0
       }
+    },
+    buildColumns () {
+      const columns = [...new Set(this.chats?.map(c => c.column))]
+      this.columns = [...columns.map(col => ({
+          title: col,
+          tasks: this.chats.filter(c => c.column === col)
+            .sort((a, b) => a.chat_index < b.chat_index ? -1 : 1)
+        })),
+        {
+          title: "New column",
+          tasks: [{
+            name: "New chat",
+            board: this.board,
+            column: "New column",
+            column_index: 10000,
+            chat_index: 0
+          }]
+        }
+      ].sort((a, b) => a.tasks[0]?.column_index < b.tasks[0]?.column_index ? -1 : 1)
+    },
+    onColumnTasksChanged(column) {
+      const column_index = this.columns.findIndex(c => c.title === column.title)
+      column.tasks.forEach((task, ix) => {
+        task.column = column.title,
+        task.column_index = column_index
+        task.chat_index = ix
+        task.id && API.chats.save(task, true)
+      })
+      this.buildColumns()
+    },
+    onEditColumnTitle(column) {
+      column.newTitle = column.title
+      column.editTitle = true
+    },
+    onColumnTitleChanged(column) {
+      column.title = column.newTitle
+      column.editTitle = false
+      this.onColumnTasksChanged(column)
+    },
+    onColumnsChanged() {},
+    async openChat(element) {
+      this.chat = await API.chats.loadChat(element.name)
     }
   }
 };

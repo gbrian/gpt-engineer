@@ -21,7 +21,7 @@ class ChatManager:
         def chat_info(file_path):
           name = ".".join(os.path.basename(file_path).split(".")[:-1])
           try:
-              chat = self.load_chat(chat_name=name)
+              chat = self.load_chat(chat_name=name, chat_only=True)
               chat.messages = chat.messages[0:1]
               return {
                 **chat.__dict__,
@@ -35,23 +35,27 @@ class ChatManager:
             key=lambda x: x["updated_at"],
             reverse=True)
 
-    def save_chat(self, chat: Chat):
+    def save_chat(self, chat: Chat, chat_only: bool=False):
         chat_file = f"{self.chat_path}/{chat.name}"
         if not chat_file.endswith(".md"):
             chat_file = chat_file + ".md"
         chat.updated_at = datetime.now().isoformat()
         if not chat.created_at:
             chat.created_at = chat.updated_at
+        if chat_only:
+            exiting_chat = self.load_chat(chat.name)
+            chat.messages = exiting_chat.messages
+
         with open(chat_file, 'w') as f:
             chat_content = self.serialize_chat(chat)
             f.write(chat_content)
 
-    def load_chat(self, chat_name):
+    def load_chat(self, chat_name, chat_only: bool = False):
         chat_file = f"{self.chat_path}/{chat_name}"
         if not chat_file.endswith(".md"):
             chat_file += ".md"
         with open(chat_file, 'r') as f:
-            chat = self.deserialize_chat(content=f.read(), chat_only=True)
+            chat = self.deserialize_chat(content=f.read(), chat_only=chat_only)
             if not chat.created_at:
                 stats = os.stat(chat_file)
                 chat.created_at = str(datetime.fromtimestamp(stats.st_ctime, tz=timezone.utc))

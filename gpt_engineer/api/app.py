@@ -207,7 +207,9 @@ class GPTEngineerAPI:
         @app.put("/api/chats")
         def api_save_chat(chat: Chat, request: Request):
             settings = request.state.settings
-            ChatManager(settings=settings).save_chat(chat)
+            chat_only = True if request.query_params.get("chatonly") == "1" else False
+            logger.info(f"Save chat: {chat.name} - chat_only: {chat_only}")
+            ChatManager(settings=settings).save_chat(chat, chat_only)
 
         @app.post("/api/images")
         def api_image_upload(file: UploadFile):
