@@ -67,6 +67,12 @@ class ChatManager:
                 chat.updated_at = str(datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc))
             return chat
 
+    def delete_chat(self, chat_name):
+        chat_file = f"{self.chat_path}/{chat_name}"
+        if not chat_file.endswith(".md"):
+            chat_file += ".md"
+        os.remove(chat_file)
+
     def serialize_chat(self, chat: Chat):
         chat_json = { **chat.__dict__ }
         del chat_json["messages"]  

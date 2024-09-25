@@ -1,5 +1,4 @@
 import axios from 'axios'
-import chatManager from './chatManager';
 
 const gpteng_key = window.location.search
                     .slice(1).split("&")
@@ -37,7 +36,6 @@ export const API = {
     .finally(() => API.liveRequests--)
   },
   lastSettings: {},
-  chatManager,
   project: {
     list () {
       return API.get('/api/projects')
@@ -125,6 +123,9 @@ export const API = {
     },
     save (chat, chatInfoOnly) {
       return API.put(`/api/chats?chatonly=${chatInfoOnly ? 1 : 0}&` + query(), chat)
+    },
+    delete(chatName) {
+      return API.del(`/api/chats?chat_name=${chatName}&` + query())
     }
   },
   run: {

@@ -189,6 +189,14 @@ class GPTEngineerAPI:
                 return chat_manager.load_chat(chat_name=chat_name)
             return chat_manager.list_chats()
 
+        @app.delete("/api/chats")
+        def api_list_chats(request: Request):
+            settings = request.state.settings
+            chat_name = request.query_params.get("chat_name")
+            chat_manager = ChatManager(settings=settings)
+            chat_manager.delete_chat(chat_name=chat_name)
+            return None
+
         @app.post("/api/chats")
         def api_chat(chat: Chat, request: Request):
             settings = request.state.settings

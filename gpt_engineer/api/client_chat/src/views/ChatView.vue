@@ -63,6 +63,9 @@ import PRView from '../views/PRView.vue'
                   <div class="text-xs">{{ moment.utc(chat.updated_at).fromNow() }}</div>
                   <div class="badge badge-sm">
                     {{  chat.id }}
+                    <span v-if="chat.parent_id">
+                      / ({{  chat.parent_id }})
+                    </span>
                   </div>
                 </div>
               </div>
@@ -76,7 +79,11 @@ import PRView from '../views/PRView.vue'
               <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
                 <i class="fa-solid fa-floppy-disk"></i>
               </button>
-              <button class="btn btn-xs hover:btn-error hover:text-white" @click="deleteChat">
+              <button class="btn btn-xs btn-error hover:text-white" @click="deleteChat" v-if="confirmDelete">
+                Comfirm? <span class="hover:underline">YES</span> / <span class="hover:underline" @click.stop="confirmDelete = false">NO</span>
+                <i class="fa-solid fa-trash"></i>
+              </button>
+              <button class="btn btn-xs hover:btn-error hover:text-white" @click="deleteChat" v-else>
                 <i class="fa-solid fa-trash"></i>
               </button>
               
@@ -89,9 +96,16 @@ import PRView from '../views/PRView.vue'
                   <i class="fa-solid fa-eye"></i>
                 </span>
               </button>
-              <button class="btn btn-primary btn-xs" @click="newChat">
-                <i class="fa-solid fa-plus"></i>
-              </button>
+              <div class="dropdown dropdown-end dropdown-bottom">
+                <button tabindex="0" class="btn btn-sm">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+                <ul tabindex="0" class="dropdown-content menu bg-base-300 rounded-box z-[1] w-60 p-2 shadow">
+                  <li @click="newSubChat()">
+                    <a>New sub task</a>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -163,7 +177,8 @@ export default {
       showSettings: false,
       addNewFile: null,
       showHidden: false,
-      showPRView: false
+      showPRView: false,
+      confirmDelete: false
     }
   },
   async created () {
@@ -202,8 +217,8 @@ export default {
         this.profiles = data
       } catch {}
     },
-    newChat () {
-      this.chat = API.chatManager.newChat()
+    async newChat () {
+      this.chat = await API.chatManager.newChat()
       this.chat.mode = this.chat.mode || 'task'
     },
     async saveChat () {
@@ -212,9 +227,12 @@ export default {
       this.chats = await API.chats.list()
     },
     async deleteChat () {
-      API.chatManager.deleteChat(this.chat)
-      this.chats = await API.chats.list()
-      this.newChat()
+      if (this.confirmDelete) {
+        await API.chats.delete(this.chat.name)
+        this.onShowChats()
+      } else {
+        this.confirmDelete = true
+      }
     },
     async loadChat (newChat) {
       this.chat = await API.chats.loadChat(newChat)
@@ -252,6 +270,13 @@ export default {
     },
     onShowChats () {
       this.$emit('chats')
+    },
+    async newSubChat () {
+      const parent = this.chat
+      await this.newChat()
+      this.chat.parent_id = parent.parent_id
+      this.chat.column = parent.column
+      this.chat.column_ix = parent.column_ix
     }
   }
 }
