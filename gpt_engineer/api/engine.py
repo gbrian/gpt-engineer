@@ -772,6 +772,14 @@ def find_all_projects(detailed: bool = False):
         return all_projects
     return projects_with_details() if detailed else all_projects
 
+def update_engine():
+    try:
+      command = ["git", "pull"]
+      result = subprocess.run(command)
+    except Exception as ex:
+      logger.exception(ex)
+      return ex
+            
 def update_wiki(settings: GPTEngineerSettings, file_path: str):
     project_wiki_path = settings.get_project_wiki_path()
     if not settings.project_wiki or file_path.startswith(project_wiki_path):

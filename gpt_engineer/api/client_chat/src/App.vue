@@ -9,6 +9,7 @@ import ProfileViewVue from './views/ProfileView.vue';
 import ProjectSettingsVue from "./views/ProjectSettings.vue";
 import KanbanVue from './components/kanban/Kanban.vue'
 import WikiViewVue from './views/WikiView.vue';
+import GlobalSettingsVue from './views/GlobalSettings.vue';
 </script>
 
 <template>
@@ -93,6 +94,12 @@ import WikiViewVue from './views/WikiView.vue';
           <i class="fa-solid fa-sliders"></i>
           Setting
         </a>
+        <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'global-settings' ? tabActive: tabInactive]"
+          @click="tabIx = 'global-settings'"
+        >
+          <i class="fa-solid fa-gear"></i>
+          Global
+        </a>
       </div>
       <KanbanVue v-if="tabIx === 'tasks'" />
       <ChatViewVue v-if="tabIx === '___tasks'" />
@@ -101,6 +108,7 @@ import WikiViewVue from './views/WikiView.vue';
       <WikiViewVue class="p-2" v-if="tabIx == 'wiki'"></WikiViewVue>
 
       <ProjectSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'settings'" />
+      <GlobalSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'global-settings'" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'profiles'" />
       <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
       <ProjectViewVue class="p-2" v-if="tabIx == 'home'"></ProjectViewVue>

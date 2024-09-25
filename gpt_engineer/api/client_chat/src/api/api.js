@@ -163,6 +163,11 @@ export const API = {
       return API.get(`/api/wiki?file_path=${path}&` + query())
     }
   },
+  engine: {
+    update () {
+      return API.get('/api/update?' + query())
+    }
+  },
   async init (gpteng_path) {
     this.gpteng_path = gpteng_path
     if (gpteng_path) {

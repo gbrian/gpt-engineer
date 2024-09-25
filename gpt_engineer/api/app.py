@@ -68,7 +68,8 @@ from gpt_engineer.api.engine import (
     check_project,
     extract_tags,
     get_keywords,
-    find_all_projects
+    find_all_projects,
+    update_engine
 )
 
 from gpt_engineer.core.scheduler import add_work
@@ -355,6 +356,10 @@ class GPTEngineerAPI:
                   return Response(content=f.read(), media_type="text/html")
             except:
                 return Response(content="# No project wiki...yet!", media_type="text/html")
+        
+        @app.get("/api/update")
+        def api_get_updated():
+            return update_engine()
 
         return app
             
