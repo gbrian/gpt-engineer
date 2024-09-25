@@ -123,8 +123,8 @@ export const API = {
       chat.messages.push(message)
       return chat
     },
-    save (chat) {
-      return API.put(`/api/chats?` + query(), chat)
+    save (chat, chatInfoOnly) {
+      return API.put(`/api/chats?chatonly=${chatInfoOnly ? 1 : 0}&` + query(), chat)
     }
   },
   run: {
