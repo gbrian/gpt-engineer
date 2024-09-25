@@ -25,6 +25,7 @@ import GlobalSettingsVue from './views/GlobalSettings.vue';
               :style="`background-image:url('${lastSettings.project_icon}')`"></div>
           <div class="">
             {{ projectName }}
+            ({{ lastSettings.model }})
           </div> 
         </div>
         <div class="dropdown">
@@ -52,14 +53,6 @@ import GlobalSettingsVue from './views/GlobalSettings.vue';
           <img src="https://codx-dev.meetnav.com/only_icon.png" class="h-7" >
           Welcome
       </a>
-      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'wiki' ? tabActive: tabInactive]"
-        @click="tabIx = 'wiki'" v-if="validProject"
-        >
-          <i class="fa-brands fa-wikipedia-w"></i>
-          wiki
-
-        </a>
-
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'tasks' ? tabActive: tabInactive]"
         @click="tabIx = 'tasks'" v-if="validProject"
       >
@@ -73,6 +66,12 @@ import GlobalSettingsVue from './views/GlobalSettings.vue';
       >
         <i class="fa-solid fa-book"></i>
         Knowledge
+      </a>
+      <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'wiki' ? tabActive: tabInactive]"
+        @click="tabIx = 'wiki'" v-if="validProject"
+        >
+          <i class="fa-brands fa-wikipedia-w"></i>
+          Documentation
       </a>
       <a role="tab" :class="['tab flex items-center gap-2', tabIx === 'settings' ? tabActive: tabInactive]"
           @click="tabIx = 'settings'" v-if="validProject"

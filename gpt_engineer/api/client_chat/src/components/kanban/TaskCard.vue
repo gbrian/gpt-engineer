@@ -1,17 +1,21 @@
 <template>
-  <div class="bg-base-100 shadow rounded px-3 pt-3 pb-5 border border-white">
-    <div class="flex justify-between">
-      <p class="font-semibold font-sans tracking-wide text-sm">{{task.name}}</p>
+  <div class="bg-base-100 shadow rounded pb-5 border border-white flex flex-col gap-2">
+    <img :src="image" v-if="image" />
+    <div class="p-2 flex flex-col gap-2">
+      <div class="flex justify-between">
+        <p class="font-semibold font-sans tracking-wide text-sm">{{task.name}}</p>
 
-      <img
-        class="w-6 h-6 rounded-full ml-3"
-        src="https://pickaface.net/gallery/avatar/unr_sample_161118_2054_ynlrg.png"
-        alt="Avatar"
-      >
-    </div>
-    <div class="flex mt-4 justify-between items-center">
-      <span class="text-sm text-gray-600">{{task.updated_at}}</span>
-      <badge v-if="task.type" :color="badgeColor">{{task.type}}</badge>
+        <img
+          class="w-6 h-6 rounded-full ml-3"
+          src="https://pickaface.net/gallery/avatar/unr_sample_161118_2054_ynlrg.png"
+          alt="Avatar"
+        >
+      </div>
+      <p class="text-xs">{{ description  }}</p>
+      <div class="flex mt-4 justify-between items-center">
+        <span class="text-sm text-gray-600">{{task.updated_at}}</span>
+        <badge v-if="task.type" :color="badgeColor">{{task.type}}</badge>
+      </div>
     </div>
   </div>
 </template>
@@ -37,6 +41,12 @@ export default {
         default: "teal"
       };
       return mappings[this.task.type] || mappings.default;
+    },
+    description () {
+      return this.task.messages ? this.task.messages[0]?.content: null
+    },
+    image () {
+      return this.task.messages ? this.task.messages[0]?.images[0]: null
     }
   }
 };

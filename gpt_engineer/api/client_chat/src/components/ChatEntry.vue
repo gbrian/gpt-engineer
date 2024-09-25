@@ -57,11 +57,11 @@ import Markdown from './Markdown.vue'
         <Markdown class="" :text="message.content" v-else></Markdown>
         <div v-if="message.images">
           <div class="grid grid-cols-6">
-            <div class="carousel-item click"
+            <div class="carousel-item click mt-2"
               v-for="url in message.images" :key="url"
               @click="$emit('image', url)"
             >
-              <img class="border rounded-md w-20 h-20" :src="url" />
+              <img class="border rounded-md h-30" :src="url" />
             </div>
           </div>
         </div>

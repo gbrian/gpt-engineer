@@ -34,7 +34,7 @@ import ChatViewVue from '../../views/ChatView.vue'
                 <div class="flex input input-bordered input-sm" v-if="element.editTitle">
                   <input type="text" v-model="element.newTitle"
                     @keydown.esc="element.editTitle = false"
-                    @keydown.enter="onColumnTitleChanged(column)"
+                    @keydown.enter="onColumnTitleChanged(element)"
                   >
                 </div>
                 <div class="click" @click="onEditColumnTitle(element)" v-else>{{element.title}}</div>

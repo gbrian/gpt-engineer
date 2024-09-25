@@ -2,6 +2,7 @@ import logging
 import pathlib
 import os
 import json
+import uuid
 from datetime import datetime, timezone
 from gpt_engineer.core.settings import GPTEngineerSettings
 
@@ -44,7 +45,11 @@ class ChatManager:
             chat.created_at = chat.updated_at
         if chat_only:
             exiting_chat = self.load_chat(chat.name)
+            chat.id = exiting_chat.id
             chat.messages = exiting_chat.messages
+        
+        if not chat.id:
+            chat.id = str(uuid.uuid4())
 
         with open(chat_file, 'w') as f:
             chat_content = self.serialize_chat(chat)
@@ -85,9 +90,6 @@ class ChatManager:
         chat_json = json.loads(lines[0][4:-2])
         chat = Chat(**chat_json)
         chat.messages = []
-        if chat_only:
-            return chat
-
         chat_message = None
         for line in lines[1:]:
             if line.startswith("## [[{") and line.endswith("}]]"):
@@ -96,6 +98,8 @@ class ChatManager:
                 chat.messages.append(chat_message)
                 continue
             chat_message.content = line if not chat_message.content else f"{chat_message.content}\n{line}"
+        if chat_only and len(chat.messages):
+            chat.messages = chat.messages[0:1]
         return chat
 
     def find_by_id(self, id):
