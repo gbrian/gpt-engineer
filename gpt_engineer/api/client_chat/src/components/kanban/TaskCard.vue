@@ -1,6 +1,11 @@
 <template>
-  <div class="bg-base-100 shadow rounded pb-5 border border-white flex flex-col gap-2">
-    <img :src="image" v-if="image" />
+  <div class="bg-base-100 shadow rounded pb-5 border border-base-300 flex flex-col gap-2">
+    <div class="bg-auto bg-no-repeat bg-center h-28 bg-base-300"
+      :style="`background-image: url(${image.src})`"
+      v-if="image"
+    >
+    </div>
+                
     <div class="p-2 flex flex-col gap-2">
       <div class="flex justify-between">
         <p class="font-semibold font-sans tracking-wide text-sm">{{task.name}}</p>
@@ -46,7 +51,17 @@ export default {
       return this.task.messages ? this.task.messages[0]?.content: null
     },
     image () {
-      return this.task.messages ? this.task.messages[0]?.images[0]: null
+      let image = (this.task.messages[0]?.images||[])[0]
+      if (image) {
+        try {
+          return JSON.parse(image)
+        } catch {
+          image = {
+            src: image
+          }
+        }
+      }
+      return image
     }
   }
 };
