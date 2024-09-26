@@ -44,7 +44,7 @@ import PRView from '../views/PRView.vue'
         <div class="px-2">
         </div>
       </div>
-      <div class="grow flex flex-col gap-2">
+      <div class="grow flex flex-col gap-2 w-full">
         <div class="text-xl flex gap-2 items-center" v-if="!chatMode">
           <div class="flex flex-col sm:flex-row gap-2 w-full">
             <div class="flex gap-2">

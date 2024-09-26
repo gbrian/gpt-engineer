@@ -197,7 +197,7 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
     """
     logger.info(f"improve_existing_code prompt: {request}")
     code_generator = None
-    if not chat.messages[-1].improvement:
+    if not chat.messages[-1].hide and not chat.messages[-1].improvement:
         retry_count = 1
         request_msg = Message(role="user", content=request)
         chat.messages.append(request_msg)
@@ -206,6 +206,7 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
             chat.messages = [msg for msg in chat.messages if msg != request_msg]
             chat.messages[-1].improvement = True
             if chat.mode == 'task':
+                chat.messages[-2].hide = False
                 chat.messages[-1].hide = True
             response = chat.messages[-1].content.strip()
             try:
@@ -225,6 +226,25 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
 
     apply_improve_code_changes(settings=settings, code_generator=code_generator)
     return code_generator
+
+def project_script_test(settings: GPTEngineerSettings):
+    logger.info(f"project_script_test, test: {settings.script_test} - {settings.script_test_check_regex}")
+    if not settings.script_test:
+        return
+
+    command = settings.script_test.split(" ")
+    result = subprocess.run(command, cwd=settings.project_path,
+                                    stdout = subprocess.PIPE,
+                                    stderr = subprocess.STDOUT,
+                                    text=True)
+    console_out = result.stdout
+    
+    logger.info(f"project_script_test: {console_out} \nOUTPUT DONE")
+
+    test_regex = settings.script_test_check_regex if settings.script_test_check_regex else 'error' 
+    if re.search(test_regex, console_out):
+        return console_out
+    return ""
 
 def apply_improve_code_changes(settings: GPTEngineerSettings, code_generator: AICodeGerator):
     changes = code_generator.code_changes

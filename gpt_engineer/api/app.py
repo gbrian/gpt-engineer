@@ -69,7 +69,8 @@ from gpt_engineer.api.engine import (
     extract_tags,
     get_keywords,
     find_all_projects,
-    update_engine
+    update_engine,
+    project_script_test
 )
 
 from gpt_engineer.core.scheduler import add_work
@@ -310,6 +311,11 @@ class GPTEngineerAPI:
             settings.watching = True
             settings.save_project()
             return { "OK": 1 }
+
+        @app.get("/api/project/script/test")
+        def api_project_watch(request: Request):
+            settings = request.state.settings
+            return project_script_test(settings=settings)
 
         @app.post("/api/projects")
         def api_project_create(request: Request):

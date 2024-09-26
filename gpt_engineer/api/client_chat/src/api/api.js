@@ -51,6 +51,9 @@ export const API = {
     },
     unwatch () {
       return API.get('/api/project/unwatch?' + query())
+    },
+    test () {
+      return API.get('/api/project/script/test?' + query())
     }
   },
   settings: {

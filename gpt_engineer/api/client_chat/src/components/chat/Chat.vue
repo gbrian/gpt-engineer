@@ -1,4 +1,5 @@
 <script setup>
+import { API } from '../../api/api'
 import ChatEntry from '@/components/ChatEntry.vue'
 </script>
 <template>
@@ -80,7 +81,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
       </div>
     </div>
     <div :class="['flex gap-2 p-2 bg-base-300 border rounded-md shadow', multiline ? 'flex-col' : '']">
-      <div :class="['max-h-40 grow px-2 py-1 overflow-auto text-wrap focus-visible:outline-none',
+      <div :class="['max-h-40 w-full max-w-full px-2 py-1 overflow-auto text-wrap focus-visible:outline-none',
         editMessageId !== null ? 'border-error': '',
         editMessageId !== null ? 'border-warning': '',
         onDraggingOverInput ? 'bg-warning/10': ''
@@ -103,6 +104,11 @@ import ChatEntry from '@/components/ChatEntry.vue'
         <button class="btn btn-warning btn-sm mb-1 btn-outline" @click="improveCode">
           <i class="fa-solid fa-code"></i> Code
         </button>
+        <button :class="['btn btn-sm mb-1 btn-outline',
+            testError ? 'btn-error' : 'btn-info'
+          ]" @click="testProject" v-if="API.lastSettings.script_test">
+          <i class="fa-solid fa-flask"></i> Test
+        </button>
       </div>
     </div>
     <div class="flex mt-2 w-full p-1 rounded-md bg-warning text-neutral" v-if="editMessageId != null">
@@ -121,7 +127,6 @@ import ChatEntry from '@/components/ChatEntry.vue'
   </div>
 </template>
 <script>
-import { API } from '@/api/api'
 const defFormater = d => JSON.stringify(d, null, 2)
 
 export default {
@@ -140,7 +145,8 @@ export default {
       previewImage: null,
       editorText: "",
       imagePreview: null,
-      onDraggingOverInput: false
+      onDraggingOverInput: false,
+      testError: null
     }
   },
   computed: {
@@ -200,9 +206,9 @@ export default {
       })
       .catch(console.error);
     },
-    improveCode () {
+    async improveCode () {
       this.postMyMessage()
-      this.sendApiRequest(
+      await this.sendApiRequest(
         () => API.run.improve(this.chat),
         data => ['### Changes done',
                   data.messages.reverse()[0].content,
@@ -214,6 +220,7 @@ export default {
                   JSON.stringify(data.errors, 2, null)
                 ].join("\n")
       )
+      this.testProject()
     },
     runEdit (codeSnipped) {
       this.sendApiRequest(
@@ -414,6 +421,14 @@ export default {
     },
     onMessageChange () {
       this.editorText = this.editor.innerText.trim() || ""
+    },
+    async testProject () {
+      const { data } = await API.project.test()
+      this.testError = data
+      if (this.testError) {
+        this.editMessage = this.testError
+        this.setEditorText(this.editMessage)
+      }
     }
   }
 }
