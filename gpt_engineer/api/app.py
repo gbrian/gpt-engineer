@@ -44,7 +44,8 @@ from gpt_engineer.api.model import (
     KnowledgeSearch,
     KnowledgeDeleteSources,
     Profile,
-    Document
+    Document,
+    LiveEdit
 )
 from gpt_engineer.api.app_service import clarify_business_request
 
@@ -70,7 +71,8 @@ from gpt_engineer.api.engine import (
     get_keywords,
     find_all_projects,
     update_engine,
-    project_script_test
+    project_script_test,
+    run_live_edit
 )
 
 from gpt_engineer.core.scheduler import add_work
@@ -255,6 +257,15 @@ class GPTEngineerAPI:
             message, errors = run_edits(settings=settings, chat=chat)
             return {
               "messages": chat.messages + [{ "role": "assistant", "content": message }],
+              "errors": errors
+            }
+
+        @app.post("/api/run/live-edit")
+        def api_run_live_edit(live_edit: LiveEdit, request: Request):
+            settings = request.state.settings
+            message, errors = run_live_edit(settings=settings, live_edit=live_edit)
+            return {
+              "messages": [{ "role": "assistant", "content": message }],
               "errors": errors
             }
 

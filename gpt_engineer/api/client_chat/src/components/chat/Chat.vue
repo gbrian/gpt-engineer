@@ -4,22 +4,13 @@ import ChatEntry from '@/components/ChatEntry.vue'
 </script>
 <template>
   <div class="flex flex-col gap-2 grow">
-    <modal v-if="imagePreview">
-      <div class="flex flex-col gap-2">
-        <div class="text-2xl">Upload image</div>
-        <img class="h-30 max-w-full" :src="imagePreview.src" />
-        <input class="input input-bordered" v-model="imagePreview.alt" placeholder="Add image info" />
-        <div class="flex justify-end gap-2">
-          <button class="btn" @click="imagePreview = null">
-            Cancel
-          </button>
-          <button class="btn btn-primary" @click="onAddImage">
-            Ok
-          </button>
-        </div>
+    <div class="flex flex-col grow" v-if="livePreview">
+      <div class="flex flex-col w-full grow">
+        <input type="text" class="input input-bordered input-xs w-full" placeholder="http://..." @keypress.enter="livePreviewUrl = $event.target.value" />
+        <iframe ref="iframe" :src="livePreviewUrl" class="w-full h-full bg-base-200"></iframe>
       </div>
-    </modal>
-    <div class="flex flex-col grow">
+    </div>
+    <div class="flex flex-col grow" v-else>
       <div class="grow overflow-auto relative">
         <div class="absolute top-0 left-0 w-full h-full scroller">
           <div v-for="message in messages" :key="message.id">
@@ -95,19 +86,19 @@ import ChatEntry from '@/components/ChatEntry.vue'
       >
       </div>
       <div class="flex gap-2 items-center justify-end mt-1">
-        <button class="btn btn btn-sm btn-circle mb-1 btn-outline" @click="sendMessage">
+        <button class="btn btn btn-sm btn-circle mb-1 btn-outline" @click="sendMessage" v-if="!livePreview">
           <i class="fa-solid fa-comment"></i>
         </button>
-        <button class="btn btn-info btn-sm btn-circle mb-1 btn-outline" @click="askKnowledge">
-          <i class="fa-solid fa-file-circle-plus"></i>
-        </button>
-        <button class="btn btn-warning btn-sm mb-1 btn-outline" @click="improveCode">
+        <button class="btn btn-warning btn-sm mb-1 btn-outline" @click="livePreview ? liveEdit() : improveCode()">
           <i class="fa-solid fa-code"></i> Code
         </button>
         <button :class="['btn btn-sm mb-1 btn-outline',
             testError ? 'btn-error' : 'btn-info'
           ]" @click="testProject" v-if="API.lastSettings.script_test">
           <i class="fa-solid fa-flask"></i> Test
+        </button>
+        <button class="btn btn-info btn-sm tooltip -mt-1" data-tip="Liev preview" @click="livePreview = !livePreview">
+          <i class="fa-solid fa-display"></i>
         </button>
       </div>
     </div>
@@ -124,13 +115,28 @@ import ChatEntry from '@/components/ChatEntry.vue'
         <i class="fa-regular fa-circle-xmark"></i>
       </button>
     </div>
+    <modal v-if="imagePreview">
+      <div class="flex flex-col gap-2">
+        <div class="text-2xl">Upload image</div>
+        <img class="h-30 max-w-full" :src="imagePreview.src" />
+        <input class="input input-bordered" v-model="imagePreview.alt" placeholder="Add image info" />
+        <div class="flex justify-end gap-2">
+          <button class="btn" @click="imagePreview = null">
+            Cancel
+          </button>
+          <button class="btn btn-primary" @click="onAddImage">
+            Ok
+          </button>
+        </div>
+      </div>
+    </modal>
   </div>
 </template>
 <script>
 const defFormater = d => JSON.stringify(d, null, 2)
 
 export default {
-  props: ['chat', 'showHidden'],
+  props: ['chat', 'showHidden', 'livePreview'],
   data () {
     return {
       waiting: false,
@@ -146,7 +152,9 @@ export default {
       editorText: "",
       imagePreview: null,
       onDraggingOverInput: false,
-      testError: null
+      testError: null,
+      livePreview: false,
+      livePreviewUrl: null
     }
   },
   computed: {
@@ -206,6 +214,10 @@ export default {
       })
       .catch(console.error);
     },
+    async liveEdit () {
+      await this.sendMessage()
+      this.improveCode()
+    },
     async improveCode () {
       this.postMyMessage()
       await this.sendApiRequest(
@@ -257,7 +269,7 @@ export default {
         return
       }
       this.postMyMessage()
-      this.sendApiRequest(
+      return this.sendApiRequest(
         () => API.chats.message(this.chat),
         ({ content } = {}) => {
           return `${ content }`
@@ -371,7 +383,7 @@ export default {
       }
     },
     saveChat () {
-      this.$emit('save')
+      return API.chats.save(this.chat)
     },
     onDrop(e) {
       this.onDraggingOverInput = false

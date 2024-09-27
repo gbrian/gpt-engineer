@@ -137,6 +137,9 @@ export const API = {
     },
     edit (chat) {
       return API.post('/api/run/edit?' + query(), chat)
+    },
+    liveEdit ({ chat, html, url, message }) {
+      return API.post('/api/run/live-edit?' + query(), { chat_name: chat.name, html, url, message })
     }
   },
   profiles: {

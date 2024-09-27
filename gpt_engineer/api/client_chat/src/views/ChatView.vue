@@ -30,7 +30,7 @@ import PRView from '../views/PRView.vue'
       </button>
     </div>
     <PRView v-if="showPRView"></PRView>
-    <div class="grow flex gap-2 h-full justify-between" v-else>
+    <div class="grow flex gap-2 h-full justify-between" v-if="showChat">
       <div class="flex flex-col  bg-base-300 p-2 overflow-auto" v-if="showChatsTree">
         <ul tabindex="0" class=" p-2 w-52">
           <li class="p-2 click hover:underline flex flex-col"
@@ -96,8 +96,8 @@ import PRView from '../views/PRView.vue'
                   <i class="fa-solid fa-eye"></i>
                 </span>
               </button>
-              <div class="dropdown dropdown-end dropdown-bottom">
-                <button tabindex="0" class="btn btn-sm">
+              <div class="dropdown dropdown-end dropdown-bottom -mt-1">
+                <button tabindex="0" class="btn btn-xs">
                   <i class="fa-solid fa-plus"></i>
                 </button>
                 <ul tabindex="0" class="dropdown-content menu bg-base-300 rounded-box z-[1] w-60 p-2 shadow">
@@ -130,6 +130,7 @@ import PRView from '../views/PRView.vue'
         </div>
         <Chat :chat="chat"
           :showHidden="showHidden"
+          :livePreview="livePreview"
           @refresh-chat="loadChat(chat.name)"
           @add-file="onAddFile"
           @delete-message="onRemoveMessage"
@@ -201,6 +202,9 @@ export default {
     },
     messages () {
       return this.chat.messages.filter(m => !m.hide || this.showHidden)
+    },
+    showChat () {
+      return !this.showPRView
     }
   },
   watch: {

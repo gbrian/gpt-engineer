@@ -88,3 +88,9 @@ class Document(BaseModel):
     id: int = Field(default=None)
     page_content: str
     metadata: dict
+
+class LiveEdit(BaseModel):
+    chat_name: str
+    html: str
+    url: str
+    message: str

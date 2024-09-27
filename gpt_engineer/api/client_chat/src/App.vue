@@ -1,6 +1,5 @@
 <script setup>
 import { API } from './api/api'
-import HomeViewVue from "./views/HomeView.vue";
 import ProjectViewVue from "./views/ProjectView.vue";
 import ChatViewVue from "./views/ChatView.vue";
 import LiveEditVue from "./views/LiveEdit.vue";
@@ -10,6 +9,7 @@ import ProjectSettingsVue from "./views/ProjectSettings.vue";
 import KanbanVue from './components/kanban/Kanban.vue'
 import WikiViewVue from './views/WikiView.vue';
 import GlobalSettingsVue from './views/GlobalSettings.vue';
+import ProjectProfileVue from './views/ProjectProfile.vue';
 </script>
 
 <template>
@@ -110,7 +110,7 @@ import GlobalSettingsVue from './views/GlobalSettings.vue';
       <GlobalSettingsVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'global-settings'" />
       <ProfileViewVue class="abolsute top-0 left-0 w-full" v-if="tabIx === 'profiles'" />
       <iframe v-if="tabIx === 4" src="/notebooks" class="absolute top-0 left-0 w-full h-full"></iframe>
-      <ProjectViewVue class="p-2" v-if="tabIx == 'home'"></ProjectViewVue>
+      <ProjectProfileVue class="p-2" v-if="tabIx == 'home'"></ProjectProfileVue>
     </div>
     <div class="modal modal-open" role="dialog" v-if="showOpenProjectModal">
       <div class="modal-box">

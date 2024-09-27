@@ -30,7 +30,8 @@ from gpt_engineer.api.model import (
     KnowledgeSearch,
     Document,
     Content,
-    ImageUrl
+    ImageUrl,
+    LiveEdit
 )
 from gpt_engineer.core.context import (
   find_relevant_documents,
@@ -805,6 +806,11 @@ def update_engine():
     except Exception as ex:
       logger.exception(ex)
       return ex
+
+def run_live_edit(settings: GPTEngineerSettings, live_edit: LiveEdit):
+    chat = ChatManager(settings=settings).load_chat(live_edit.chat_name)
+    chat_with_project(settings=settings, chat=chat, use_knowledge=True)
+    return improve_existing_code(settings=settings, chat=chat, apply_changes=True)
             
 def update_wiki(settings: GPTEngineerSettings, file_path: str):
     project_wiki_path = settings.get_project_wiki_path()
