@@ -223,7 +223,7 @@ def improve_existing_code(settings: GPTEngineerSettings, chat: Chat, apply_chang
         if not apply_changes:
             return code_generator
     else:
-        code_generator = AI_CODE_GENERATOR_PARSER.invoke(response)
+        code_generator = AI_CODE_GENERATOR_PARSER.invoke(chat.messages[-1].content)
 
     apply_improve_code_changes(settings=settings, code_generator=code_generator)
     return code_generator

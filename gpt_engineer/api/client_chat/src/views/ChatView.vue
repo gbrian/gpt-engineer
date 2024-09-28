@@ -73,8 +73,9 @@ import PRView from '../views/PRView.vue'
             <div class="grow"></div>
             <div class="flex gap-2">
               <select v-model="chat.mode" class="select select-xs select-bordered">
-                <option selected value="chat">chat</option>
+                <option value="chat">chat</option>
                 <option selected value="task">task</option>
+                <option value="live">live</option>
               </select>
               <button class="btn btn-xs hover:btn-info hover:text-white" @click="saveChat">
                 <i class="fa-solid fa-floppy-disk"></i>
@@ -130,7 +131,6 @@ import PRView from '../views/PRView.vue'
         </div>
         <Chat :chat="chat"
           :showHidden="showHidden"
-          :livePreview="livePreview"
           @refresh-chat="loadChat(chat.name)"
           @add-file="onAddFile"
           @delete-message="onRemoveMessage"

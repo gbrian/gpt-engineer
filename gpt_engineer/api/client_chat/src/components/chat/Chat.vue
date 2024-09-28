@@ -6,8 +6,8 @@ import ChatEntry from '@/components/ChatEntry.vue'
   <div class="flex flex-col gap-2 grow">
     <div class="flex flex-col grow" v-if="livePreview">
       <div class="flex flex-col w-full grow">
-        <input type="text" class="input input-bordered input-xs w-full" placeholder="http://..." @keypress.enter="livePreviewUrl = $event.target.value" />
-        <iframe ref="iframe" :src="livePreviewUrl" class="w-full h-full bg-base-200"></iframe>
+        <input type="text" class="input input-bordered input-xs w-full" placeholder="http://..." v-model="chat.live_url" />
+        <iframe ref="iframe" :src="chat.live_url" class="w-full h-full bg-base-200"></iframe>
       </div>
     </div>
     <div class="flex flex-col grow" v-else>
@@ -57,18 +57,18 @@ import ChatEntry from '@/components/ChatEntry.vue'
           </li>
         </ul>
       </div>
-      <div class="carousel rounded-box">
-        <div class="carousel-item relative click flex flex-col" v-for="image, ix in allImages" :key="image.src">
-          <div class="bg-auto bg-no-repeat bg-center h-28 w-28 bg-base-300 mr-4"
-            :style="`background-image: url(${image.src})`" @click="imagePreview = image">
-          </div>
-          <p class="text-xs">{{ image.alt }}</p>
-          <button class="btn btn-xs btn-circle btn-error absolute right-2 top-2"
-            @click="removeImage(ix)"
-          >
-            X
-          </button>
+    </div>
+    <div class="carousel rounded-box">
+      <div class="carousel-item relative click flex flex-col" v-for="image, ix in allImages" :key="image.src">
+        <div class="bg-auto bg-no-repeat bg-center h-28 w-28 bg-base-300 mr-4"
+          :style="`background-image: url(${image.src})`" @click="imagePreview = image">
         </div>
+        <p class="text-xs">{{ image.alt }}</p>
+        <button class="btn btn-xs btn-circle btn-error absolute right-2 top-2"
+          @click="removeImage(ix)"
+        >
+          X
+        </button>
       </div>
     </div>
     <div :class="['flex gap-2 p-2 bg-base-300 border rounded-md shadow', multiline ? 'flex-col' : '']">
@@ -96,9 +96,6 @@ import ChatEntry from '@/components/ChatEntry.vue'
             testError ? 'btn-error' : 'btn-info'
           ]" @click="testProject" v-if="API.lastSettings.script_test">
           <i class="fa-solid fa-flask"></i> Test
-        </button>
-        <button class="btn btn-info btn-sm tooltip -mt-1" data-tip="Liev preview" @click="livePreview = !livePreview">
-          <i class="fa-solid fa-display"></i>
         </button>
       </div>
     </div>
@@ -136,7 +133,7 @@ import ChatEntry from '@/components/ChatEntry.vue'
 const defFormater = d => JSON.stringify(d, null, 2)
 
 export default {
-  props: ['chat', 'showHidden', 'livePreview'],
+  props: ['chat', 'showHidden'],
   data () {
     return {
       waiting: false,
@@ -152,9 +149,7 @@ export default {
       editorText: "",
       imagePreview: null,
       onDraggingOverInput: false,
-      testError: null,
-      livePreview: false,
-      livePreviewUrl: null
+      testError: null
     }
   },
   computed: {
@@ -169,6 +164,9 @@ export default {
     },
     allImages () {
       return this.images
+    },
+    livePreview () {
+      return this.chat?.mode === 'live'
     }
   },
   watch: {
@@ -260,7 +258,7 @@ export default {
         })
         this.setEditorText("")
         this.images = []
-        this.$refs.anchor.scrollIntoView()
+        this.$refs.anchor?.scrollIntoView()
       }
     },
     async sendMessage () {

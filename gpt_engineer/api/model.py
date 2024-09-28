@@ -42,6 +42,7 @@ class Chat(BaseModel):
     column: str = Field(default='')
     column_index: int = Field(default=-1)
     chat_index: int = Field(default=-1)
+    live_url: str = Field(default='')
 
 class Logprobs(BaseModel):
     tokens: List[str]

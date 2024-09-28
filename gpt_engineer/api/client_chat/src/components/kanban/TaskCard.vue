@@ -10,11 +10,18 @@
       <div class="flex justify-between">
         <p class="font-semibold font-sans tracking-wide text-sm">{{task.name}}</p>
 
-        <img
-          class="w-6 h-6 rounded-full ml-3"
-          src="https://pickaface.net/gallery/avatar/unr_sample_161118_2054_ynlrg.png"
-          alt="Avatar"
-        >
+        <div class="p-2 rounded-full border-1 bg-base-300">
+          <span class="text-info" v-if="task.mode === 'live'">
+            <i class="fa-xl fa-brands fa-chromecast"></i>
+          </span>
+          <span v-if="task.mode === 'chat'">
+            <i class="fa-xl fa-regular fa-comments"></i>
+          </span>
+          <span v-if="task.mode === 'task'">
+            <i class="fa-xl fa-regular fa-file-code"></i>
+          </span>
+
+        </div>
       </div>
       <p class="text-xs">{{ description  }}</p>
       <div class="flex mt-4 justify-between items-center">
